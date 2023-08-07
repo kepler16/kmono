@@ -1,0 +1,5 @@
+{:paths ["src" "resources"]
+ :deps {babashka/process {:mvn/version "0.5.21"}
+        babashka/fs {:mvn/version "0.4.19"}
+        metosin/malli {:mvn/version "0.11.0"}
+        org.flatland/ordered {:mvn/version "1.15.11"}}}
