@@ -2,18 +2,23 @@
   (:require
    [malli.core :as m]))
 
-(def ?Deps
+(def ?VersionMap
   [:vector
-   [:map
-    [:coordinate :string]
-    [:version :string]]])
+   [:map-of :string :string]])
 
 (defprotocol Adapter
-  (update-deps! [this path deps]))
+  (update-deps! [this deps])
+  (get-deps [this]))
 
-(defn bump-deps!
-  [adapter path deps]
-  (assert (m/validate ?Deps deps)
-          (m/explain ?Deps deps))
-  (update-deps! adapter path deps))
+(defn bump-local-deps!
+  [adapter version-map]
+  (assert (m/validate ?VersionMap version-map)
+          (m/explain ?VersionMap version-map))
+  (update-deps! adapter version-map))
+
+(defn get-local-deps
+  [adapter]
+  (get-deps adapter))
+
+
 
