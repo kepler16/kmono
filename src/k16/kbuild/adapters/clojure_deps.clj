@@ -1,70 +1,53 @@
 (ns k16.kbuild.adapters.clojure-deps
   (:require
-   [k16.kbuild.adapter :refer [Adapter]]
+   [babashka.fs :as fs]
    [clojure.edn :as edn]
-   [clojure.walk :as walk]))
-
-(defn update-locals
-  [deps-edn version-map]
-  (walk/postwalk
-   (fn [step-entity]
-     (or (when (map-entry? step-entity)
-           (let [[pname v] step-entity]
-             ;; replace only local/root deps
-             (when (:local/root v)
-               (when-let [version (get version-map (str pname))]
-                 [pname {:mvn/version version}]))))
-         step-entity))
-   deps-edn))
+   [k16.kbuild.adapter :refer [Adapter]]))
 
 (defn- local?
   [[_ coord]]
   (boolean (:local/root coord)))
 
-(defn get-locals
-  "Gather all dependencies that are local/root and return a list of symbols"
-  [deps-edn]
+(defn- get-local-deps
+  [config deps-edn]
   (into
    (->> deps-edn
         :deps
         (filter local?)
         (mapv (comp str first)))
-   (->> deps-edn
-        :aliases
-        (vals)
-        (map #(vals (select-keys % [:deps :extra-deps :replace-deps])))
-        (flatten)
-        (apply merge)
-        (filter local?)
-        (map (comp str first)))))
+   (when-let [manage-aliases (seq (:aliases config))]
+     (->> (map #(vals (select-keys % [:deps :extra-deps :replace-deps]))
+               (-> deps-edn
+                   :aliases
+                   (select-keys manage-aliases)
+                   (vals)))
+          (flatten)
+          (apply merge)
+          (filter local?)
+          (map first)))))
 
-(defn adapter
-  [path]
-  (reify Adapter
-    (update-deps! [_ dep-versions]
-      (let [deps-edn (-> path (slurp) (edn/read-string))
-            with-updated-locals (update-locals deps-edn dep-versions)]
+(defn ->adapter
+  [package-path]
+  (let [deps-edn (-> (fs/file package-path "deps.edn")
+                     (slurp)
+                     (edn/read-string))
+        config (:kbuild/config deps-edn)
+        managed-deps (get-local-deps config deps-edn)]
+    (reify Adapter
+
+      (prepare-deps-env [_ changes]
         (binding [*print-namespace-maps* false]
-          (spit path with-updated-locals))))
+          (str "'"
+               {:deps
+                (into {} (map
+                          (fn [dep]
+                            [(symbol dep)
+                             {:mvn/version
+                              (get-in changes [dep :version])}]))
+                      managed-deps)}
+               "'")))
 
-    (get-deps [_]
-      (let [deps-edn (-> path (slurp) (edn/read-string))]
-        (get-locals deps-edn)))))
+      (get-managed-deps [_] managed-deps)
 
-(comment
-  (def deps-str (slurp "/Users/armed/Developer/k16/transit/micro/packages/http/deps.edn"))
-  (def deps-edn (edn/read-string deps-str))
-  (get-locals (edn/read-string deps-str))
-  (->> deps-edn
-       :aliases
-       (vals)
-       (map #(vals (select-keys % [:deps :extra-deps :replace-deps])))
-       (flatten)
-       (apply merge)
-       (filter local?))
-  (def bumps {"transit-engineering/telemetry.clj" "1.89.2"
-              "transit-engineering/test.clj" "1.77.2"})
-  (binding [*print-namespace-maps* false]
-    (update-locals deps-edn bumps))
+      (get-kbuild-config [_] config))))
 
-  nil)

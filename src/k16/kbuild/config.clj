@@ -1,66 +1,72 @@
 (ns k16.kbuild.config
   (:require
-   [k16.kbuild.adapters.clojure-deps :as clj.deps]
-   [k16.kbuild.adapter :as adapter]
    [babashka.fs :as fs]
-   [clojure.edn :as edn]
    [clojure.set :as set]
    [clojure.string :as string]
    [flatland.ordered.set :as oset]
+   [k16.kbuild.adapter :as adapter]
+   [k16.kbuild.adapters.clojure-deps :as clj.deps]
    [malli.core :as m]
    [malli.error :as me]
-   [malli.transform :as mt]
    [malli.util :as mu]))
 
-(def ?Package
+(def ?KbuldPackageConfig
   [:map
-   [:name :string]
-   [:dir :string]
-   [:depends_on {:optional true}
-    [:vector :string]]
-   [:adapter {:default :clojure-deps}
-    :keyword]
-   [:fallback_version {:optional true}
+   [:group [:or :string :symbol]]
+   [:artifact {:optional true}
+    [:maybe [:or :string :symbol]]]
+   [:aliases {:optional true}
+    [:vector :keyword]]
+   [:release-cmd {:optional true}
     :string]
-   [:release_cmd {:optional true} :string]
-   [:build_cmd :string]])
+   [:build-cmd :string]])
 
-(def ?Config
-  [:map {:closed false}
-   [:defaults
-    (-> (mu/optional-keys ?Package)
-        (mu/dissoc :name)
-        (mu/dissoc :dir)
-        (mu/dissoc :depends_on))]
-   [:packages [:vector ?Package]]])
+(def ?Package
+  (-> ?KbuldPackageConfig
+      (mu/required-keys [:artifact])
+      (mu/assoc :depends-on [:vector :string])
+      (mu/assoc :name :string)))
+
+(def ?Packages
+  [:vector ?Package])
 
 (def ^:dynamic *config-dir* ".")
 
-(defn -get-adapder
-  [{:keys [adapter dir]}]
-  (let [pkg-dir (fs/file *config-dir* dir)]
-    (case adapter
-      :clojure-deps (clj.deps/adapter (fs/file pkg-dir "deps.edn"))
-      (clj.deps/adapter (fs/file pkg-dir "deps.edn")))))
+(defn get-adapter
+  [pkg-dir]
+  (clj.deps/->adapter (fs/file pkg-dir)))
 
-(def get-adapter (memoize -get-adapder))
+(defn- assert-schema!
+  [?schema value]
+  (assert (m/validate ?schema value)
+          (me/humanize (m/explain ?schema value)))
+  value)
 
-(defn- read-config
-  [config-dir]
-  (let [config-file (fs/file config-dir "kbuild.edn")]
-    (if (fs/exists? config-file)
-      (let [config-edn (->> config-file
-                            (slurp)
-                            (edn/read-string))]
-        (m/decode ?Config
-                  config-edn
-                  mt/default-value-transformer))
-      (throw (ex-info "Config file not found (json/edn)"
-                      {:config-dir config-dir})))))
+(defn- create-package-config [package-dir]
+  (let [adapter (get-adapter package-dir)
+        kb-pkg-config (->> (adapter/get-kbuild-config adapter)
+                           (assert-schema! ?KbuldPackageConfig))
+        artifact (or (:artifact kb-pkg-config)
+                     (symbol (fs/file-name package-dir)))
+        pkg-name (str (:group kb-pkg-config) "/" artifact)]
+
+    (let [pkg-config (merge kb-pkg-config
+                            {:artifact (or (:artifact kb-pkg-config)
+                                           (symbol (fs/file-name package-dir)))
+                             :name pkg-name
+                             :adapter adapter
+                             :dir (str package-dir)})]
+      (->> (assoc pkg-config :depends-on (adapter/get-managed-deps adapter))
+           (assert-schema! ?Package)))))
+
+(defn- create-config-data
+  [root-dir glob]
+  (let [package-dirs (fs/glob root-dir glob)]
+    {:packages (mapv create-package-config package-dirs)}))
 
 (defn create-graph [packages]
-  (reduce (fn [acc {:keys [name depends_on]}]
-            (assoc acc name (or (set depends_on) #{})))
+  (reduce (fn [acc {:keys [name depends-on]}]
+            (assoc acc name (or (set depends-on) #{})))
           {}
           packages))
 
@@ -85,9 +91,8 @@
   [graph]
   (let [cycle-path (find-cycles graph)]
     (when (seq cycle-path)
-      (throw (ex-info (str "Cicrlar dependency error:\n "
-                           (string/join " ->\n " cycle-path))
-                      {:cycle cycle-path})))))
+      (throw (ex-info (str "Cicrlar dependency error")
+                      {:body cycle-path})))))
 
 (defn find-missing-deps
   [graph]
@@ -102,9 +107,8 @@
   [graph]
   (let [diff (find-missing-deps graph)]
     (when (seq diff)
-      (throw (ex-info (str "Unknown dependencies:\n "
-                           (string/join "\n-" diff))
-                      {:unknowns diff})))))
+      (throw (ex-info "Unknown dependencies"
+                      {:body (str "- " (string/join "\n- " diff))})))))
 
 (defn parallel-topo-sort
   [graph]
@@ -116,71 +120,36 @@
                    (map (fn [[k v]] [k (apply disj v ks)]))
                    (apply dissoc graph ks)))))))
 
-(defn gather-deps
-  [packages]
-  (mapv (fn [pkg]
-          (assoc pkg :depends_on (-> pkg (get-adapter) (adapter/get-local-deps))))
-        packages))
-
 (defn load-config
   "Loads config from a file, accepts a directory where config is located,
   defaults to current dir. Returns a map with parsed config and build order.
   Build order is a list of parallel builds, where parallel build
   is a list of package names which can run simultaneously"
   ([]
-   (load-config "."))
-  ([config-dir]
-   (assert config-dir "Config dir is not specified")
-   (binding [*config-dir* config-dir]
-     (let [config-map (read-config config-dir)
-           packages (mapv (fn [pkg]
-                            (m/decode ?Package
-                                      (merge (:defaults config-map) pkg)
-                                      mt/default-value-transformer))
-                          (:packages config-map))
-           with-defaults (assoc config-map :packages packages)]
-       (if-let [err (m/explain ?Config with-defaults)]
-         (throw (ex-info "Config validation error" {:explanation (me/humanize err)}))
-         (let [graph (-> packages gather-deps create-graph)]
+   (load-config "." "packages/*"))
+  ([root-dir]
+   (load-config root-dir "packages/*"))
+  ([root-dir glob]
+   (assert root-dir "Config dir is not specified")
+   (binding [*config-dir* root-dir]
+     (let [config-map (create-config-data root-dir glob)
+           packages (:packages config-map)]
+       (if-let [err (m/explain ?Packages packages)]
+         (throw (ex-info "Config validation error" {:body (me/humanize err)}))
+         (let [graph (create-graph packages)]
+           (def graph graph)
            (assert-missing-deps! graph)
            (assert-cycles! graph)
-           {:config with-defaults
+           {:packages packages
             :graph graph
             :build-order (parallel-topo-sort graph)}))))))
 
 (comment
-  (def graph {"transit-engineering/gx" #{},
-              "transit-engineering/util.clj" #{"transit-engineering/bar"},
-              "transit-engineering/auth.clj" #{"transit-engineering/util.clj"},
-              "transit-engineering/telemetry.clj" #{"transit-engineering/util.clj"},
-              "transit-engineering/bar"
-              #{"transit-engineering/telemetry.clj" "transit-engineering/auth.clj"}})
 
-  (set (reduce into [] (vals graph)))
+  (load-config "/Users/armed/Developer/k16/transit/micro")
 
-  (find-missing-deps graph)
-  (assert-missing-deps! graph)
-
-  (assert-cycles! graph)
-
-  (slurp "/Users/armed/Developer/k16/transit/micro/packages/auth.clj/deps.edn")
-  (def config-dir "/Users/armed/Developer/k16/transit/micro")
-
-  (binding [*config-dir* config-dir]
-    (-> {:dir "packages/mongo.clj"
-         :adapter :clojure-deps}
-        (get-adapter)
-        (adapter/get-local-deps)))
-  (def config (load-config "/Users/armed/Developer/k16/transit/micro"))
-
-  (find-cycles graph)
-
-  (def graph (create-graph (:packages config))) ; false (in this case)
-
-  (parallel-topo-sort graph)
-
-  (empty-deps-node graph))
-
-(comment
+  (let [p (second packages)]
+    (-> p :adapter (adapter/get-managed-deps p)))
 
   nil)
+
