@@ -30,7 +30,24 @@
 (def ?Packages
   [:vector ?Package])
 
-(def ^:dynamic *config-dir* ".")
+(def ?PackageMap
+  [:map-of :string ?Package])
+
+(def ?Graph
+  [:map-of :string [:set :string]])
+
+(def ?BuildOrder
+  [:vector [:vector :string]])
+
+(def ?Config
+  [:map {:closed true}
+   [:dry-run? {:optional true} :boolean]
+   [:snapshot? {:optional true} :boolean]
+   [:repo-root :string]
+   [:packages ?Packages]
+   [:package-map ?PackageMap]
+   [:graph ?Graph]
+   [:build-order ?BuildOrder]])
 
 (defn get-adapter
   [pkg-dir]
@@ -41,6 +58,10 @@
   (assert (m/validate ?schema value)
           (me/humanize (m/explain ?schema value)))
   value)
+
+(defn validate-config!
+  [config]
+  (assert-schema! ?Config config))
 
 (defn- create-package-config [package-dir]
   (let [adapter (get-adapter package-dir)
@@ -59,12 +80,15 @@
       (->> (assoc pkg-config :depends-on (adapter/get-managed-deps adapter))
            (assert-schema! ?Package)))))
 
-(defn- create-config-data
+(defn- create-config
   [root-dir glob]
   (let [package-dirs (fs/glob root-dir glob)]
     {:packages (mapv create-package-config package-dirs)}))
 
-(defn create-graph [packages]
+(defn create-graph
+  {:malli/schema [:=> [:cat ?Packages] ?Graph]}
+  [packages]
+  (println "Creating graph...")
   (reduce (fn [acc {:keys [name depends-on]}]
             (assoc acc name (or (set depends-on) #{})))
           {}
@@ -111,42 +135,58 @@
                       {:body (str "- " (string/join "\n- " diff))})))))
 
 (defn parallel-topo-sort
+  {:malli/schema [:=> [:cat ?Graph] [:maybe ?BuildOrder]]}
   [graph]
   (when (seq graph)
     (when-let [ks (seq (keep (fn [[k v]] (when (empty? v) k)) graph))]
-      (into [ks]
-            (parallel-topo-sort
-             (into {}
-                   (map (fn [[k v]] [k (apply disj v ks)]))
-                   (apply dissoc graph ks)))))))
+      (vec (into [(vec ks)]
+                 (parallel-topo-sort
+                  (into {}
+                        (map (fn [[k v]] [k (apply disj v ks)]))
+                        (apply dissoc graph ks))))))))
+
+(defn- ->pkg-map
+  {:malli/schema [:=> [:cat ?Config] ?PackageMap]}
+  [packages]
+  (into {} (map (juxt :name identity)) packages))
 
 (defn load-config
   "Loads config from a file, accepts a directory where config is located,
   defaults to current dir. Returns a map with parsed config and build order.
   Build order is a list of parallel builds, where parallel build
   is a list of package names which can run simultaneously"
+  {:malli/schema [:function
+                  [:=> :cat ?Config]
+                  [:=> [:cat :string] ?Config]
+                  [:=> [:cat :string :string] ?Config]]}
   ([]
    (load-config "." "packages/*"))
-  ([root-dir]
-   (load-config root-dir "packages/*"))
-  ([root-dir glob]
-   (assert root-dir "Config dir is not specified")
-   (binding [*config-dir* root-dir]
-     (let [config-map (create-config-data root-dir glob)
-           packages (:packages config-map)]
-       (if-let [err (m/explain ?Packages packages)]
-         (throw (ex-info "Config validation error" {:body (me/humanize err)}))
-         (let [graph (create-graph packages)]
-           (def graph graph)
-           (assert-missing-deps! graph)
-           (assert-cycles! graph)
-           {:packages packages
-            :graph graph
-            :build-order (parallel-topo-sort graph)}))))))
+  ([repo-root]
+   (load-config repo-root "packages/*"))
+  ([repo-root glob]
+   (assert repo-root "Config dir is not specified")
+   (println "Loading config...")
+   (let [config (create-config repo-root glob)
+         packages (:packages config)]
+     (println (count packages) "packages found: ")
+     (doseq [pkg packages]
+       (println "\t" (:name pkg)))
+     (if-let [err (m/explain ?Packages packages)]
+       (throw (ex-info "Config validation error" {:body (me/humanize err)}))
+       (let [graph (create-graph packages)]
+         (assert-missing-deps! graph)
+         (assert-cycles! graph)
+         {:repo-root repo-root
+          :packages packages
+          :package-map (->pkg-map packages)
+          :graph graph
+          :build-order (parallel-topo-sort graph)})))))
 
 (comment
 
-  (load-config "/Users/armed/Developer/k16/transit/micro")
+  (def config (load-config "/Users/armed/Developer/k16/transit/micro"))
+  (def graph (create-graph (:packages config)))
+  (def topo (parallel-topo-sort graph))
 
   (let [p (second packages)]
     (-> p :adapter (adapter/get-managed-deps p)))

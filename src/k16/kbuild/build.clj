@@ -1,142 +1,177 @@
 (ns k16.kbuild.build
   (:require
    [babashka.process :as bp]
-   [clojure.string :as string]
-   [k16.kbuild.config :as config]
    [k16.kbuild.adapter :as adapter]
+   [k16.kbuild.config :as config]
+   [k16.kbuild.dry :as dry]
    [k16.kbuild.git :as git]))
 
-(def ?Builds
-  [:map-of
-   :string
-   [:map
-    [:version :string]
-    [:tag :string]
-    [:package-name :string]
-    [:build? :boolean]]])
+(def ?ProcsResult
+  [:vector
+   [:map-of
+    :string
+    [:map
+     [:success? :boolean]
+     [:output :string]]]])
 
-(def version-pattern
-  (re-pattern #"(?:(?:[^\d]*))(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?(?:[^\d].*)?"))
+(def ?ProcResult
+  [:map
+   [:success? :boolean]
+   [:output :string]])
 
-(defn version?
-  [v]
-  (boolean (re-matches version-pattern v)))
+(def ?ProcAwaitResults
+  [:map-of :string ?ProcResult])
 
-(defn bump
-  "Bumps the version depending of type of bump [major, minor, patch, build]
-  strips out any characters not related to version, e.g. v1.1.1-foo becomes 1.1.2"
-  [version bump-type]
-  (if-let [[_ major minor patch build] (re-matches version-pattern version)]
-    (let [major (parse-long major)
-          minor (parse-long minor)
-          patch (parse-long patch)
-          build' (if build (parse-long build) 0)]
-      (case bump-type
-        :major (string/join "." [(inc major) 0 0 0])
-        :minor (string/join "." [major (inc minor) 0 0])
-        :patch (string/join "." [major minor (inc patch) 0])
-        :build (string/join "." [major minor patch (inc build')])
-        version))
-    (throw (ex-info "Version does not match pattern `major.minor.patch[.build]`"
-                    {:body (str "version: " version)}))))
+(def ?JobResult
+  [:tuple :boolean ?ProcsResult])
 
-(comment
-  (def version "1.77.2.3")
+(def ?BuildProc
+  [:tuple :string :map])
 
-  (= "2.0.0.0" (bump version :major))
-  (= "1.78.0.0" (bump version :minor))
-  (= "1.77.3.0" (bump version :patch))
-  (= "1.77.2.4" (bump version :chore))
-  (= "1.77.2.3" (bump version :none))
-
-  (bump "lol1.3.2.4" :major)
-  (bump "lol1.3.2" :none)
-  (re-matches version-pattern "1.2.3")
-
-  nil)
-
-(defn package-changes
-  [repo-path {:keys [name dir]}]
-  (let [tags (git/get-sorted-tags repo-path)]
-    (when-let [latest-tag (->> tags
-                               (filter #(string/starts-with? % name))
-                               (first))]
-      (let [[_ current-version] (string/split latest-tag #"@")
-            bump-type (-> (git/subdir-changes dir latest-tag)
-                          (git/bump-type))]
-        (when (version? current-version)
-          (let [version (bump current-version bump-type)
-                tag (str name "@" version)]
-            {:version version
-             :tag tag
-             :package-name name
-             :build? (not= :none bump-type)}))))))
-
-(defn scan-for-changes
-  "Takes a repo path and kbuild config map. Scans all packages and determines
-  version, tag, and should it be built. Build is always true in case of
-  fallback_version"
-  {:malli/schema [:=> [:cat :string config/?Packages] ?Builds]}
-  [repo-path packages]
-  (into {}
-        (map (fn [pkg] [(:name pkg) (package-changes repo-path pkg)]))
-        packages))
-
-(defn build-package
-  [pkg-map changes pkg-name]
-  (println "\t" pkg-name "building")
-  (let [pkg (get pkg-map pkg-name)
+(defn- run-external-cmd
+  [config changes pkg-name cmd-type]
+  (let [pkg-map (:package-map config)
+        pkg (get pkg-map pkg-name)
         deps-env (-> pkg :adapter (adapter/prepare-deps-env changes))
         version (get-in changes [pkg-name :version])
-        build-cmd (:build-cmd pkg)
+        _ (println "\t" cmd-type (str pkg-name "@" version))
+        ext-cmd (if (:dry-run? config)
+                  (if (= :build-cmd cmd-type)
+                    dry/fake-build-cmd
+                    dry/fake-release-cmd)
+                  (get pkg cmd-type))
         build-result (bp/process {:extra-env
                                   {"KBUILD_DEPS_ENV" deps-env
-                                   "VERSION" version}
+                                   "KBUILD_PKG_VERSION" version
+                                   "KBUILD_PKG_NAME" pkg-name}
                                   :out :string
                                   :err :string
                                   :dir (:dir pkg)}
-                                 build-cmd)]
+                                 ext-cmd)]
     [pkg-name build-result]))
+
+(defn build-package
+  [config changes pkg-name]
+  (run-external-cmd config changes pkg-name :build-cmd))
+
+(defn release-package
+  [config changes pkg-name]
+  (run-external-cmd config changes pkg-name :release-cmd))
 
 (defn get-milis
   []
   (.getTime (java.util.Date.)))
 
+(defn- failed?
+  [proc]
+  (not (-> proc (deref) :exit (zero?))))
+
+(defn- rotate [v]
+  (into (vec (drop 1 v)) (take 1 v)))
+
+(defn- ->success
+  {:malli/schema [:=> [:cat :map] ?ProcResult]}
+  [proc]
+  {:success? true
+   :output @(:out proc)})
+
+(defn- ->failure
+  {:malli/schema [:=> [:cat :map] ?ProcResult]}
+  [proc]
+  {:success? false
+   :output @(:err proc)})
+
+(defn await-procs
+  {:malli/schema [:=>
+                  [:cat [:sequential ?BuildProc] :boolean]
+                  [:tuple :boolean ?ProcAwaitResults]]}
+  [build-procs terminate-on-failure?]
+  (loop [build-procs build-procs
+         results {}]
+    (let [[pkg-name proc] (first build-procs)]
+      (if proc
+        (if (bp/alive? proc)
+          (do (Thread/sleep 200)
+              (recur (rotate build-procs) results))
+          (if (failed? proc)
+            (if terminate-on-failure?
+              [false (assoc results pkg-name (->failure proc))]
+              (do (println "\t" pkg-name "failed")
+                  (recur (rest build-procs) (assoc results pkg-name (->failure proc)))))
+            (do (println "\t" pkg-name "complete")
+                (recur (rest build-procs) (assoc results pkg-name (->success proc))))))
+        [true results]))))
+
 (defn build
-  [repo-path config]
-  (let [package-map (into {} (map (juxt :name identity)) (:packages config))
-        build-order (:build-order config)
-        changes (scan-for-changes repo-path (:packages config))
+  {:malli/schema [:=> [:cat config/?Config git/?Changes] ?JobResult]}
+  [config changes]
+  (let [build-order (:build-order config)
         stages-to-run (map (fn [build-stage]
                              (filter (fn [pkg-name]
                                        (get-in changes [pkg-name :build?]))
                                      build-stage))
                            build-order)
         global-start (get-milis)]
-    (doseq [stage stages-to-run]
-      (println "Stage started")
-      (let [start-time (get-milis)
-            build-procs (mapv (partial build-package package-map changes) stage)]
-        (println)
-        (doseq [[pkg-name proc] build-procs]
-          {pkg-name
-           (if (zero? (-> (deref proc) :exit))
-             (do (println "\t" pkg-name "complete")
-                 @(:out proc))
-             (do (println "\t" pkg-name "failed")
-                 @(:err proc)))})
-        (println "Stage finished in"
-                 (- (get-milis) start-time)
-                 "ms\n")))
-    (println "Total time:" (- (get-milis) global-start) "ms")))
+    (println (count stages-to-run) "parallel stages to run...")
+    (loop [stages stages-to-run
+           idx 1
+           stage-results []]
+      (if (seq stages)
+        (let [stage (first stages)
+              prefix (str "#" idx)
+              start-time (get-milis)
+              _ (println prefix "stage started" (str "(" (count stage) " packages)"))
+              build-procs (mapv (partial build-package config changes) stage)
+              _ (println)
+              [success? stage-result] (await-procs build-procs true)]
+          (if success?
+            (do (println prefix "stage finished in"
+                         (- (get-milis) start-time)
+                         "ms\n")
+                (recur (rest stages) (inc idx) (conj stage-results stage-result)))
+            (do (println prefix "stage failed for package:" (first stage-result))
+                (println "Terminating")
+                (doseq [[_ proc] build-procs]
+                  (bp/destroy-tree proc))
+                [false (conj stage-results stage-result)])))
+        (do (println "Total time:" (- (get-milis) global-start) "ms")
+            (println "Results:")
+            [true stage-results])))))
+
+(defn release
+  {:malli/schema [:=> [:cat config/?Config git/?Changes]
+                  [:map-of :string ?ProcResult]]}
+  [config changes]
+  (let [pkgs-to-release (into []
+                              (comp
+                               (filter (fn [[_ change]]
+                                         (:build? change)))
+                               (map second)
+                               (map :package-name))
+                              changes)]
+    (println (count pkgs-to-release) "packages will be released")
+    (let [release-procs (mapv (partial release-package config changes)
+                              pkgs-to-release)
+          _ (println)
+          [_ result] (await-procs release-procs false)]
+      result)))
 
 (comment
   (def repo-path "/Users/armed/Developer/k16/transit/micro")
   (def config (config/load-config repo-path))
+  (def changes (git/scan-for-changes repo-path (:packages config)))
+  (into []
+        (comp
+         (filter (fn [[_ change]]
+                   (:build? change)))
+         (map second)
+         (map :package-name))
+        changes)
+  (:package-map config)
   (build repo-path config)
+  (def release-result (release config changes))
   (:build-order config)
   (into {} (map (juxt :name identity)) (:packages config))
-  (def changes (scan-for-changes repo-path (:packages config)))
   (adapter/prepare-deps-env (:adapter (second (:packages config)))
                             changes)
   (git/get-sorted-tags repo-path)
