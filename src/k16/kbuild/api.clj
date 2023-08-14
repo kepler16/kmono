@@ -32,9 +32,10 @@
                                           (:success? result)))
                                 (map first))
                                release-results)
-        tags-to-create (map (fn [pkg-name]
-                              (get-in changes [pkg-name :tag]))
-                            success-releases)]
+        tags-to-create (->> success-releases
+                            (map (fn [pkg-name]
+                                   (get-in changes [pkg-name :tag])))
+                            (remove nil?))]
     (doseq [[pkg-name result] failed-releases]
       (println pkg-name "failed to release:")
       (println (str (:output result) "\n")))
@@ -43,7 +44,8 @@
       (try
         (git/create-tags! config tags-to-create)
         (git/push-tags! config)
-        (println (str "Tags created and pushed: \n\t " (string/join "\n\t " tags-to-create)))
+        (println (str "Tags created and pushed: \n\t "
+                      (string/join "\n\t " tags-to-create)))
         true
         (catch Throwable ex
           (println "Error creating and pushing git tags:")
@@ -51,6 +53,10 @@
           (println (:body (ex-data ex)))
           false))
       false)))
+
+(defn- create-release-tags
+  [config changes]
+  (let [tags-to-create (map :tag (vals changes))]))
 
 (defn run
   [{:keys [mode repo-root glob dry-run? snapshot?]
@@ -75,8 +81,7 @@
 (comment
   (def config (-> (config/load-config "../../transit/micro"
                                       "packages/*")
-                  (merge {:snapshot? true
-                          :dry-run? true})))
+                  (merge {:snapshot? true})))
   (def changes (git/scan-for-changes config))
   (run-build config changes)
   (run-release config changes)

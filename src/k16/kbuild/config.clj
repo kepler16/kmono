@@ -5,49 +5,11 @@
    [clojure.string :as string]
    [flatland.ordered.set :as oset]
    [k16.kbuild.adapter :as adapter]
+   [k16.kbuild.config-schema :as schema]
    [k16.kbuild.adapters.clojure-deps :as clj.deps]
+   [k16.kbuild.git :as git]
    [malli.core :as m]
-   [malli.error :as me]
-   [malli.util :as mu]))
-
-(def ?KbuldPackageConfig
-  [:map
-   [:group [:or :string :symbol]]
-   [:artifact {:optional true}
-    [:maybe [:or :string :symbol]]]
-   [:aliases {:optional true}
-    [:vector :keyword]]
-   [:release-cmd {:optional true}
-    :string]
-   [:build-cmd :string]])
-
-(def ?Package
-  (-> ?KbuldPackageConfig
-      (mu/required-keys [:artifact])
-      (mu/assoc :depends-on [:vector :string])
-      (mu/assoc :name :string)))
-
-(def ?Packages
-  [:vector ?Package])
-
-(def ?PackageMap
-  [:map-of :string ?Package])
-
-(def ?Graph
-  [:map-of :string [:set :string]])
-
-(def ?BuildOrder
-  [:vector [:vector :string]])
-
-(def ?Config
-  [:map {:closed true}
-   [:dry-run? {:optional true} :boolean]
-   [:snapshot? {:optional true} :boolean]
-   [:repo-root :string]
-   [:packages ?Packages]
-   [:package-map ?PackageMap]
-   [:graph ?Graph]
-   [:build-order ?BuildOrder]])
+   [malli.error :as me]))
 
 (defn get-adapter
   [pkg-dir]
@@ -61,12 +23,12 @@
 
 (defn validate-config!
   [config]
-  (assert-schema! ?Config config))
+  (assert-schema! schema/?Config config))
 
 (defn- create-package-config [package-dir]
   (let [adapter (get-adapter package-dir)
         kb-pkg-config (->> (adapter/get-kbuild-config adapter)
-                           (assert-schema! ?KbuldPackageConfig))
+                           (assert-schema! schema/?KbuldPackageConfig))
         artifact (or (:artifact kb-pkg-config)
                      (symbol (fs/file-name package-dir)))
         pkg-name (str (:group kb-pkg-config) "/" artifact)]
@@ -78,7 +40,7 @@
                              :adapter adapter
                              :dir (str package-dir)})]
       (->> (assoc pkg-config :depends-on (adapter/get-managed-deps adapter))
-           (assert-schema! ?Package)))))
+           (assert-schema! schema/?Package)))))
 
 (defn- create-config
   [root-dir glob]
@@ -86,7 +48,7 @@
     {:packages (mapv create-package-config package-dirs)}))
 
 (defn create-graph
-  {:malli/schema [:=> [:cat ?Packages] ?Graph]}
+  {:malli/schema [:=> [:cat schema/?Packages] schema/?Graph]}
   [packages]
   (println "Creating graph...")
   (reduce (fn [acc {:keys [name depends-on]}]
@@ -135,7 +97,7 @@
                       {:body (str "- " (string/join "\n- " diff))})))))
 
 (defn parallel-topo-sort
-  {:malli/schema [:=> [:cat ?Graph] [:maybe ?BuildOrder]]}
+  {:malli/schema [:=> [:cat schema/?Graph] [:maybe schema/?BuildOrder]]}
   [graph]
   (when (seq graph)
     (when-let [ks (seq (keep (fn [[k v]] (when (empty? v) k)) graph))]
@@ -146,7 +108,7 @@
                         (apply dissoc graph ks))))))))
 
 (defn- ->pkg-map
-  {:malli/schema [:=> [:cat ?Config] ?PackageMap]}
+  {:malli/schema [:=> [:cat schema/?Config] schema/?PackageMap]}
   [packages]
   (into {} (map (juxt :name identity)) packages))
 
@@ -156,9 +118,9 @@
   Build order is a list of parallel builds, where parallel build
   is a list of package names which can run simultaneously"
   {:malli/schema [:function
-                  [:=> :cat ?Config]
-                  [:=> [:cat :string] ?Config]
-                  [:=> [:cat :string :string] ?Config]]}
+                  [:=> :cat schema/?Config]
+                  [:=> [:cat :string] schema/?Config]
+                  [:=> [:cat :string :string] schema/?Config]]}
   ([]
    (load-config "." "packages/*"))
   ([repo-root]
@@ -171,12 +133,13 @@
      (println (count packages) "packages found: ")
      (doseq [pkg packages]
        (println "\t" (:name pkg)))
-     (if-let [err (m/explain ?Packages packages)]
+     (if-let [err (m/explain schema/?Packages packages)]
        (throw (ex-info "Config validation error" {:body (me/humanize err)}))
        (let [graph (create-graph packages)]
          (assert-missing-deps! graph)
          (assert-cycles! graph)
          {:repo-root repo-root
+          :commit-sha (git/get-commit-sha repo-root)
           :packages packages
           :package-map (->pkg-map packages)
           :graph graph

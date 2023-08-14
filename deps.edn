@@ -1,5 +1,10 @@
 {:paths ["src" "resources"]
  :deps {babashka/process {:mvn/version "0.5.21"}
         babashka/fs {:mvn/version "0.4.19"}
-        metosin/malli {:mvn/version "0.11.0"}
-        org.flatland/ordered {:mvn/version "1.15.11"}}}
+        funcool/promesa {:mvn/version "11.0.671"}
+        org.apache.maven.resolver/maven-resolver-api {:mvn/version "1.9.15"}
+        org.clojure/tools.deps {:mvn/version "0.18.1354"}
+        metosin/malli {:git/url "https://github.com/metosin/malli"
+                       :git/sha "fee1f17a3accb186a6aa077282eb9a9b87b82c5f"}
+        org.flatland/ordered {:mvn/version "1.15.11"}}
+ :aliases {:dev {:extra-paths ["dev"]}}}

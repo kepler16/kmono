@@ -2,7 +2,7 @@
   (:require
    [babashka.process :as bp]
    [k16.kbuild.adapter :as adapter]
-   [k16.kbuild.config :as config]
+   [k16.kbuild.config-schema :as config.schema]
    [k16.kbuild.dry :as dry]
    [k16.kbuild.git :as git]))
 
@@ -30,25 +30,27 @@
 
 (defn- run-external-cmd
   [config changes pkg-name cmd-type]
-  (let [pkg-map (:package-map config)
-        pkg (get pkg-map pkg-name)
-        deps-env (-> pkg :adapter (adapter/prepare-deps-env changes))
-        version (get-in changes [pkg-name :version])
-        _ (println "\t" cmd-type (str pkg-name "@" version))
-        ext-cmd (if (:dry-run? config)
-                  (if (= :build-cmd cmd-type)
-                    dry/fake-build-cmd
-                    dry/fake-release-cmd)
-                  (get pkg cmd-type))
-        build-result (bp/process {:extra-env
-                                  {"KBUILD_DEPS_ENV" deps-env
-                                   "KBUILD_PKG_VERSION" version
-                                   "KBUILD_PKG_NAME" pkg-name}
-                                  :out :string
-                                  :err :string
-                                  :dir (:dir pkg)}
-                                 ext-cmd)]
-    [pkg-name build-result]))
+  (let [change (get changes pkg-name)]
+    (when (not @(:published? change))
+      (let [pkg-map (:package-map config)
+            pkg (get pkg-map pkg-name)
+            deps-env (-> pkg :adapter (adapter/prepare-deps-env changes))
+            version (get-in changes [pkg-name :version])
+            _ (println "\t" cmd-type (str pkg-name "@" version))
+            ext-cmd (if (:dry-run? config)
+                      (if (= :build-cmd cmd-type)
+                        dry/fake-build-cmd
+                        dry/fake-release-cmd)
+                      (get pkg cmd-type))
+            build-result (bp/process {:extra-env
+                                      {"KBUILD_DEPS_ENV" deps-env
+                                       "KBUILD_PKG_VERSION" version
+                                       "KBUILD_PKG_NAME" pkg-name}
+                                      :out :string
+                                      :err :string
+                                      :dir (:dir pkg)}
+                                     ext-cmd)]
+        [pkg-name build-result]))))
 
 (defn build-package
   [config changes pkg-name]
@@ -102,9 +104,9 @@
                 (recur (rest build-procs) (assoc results pkg-name (->success proc))))))
         [true results]))))
 
-(defn build
-  {:malli/schema [:=> [:cat config/?Config git/?Changes] ?JobResult]}
-  [config changes]
+(defn run-external-cmds
+  {:malli/schema [:=> [:cat config.schema/?Config git/?Changes] ?JobResult]}
+  [config changes operation-fn]
   (let [build-order (:build-order config)
         stages-to-run (map (fn [build-stage]
                              (filter (fn [pkg-name]
@@ -121,9 +123,11 @@
               prefix (str "#" idx)
               start-time (get-milis)
               _ (println prefix "stage started" (str "(" (count stage) " packages)"))
-              build-procs (mapv (partial build-package config changes) stage)
+              op-procs (->> stage
+                            (map (partial operation-fn config changes))
+                            (remove nil?))
               _ (println)
-              [success? stage-result] (await-procs build-procs true)]
+              [success? stage-result] (await-procs op-procs true)]
           (if success?
             (do (println prefix "stage finished in"
                          (- (get-milis) start-time)
@@ -131,34 +135,26 @@
                 (recur (rest stages) (inc idx) (conj stage-results stage-result)))
             (do (println prefix "stage failed for package:" (first stage-result))
                 (println "Terminating")
-                (doseq [[_ proc] build-procs]
+                (doseq [[_ proc] op-procs]
                   (bp/destroy-tree proc))
                 [false (conj stage-results stage-result)])))
         (do (println "Total time:" (- (get-milis) global-start) "ms")
             (println "Results:")
             [true stage-results])))))
 
-(defn release
-  {:malli/schema [:=> [:cat config/?Config git/?Changes]
-                  [:map-of :string ?ProcResult]]}
+(defn build
+  {:malli/schema [:=> [:cat config.schema/?Config git/?Changes] ?JobResult]}
   [config changes]
-  (let [pkgs-to-release (into []
-                              (comp
-                               (filter (fn [[_ change]]
-                                         (:build? change)))
-                               (map second)
-                               (map :package-name))
-                              changes)]
-    (println (count pkgs-to-release) "packages will be released")
-    (let [release-procs (mapv (partial release-package config changes)
-                              pkgs-to-release)
-          _ (println)
-          [_ result] (await-procs release-procs false)]
-      result)))
+  (run-external-cmds config changes build-package))
+
+(defn release
+  {:malli/schema [:=> [:cat config.schema/?Config git/?Changes] ?JobResult]}
+  [config changes]
+  (run-external-cmds config changes release-package))
 
 (comment
   (def repo-path "/Users/armed/Developer/k16/transit/micro")
-  (def config (config/load-config repo-path))
+  (def config (config.schema/load-config repo-path))
   (def changes (git/scan-for-changes repo-path (:packages config)))
   (into []
         (comp
