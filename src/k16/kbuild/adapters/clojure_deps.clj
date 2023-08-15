@@ -67,7 +67,7 @@
        (get-kbuild-config [_] config)
 
        (release-published? [_ version]
-         (-> (p/future
+         (-> (p/vthread
               (let [;; ignore user's local repository cache
                     local-repo (str package-path "/.m2")]
                 (try
