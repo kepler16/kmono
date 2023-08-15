@@ -145,16 +145,17 @@
           (let [version (bump {:version current-version
                                :bump-type bump-type
                                :commit-sha commit-sha
-                               :snapshot? :snapshot?})]
+                               :snapshot? snapshot?})]
             {:version version
              :published? (adapter/release-published? adapter version)
              :tag (when-not snapshot? (str name "@" version))
              :package-name name}))))))
 
-(defn- update-dependant
-  [{:keys [commit-sha snapshot? package-map]} changes dependant-name]
-  (let [dpkg (get package-map dependant-name)
-        {:keys [version] :as dependant} (get changes dependant-name)
+(defn- bump-dependant
+  [dependant config dependant-name]
+  (let [{:keys [version]} dependant
+        {:keys [commit-sha snapshot? package-map]} config
+        dpkg (get package-map dependant-name)
         new-version (bump {:version version
                            :bump-type :build
                            :commit-sha commit-sha
@@ -166,24 +167,25 @@
 
 (defn ensure-dependent-builds
   [config changes]
-  (loop [changes' changes
-         cursor (keys changes)]
+  (p/loop [changes' changes
+           cursor (keys changes)]
     (if-let [{:keys [published? package-name]} (get changes' (first cursor))]
-      (do
-        (println published?)
-
-        (if-not @published?
-          (let [dependants (->> (:graph config)
-                                (map (fn [[pkg-name deps]]
-                                       (when (contains? deps package-name)
-                                         pkg-name)))
-                                (remove nil?))]
-            (recur (reduce (fn [chgs dpn-name]
-                             (update-dependant config chgs dpn-name))
+      (if-not @published?
+        (let [dependants-to-bump (->> (:graph config)
+                                      (map (fn [[pkg-name deps]]
+                                             (when (and (contains? deps package-name)
+                                                        (-> changes
+                                                            (get pkg-name)
+                                                            :published?
+                                                            (deref)))
+                                               pkg-name)))
+                                      (remove nil?))]
+          (p/recur (reduce (fn [chgs dpn-name]
+                             (update chgs dpn-name bump-dependant config dpn-name))
                            changes'
-                           dependants)
+                           dependants-to-bump)
                    (rest cursor)))
-          (recur changes' (rest cursor))))
+        (p/recur changes' (rest cursor)))
       changes')))
 
 (defn scan-for-changes
@@ -192,11 +194,10 @@
   fallback_version. Returns a promise containing changes"
   {:malli/schema [:=> [:cat config.schema/?Config] ?Changes]}
   [{:keys [packages] :as config}]
-  (let [changes (into {} (map (fn [pkg] [(:name pkg) (package-changes config pkg)])
-                              packages))]
-    #_
-    (ensure-dependent-builds config changes)
-    changes))
+  (->> packages
+       (into {} (map (fn [pkg] [(:name pkg) (package-changes config pkg)])))
+       (ensure-dependent-builds config)
+       (deref)))
 
 (defn create-tags!
   {:malli/schema [:=> [:cat config.schema/?Config [:sequential :string]] :boolean]}

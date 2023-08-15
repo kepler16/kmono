@@ -21,17 +21,18 @@
 (defn- run-release
   [config changes]
   (println "Releasing...")
-  (let [release-results (build/release config changes)
+  (let [[success? stage-results] (build/release config changes)
+        all-results (apply merge stage-results)
         failed-releases (into {}
                               (filter (fn [[_ result]]
                                         (not (:success? result))))
-                              release-results)
+                              all-results)
         success-releases (into []
                                (comp
                                 (filter (fn [[_ result]]
                                           (:success? result)))
                                 (map first))
-                               release-results)
+                               all-results)
         tags-to-create (->> success-releases
                             (map (fn [pkg-name]
                                    (get-in changes [pkg-name :tag])))
@@ -40,23 +41,19 @@
       (println pkg-name "failed to release:")
       (println (str (:output result) "\n")))
     (println)
-    (if (seq success-releases)
+    (if (seq tags-to-create)
       (try
+        (println "Creating tags for successful results")
         (git/create-tags! config tags-to-create)
         (git/push-tags! config)
         (println (str "Tags created and pushed: \n\t "
                       (string/join "\n\t " tags-to-create)))
-        true
         (catch Throwable ex
           (println "Error creating and pushing git tags:")
           (println (ex-message ex))
-          (println (:body (ex-data ex)))
-          false))
-      false)))
-
-(defn- create-release-tags
-  [config changes]
-  (let [tags-to-create (map :tag (vals changes))]))
+          (println (:body (ex-data ex)))))
+      (println "No tags has been created"))
+    success?))
 
 (defn run
   [{:keys [mode repo-root glob dry-run? snapshot?]
@@ -81,7 +78,8 @@
 (comment
   (def config (-> (config/load-config "../../transit/micro"
                                       "packages/*")
-                  (merge {:snapshot? true})))
+                  (merge {:snapshot? true
+                          :dry-run? false})))
   (def changes (git/scan-for-changes config))
   (run-build config changes)
   (run-release config changes)

@@ -110,7 +110,11 @@
   (let [build-order (:build-order config)
         stages-to-run (map (fn [build-stage]
                              (filter (fn [pkg-name]
-                                       (get-in changes [pkg-name :build?]))
+                                       (-> changes
+                                           (get pkg-name)
+                                           :published?
+                                           (deref)
+                                           (not)))
                                      build-stage))
                            build-order)
         global-start (get-milis)]
@@ -139,7 +143,6 @@
                   (bp/destroy-tree proc))
                 [false (conj stage-results stage-result)])))
         (do (println "Total time:" (- (get-milis) global-start) "ms")
-            (println "Results:")
             [true stage-results])))))
 
 (defn build
