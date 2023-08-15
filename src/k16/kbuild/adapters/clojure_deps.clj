@@ -70,49 +70,44 @@
          (-> (p/vthread
               (let [;; ignore user's local repository cache
                     local-repo (str ".kbuild/" package-path "/.m2")]
-                (try
-                  (deps.util.session/with-session
-                    (let [;; ignoring user's machine local m2 repo
-                          versions (->> (deps.ext/find-versions
-                                         (symbol coord)
-                                         nil
-                                         :mvn {:mvn/local-repo local-repo
-                                               :mvn/repos
-                                               (merge deps.util.maven/standard-repos
-                                                      (:mvn/repos deps-edn))})
-                                        (map :mvn/version)
-                                        (set))]
-                      (contains? versions version)))
-                  (finally
-                     ;; cleanup
-                    (try (fs/delete-tree local-repo)
-                         (catch Throwable _))))))
+                (deps.util.session/with-session
+                  (let [;; ignoring user's machine local m2 repo
+                        versions (->> (deps.ext/find-versions
+                                       (symbol coord)
+                                       nil
+                                       :mvn {:mvn/local-repo local-repo
+                                             :mvn/repos
+                                             (merge deps.util.maven/standard-repos
+                                                    (:mvn/repos deps-edn))})
+                                      (map :mvn/version)
+                                      (set))]
+                    (contains? versions version)))))
              (p/timeout timeout-ms (str "Timeout resolving mvn version for package " coord))))))))
 
 (comment
   (def timeout-ms 3000)
   (def result (-> (p/future
-                   (let [;; ignore user's local repository cache
-                         local-repo "./.m2"
-                         version "1.1.1"]
-                     (try
-                       (deps.util.session/with-session
-                         (let [versions (->> (deps.ext/find-versions
-                                              'transit-engineering/telemetry.clj
-                                              nil
-                                              :mvn {:mvn/local-repo local-repo
-                                                    :mvn/repos
-                                                    (merge deps.util.maven/standard-repos
-                                                           {"github-transit" {:url "https://maven.pkg.github.com/transit-engineering/micro"}
-                                                            "github-kepler" {:url "https://maven.pkg.github.com/kepler16/*"}})})
-                                             (map :mvn/version)
-                                             (set))]
-                           versions
-                           #_(contains? versions version)))
-                       (finally
+                    (let [;; ignore user's local repository cache
+                          local-repo "./.m2"
+                          version "1.1.1"]
+                      (try
+                        (deps.util.session/with-session
+                          (let [versions (->> (deps.ext/find-versions
+                                               'transit-engineering/telemetry.clj
+                                               nil
+                                               :mvn {:mvn/local-repo local-repo
+                                                     :mvn/repos
+                                                     (merge deps.util.maven/standard-repos
+                                                            {"github-transit" {:url "https://maven.pkg.github.com/transit-engineering/micro"}
+                                                             "github-kepler" {:url "https://maven.pkg.github.com/kepler16/*"}})})
+                                              (map :mvn/version)
+                                              (set))]
+                            versions
+                            #_(contains? versions version)))
+                        (finally
                      ;; cleanup
-                         (try (fs/delete-tree local-repo)
-                              (catch Throwable _))))))
+                          (try (fs/delete-tree local-repo)
+                               (catch Throwable _))))))
                   (p/timeout timeout-ms "Timeout resolving mvn version for package")))
   @result
 
