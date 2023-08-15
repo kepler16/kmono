@@ -135,9 +135,9 @@
 (defn package-changes
   [{:keys [repo-root snapshot? commit-sha]} {:keys [name dir adapter]}]
   (let [tags (get-sorted-tags repo-root)]
-    (when-let [latest-tag (->> tags
-                               (filter #(string/starts-with? % name))
-                               (first))]
+    (if-let [latest-tag (->> tags
+                             (filter #(string/starts-with? % name))
+                             (first))]
       (let [[_ current-version] (string/split latest-tag #"@")
             bump-type (-> (subdir-changes dir latest-tag)
                           (bump-type))]
@@ -149,7 +149,9 @@
             {:version version
              :published? (adapter/release-published? adapter version)
              :tag (when-not snapshot? (str name "@" version))
-             :package-name name}))))))
+             :package-name name})))
+      (throw (ex-info (str "ERROR: latest tag for [" name "] not found")
+                      {:body name})))))
 
 (defn- bump-dependant
   [dependant config dependant-name]

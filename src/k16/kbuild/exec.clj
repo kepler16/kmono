@@ -1,32 +1,14 @@
-(ns k16.kbuild.build
+(ns k16.kbuild.exec
   (:require
    [babashka.process :as bp]
+   [k16.kbuild.proc :as kbuild.proc]
    [k16.kbuild.adapter :as adapter]
    [k16.kbuild.config-schema :as config.schema]
    [k16.kbuild.dry :as dry]
    [k16.kbuild.git :as git]))
 
-(def ?ProcsResult
-  [:vector
-   [:map-of
-    :string
-    [:map
-     [:success? :boolean]
-     [:output :string]]]])
-
-(def ?ProcResult
-  [:map
-   [:success? :boolean]
-   [:output :string]])
-
-(def ?ProcAwaitResults
-  [:map-of :string ?ProcResult])
-
 (def ?JobResult
-  [:tuple :boolean ?ProcsResult])
-
-(def ?BuildProc
-  [:tuple :string :map])
+  [:tuple :boolean kbuild.proc/?ProcsResult])
 
 (defn- run-external-cmd
   [config changes pkg-name cmd-type]
@@ -36,12 +18,15 @@
             pkg (get pkg-map pkg-name)
             deps-env (-> pkg :adapter (adapter/prepare-deps-env changes))
             version (get-in changes [pkg-name :version])
-            _ (println "\t" cmd-type (str pkg-name "@" version))
             ext-cmd (if (:dry-run? config)
-                      (if (= :build-cmd cmd-type)
-                        dry/fake-build-cmd
-                        dry/fake-release-cmd)
-                      (get pkg cmd-type))
+                      (case cmd-type
+                        :build-cmd dry/fake-build-cmd
+                        :release-cmd dry/fake-release-cmd
+                        dry/fake-cusrom-cmd)
+                      (or (get pkg cmd-type)
+                          (get config cmd-type)))
+            _ (assert ext-cmd (str "Command of type [" cmd-type "] could not be found"))
+            _ (println "\t" (str pkg-name "@" version " => " ext-cmd))
             build-result (bp/process {:extra-env
                                       {"KBUILD_DEPS_ENV" deps-env
                                        "KBUILD_PKG_VERSION" version
@@ -60,53 +45,17 @@
   [config changes pkg-name]
   (run-external-cmd config changes pkg-name :release-cmd))
 
+(defn package-custom-command
+  [config changes pkg-name]
+  (run-external-cmd config changes pkg-name :custom-cmd))
+
 (defn get-milis
   []
   (.getTime (java.util.Date.)))
 
-(defn- failed?
-  [proc]
-  (not (-> proc (deref) :exit (zero?))))
-
-(defn- rotate [v]
-  (into (vec (drop 1 v)) (take 1 v)))
-
-(defn- ->success
-  {:malli/schema [:=> [:cat :map] ?ProcResult]}
-  [proc]
-  {:success? true
-   :output @(:out proc)})
-
-(defn- ->failure
-  {:malli/schema [:=> [:cat :map] ?ProcResult]}
-  [proc]
-  {:success? false
-   :output @(:err proc)})
-
-(defn await-procs
-  {:malli/schema [:=>
-                  [:cat [:sequential ?BuildProc] :boolean]
-                  [:tuple :boolean ?ProcAwaitResults]]}
-  [build-procs terminate-on-failure?]
-  (loop [build-procs build-procs
-         results {}]
-    (let [[pkg-name proc] (first build-procs)]
-      (if proc
-        (if (bp/alive? proc)
-          (do (Thread/sleep 200)
-              (recur (rotate build-procs) results))
-          (if (failed? proc)
-            (if terminate-on-failure?
-              [false (assoc results pkg-name (->failure proc))]
-              (do (println "\t" pkg-name "failed")
-                  (recur (rest build-procs) (assoc results pkg-name (->failure proc)))))
-            (do (println "\t" pkg-name "complete")
-                (recur (rest build-procs) (assoc results pkg-name (->success proc))))))
-        [true results]))))
-
 (defn run-external-cmds
   {:malli/schema [:=> [:cat config.schema/?Config git/?Changes] ?JobResult]}
-  [config changes operation-fn]
+  [config changes operation-fn terminate-on-fail?]
   (let [build-order (:build-order config)
         stages-to-run (map (fn [build-stage]
                              (filter (fn [pkg-name]
@@ -126,18 +75,19 @@
         (let [stage (first stages)
               prefix (str "#" idx)
               start-time (get-milis)
+              _ (println)
               _ (println prefix "stage started" (str "(" (count stage) " packages)"))
               op-procs (->> stage
                             (map (partial operation-fn config changes))
                             (remove nil?))
-              _ (println)
-              [success? stage-result] (await-procs op-procs true)]
+              [success? stage-result] (kbuild.proc/await-procs
+                                        op-procs terminate-on-fail?)]
           (if success?
             (do (println prefix "stage finished in"
                          (- (get-milis) start-time)
                          "ms\n")
                 (recur (rest stages) (inc idx) (conj stage-results stage-result)))
-            (do (println prefix "stage failed for package:" (first stage-result))
+            (do (println prefix "stage failed")
                 (println "Terminating")
                 (doseq [[_ proc] op-procs]
                   (bp/destroy-tree proc))
@@ -148,12 +98,17 @@
 (defn build
   {:malli/schema [:=> [:cat config.schema/?Config git/?Changes] ?JobResult]}
   [config changes]
-  (run-external-cmds config changes build-package))
+  (run-external-cmds config changes build-package true))
 
 (defn release
   {:malli/schema [:=> [:cat config.schema/?Config git/?Changes] ?JobResult]}
   [config changes]
-  (run-external-cmds config changes release-package))
+  (run-external-cmds config changes release-package true))
+
+(defn custom-command
+  {:malli/schema [:=> [:cat config.schema/?Config git/?Changes] ?JobResult]}
+  [config changes]
+  (run-external-cmds config changes package-custom-command false))
 
 (comment
   (def repo-path "/Users/armed/Developer/k16/transit/micro")

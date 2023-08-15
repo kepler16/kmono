@@ -33,13 +33,18 @@
 
 (def ?Config
   [:map {:closed true}
-   [:dry-run? {:optional true} :boolean]
-   [:snapshot? {:optional true} :boolean]
+   [:mode [:enum :build :exec :release]]
+   [:glob :string]
+   [:dry-run? :boolean]
+   [:snapshot? :boolean]
    [:repo-root :string]
-   [:commit-sha {:optional true} :string]
+   [:commit-sha :string]
    [:packages ?Packages]
    [:package-map ?PackageMap]
    [:graph ?Graph]
-   [:build-order ?BuildOrder]])
+   [:build-order [:maybe ?BuildOrder]]
+   [:build-cmd {:optional true} [:maybe :string]]
+   [:release-cmd {:optional true} [:maybe :string]]
+   [:custom-cmd {:optional true} [:maybe :string]]])
 
 
