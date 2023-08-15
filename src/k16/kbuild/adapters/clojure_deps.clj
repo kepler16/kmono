@@ -69,7 +69,7 @@
        (release-published? [_ version]
          (-> (p/vthread
               (let [;; ignore user's local repository cache
-                    local-repo (str package-path "/.m2")]
+                    local-repo (str ".kbuild/" package-path "/.m2")]
                 (try
                   (deps.util.session/with-session
                     (let [;; ignoring user's machine local m2 repo
