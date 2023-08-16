@@ -114,14 +114,14 @@
 (comment
   (def config (-> (config/load-config "../../transit/micro"
                                       "packages/*")
-                  (merge {:snapshot? true
-                          :dry-run? false})))
-  (-> (config/load-config "../../transit/micro"
-                          "packages/*")
-      (merge {:snapshot? true
-              :mode :exec
-              :dry-run? false})
-      (config/validate-config!))
+                  (merge {:snapshot? false
+                          :glob "packages/*"
+                          :mode :exec
+                          :dry-run? false})
+                  (config/validate-config!)))
+  (def packages (:packages config))
+  (def pkg (first packages))
+  @(:published? (git/package-changes config pkg))
   (def changes (git/scan-for-changes config))
   (update-vals changes (fn [v] (update v :published? deref)))
   (run-build config changes)
