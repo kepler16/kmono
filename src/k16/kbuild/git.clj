@@ -98,7 +98,7 @@
                         :build (string/join "." [major minor patch (inc build')])
                         version)]
       (if snapshot?
-        (str new-version "-" commit-sha ".dev")
+        (str new-version "-" commit-sha "-SNAPSHOT")
         new-version))
     (throw (ex-info "Version does not match pattern `major.minor.patch[.build]`"
                     {:body (str "version: " version)}))))
