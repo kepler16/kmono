@@ -149,7 +149,9 @@
                                :snapshot? snapshot?})]
             {:version version
              :published? (adapter/release-published? adapter version)
-             :tag (when-not snapshot? (str name "@" version))
+             ;; create a new tag only if version is changed
+             :tag (when-not (not= current-version version)
+                    (str name "@" version))
              :package-name name})))
       (throw (ex-info (str "ERROR: latest tag for [" name "] not found")
                       {:body name})))))
