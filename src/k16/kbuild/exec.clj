@@ -14,7 +14,7 @@
 (defn- run-external-cmd
   [config changes pkg-name cmd-type]
   (let [change (get changes pkg-name)]
-    (when (not @(:published? change))
+    (if (not @(:published? change))
       (let [pkg-map (:package-map config)
             pkg (get pkg-map pkg-name)
             deps-env (-> pkg :adapter (adapter/prepare-deps-env changes))
@@ -36,7 +36,8 @@
                                       :err :string
                                       :dir (:dir pkg)}
                                      ext-cmd)]
-        [pkg-name build-result]))))
+        [pkg-name build-result])
+      [pkg-name {:skipped? true}])))
 
 (defn build-package
   [config changes pkg-name]
@@ -57,19 +58,10 @@
 (defn run-external-cmds
   {:malli/schema [:=> [:cat config.schema/?Config git/?Changes] ?JobResult]}
   [config changes operation-fn terminate-on-fail?]
-  (let [build-order (:build-order config)
-        stages-to-run (map (fn [build-stage]
-                             (filter (fn [pkg-name]
-                                       (-> changes
-                                           (get pkg-name)
-                                           :published?
-                                           (deref)
-                                           (not)))
-                                     build-stage))
-                           build-order)
+  (let [exec-order (:build-order config)
         global-start (get-milis)]
-    (ansi/print-info (count stages-to-run) "parallel stages to run...")
-    (loop [stages stages-to-run
+    (ansi/print-info (count exec-order) "parallel stages to run...")
+    (loop [stages exec-order
            idx 1
            stage-results []]
       (if (seq stages)

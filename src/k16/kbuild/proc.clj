@@ -45,6 +45,12 @@
   {:success? false
    :output @(:err proc)})
 
+(defn- ->skipped
+  {:malli/schema [:=> [:cat ?BabashkaProcess] ?ProcResult]}
+  []
+  {:success? true
+   :output "no changes"})
+
 (defn await-procs
   {:malli/schema [:=>
                   [:cat [:sequential ?CmdProc] :boolean]
@@ -54,15 +60,26 @@
          results {}]
     (let [[pkg-name proc] (first package-procs)]
       (if proc
-        (if (bp/alive? proc)
+        (cond
+          (:skipped? proc)
+          (do (println "\t" (ansi/cyan "skipped") pkg-name)
+              (recur (rest package-procs)
+                     (assoc results pkg-name (->skipped))))
+
+          (bp/alive? proc)
           (do (Thread/sleep 200)
               (recur (rotate package-procs) results))
-          (if (failed? proc)
-            (if terminate-on-failure?
-              [false (assoc results pkg-name (->failure proc))]
-              (do (println "\t" (ansi/red "failed") pkg-name)
-                  (recur (rest package-procs) (assoc results pkg-name (->failure proc)))))
-            (do (println "\t" (ansi/green "success") pkg-name)
-                (recur (rest package-procs) (assoc results pkg-name (->success proc))))))
+
+          (failed? proc)
+          (if terminate-on-failure?
+            [false (assoc results pkg-name (->failure proc))]
+            (do (println "\t" (ansi/red "failure") pkg-name)
+                (recur (rest package-procs)
+                       (assoc results pkg-name (->failure proc)))))
+
+          :else (do (println "\t" (ansi/green "success") pkg-name)
+                    (recur (rest package-procs)
+                           (assoc results pkg-name (->success proc)))))
+
         [true results]))))
 
