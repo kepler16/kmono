@@ -11,9 +11,11 @@
   [{:keys [out err] :as result}]
   (if (seq err)
     (throw (ex-info err {:body result}))
-    (-> (string/trim out)
-        (string/split-lines)
-        (vec))))
+    (let [out (string/trim out)]
+      (when (seq out)
+        (-> out
+            (string/split-lines)
+            (vec))))))
 
 (defn run-cmd! [dir & cmd]
   (-> (bp/shell {:dir (str dir)
@@ -27,20 +29,15 @@
   [repo-root]
   (run-cmd! repo-root "git tag --sort=-creatordate"))
 
-(defn get-commit-sha
-  "Short sha of latest commit"
-  [repo-root]
-  (first (run-cmd! repo-root "git rev-parse --short HEAD")))
-
 (defn subdir-commit-sha
   [sub-dir]
   (first (run-cmd! (str sub-dir) "git log -n 1 --pretty=format:\"%h\" -- .")))
 
 (defn subdir-changes
   [sub-dir tag]
-  (let [out (run-cmd! sub-dir
-                      "git log --pretty=format:\"%s\" "
-                      tag "..HEAD -- .")]
+  (if-let [out (run-cmd! sub-dir
+                         "git log --pretty=format:\"%s\" "
+                         tag "..HEAD -- .")]
     (if (coll? out)
       (vec out)
       [out])))
@@ -138,7 +135,7 @@
 
 (defn package-changes
   [{:keys [repo-root snapshot?]} {:keys [name commit-sha dir adapter]}]
-  (let [tags (get-sorted-tags repo-root)]
+  (if-let [tags (get-sorted-tags repo-root)]
     (if-let [latest-tag (->> tags
                              (filter #(string/starts-with? % name))
                              (first))]
