@@ -17,6 +17,7 @@
   (-> ?KbuldPackageConfig
       (mu/required-keys [:artifact])
       (mu/assoc :depends-on [:vector :string])
+      (mu/assoc :commit-sha :string)
       (mu/assoc :name :string)))
 
 (def ?Packages
@@ -38,7 +39,6 @@
    [:dry-run? :boolean]
    [:snapshot? :boolean]
    [:repo-root :string]
-   [:commit-sha :string]
    [:packages ?Packages]
    [:package-map ?PackageMap]
    [:graph ?Graph]

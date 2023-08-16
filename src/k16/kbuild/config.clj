@@ -32,20 +32,22 @@
                            (assert-schema! schema/?KbuldPackageConfig))
         artifact (or (:artifact kb-pkg-config)
                      (symbol (fs/file-name package-dir)))
-        pkg-name (str (:group kb-pkg-config) "/" artifact)]
+        pkg-name (str (:group kb-pkg-config) "/" artifact)
+        pkg-commit-sha (git/subdir-commit-sha package-dir)]
 
     (let [pkg-config (merge kb-pkg-config
                             {:artifact (or (:artifact kb-pkg-config)
                                            (symbol (fs/file-name package-dir)))
                              :name pkg-name
+                             :commit-sha pkg-commit-sha
                              :adapter adapter
                              :dir (str package-dir)})]
       (->> (assoc pkg-config :depends-on (adapter/get-managed-deps adapter))
            (assert-schema! schema/?Package)))))
 
 (defn- create-config
-  [root-dir glob]
-  (let [package-dirs (fs/glob root-dir glob)]
+  [repo-root glob]
+  (let [package-dirs (fs/glob repo-root glob)]
     {:packages (mapv create-package-config package-dirs)}))
 
 (defn create-graph
@@ -140,7 +142,6 @@
          (assert-missing-deps! graph)
          (assert-cycles! graph)
          {:repo-root repo-root
-          :commit-sha (git/get-commit-sha repo-root)
           :packages packages
           :package-map (->pkg-map packages)
           :graph graph

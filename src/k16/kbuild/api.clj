@@ -118,7 +118,9 @@
                           :dry-run? false})))
   (-> (config/load-config "../../transit/micro"
                           "packages/*")
-      (merge {:custom-cmd "just test"})
+      (merge {:snapshot? true
+              :mode :exec
+              :dry-run? false})
       (config/validate-config!))
   (def changes (git/scan-for-changes config))
   (update-vals changes (fn [v] (update v :published? deref)))

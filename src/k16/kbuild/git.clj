@@ -16,7 +16,7 @@
         (vec))))
 
 (defn run-cmd! [dir & cmd]
-  (-> (bp/shell {:dir dir
+  (-> (bp/shell {:dir (str dir)
                  :out :string
                  :err :string}
                 (string/join cmd))
@@ -31,6 +31,10 @@
   "Short sha of latest commit"
   [repo-root]
   (first (run-cmd! repo-root "git rev-parse --short HEAD")))
+
+(defn subdir-commit-sha
+  [sub-dir]
+  (first (run-cmd! (str sub-dir) "git log -n 1 --pretty=format:\"%h\" -- .")))
 
 (defn subdir-changes
   [sub-dir tag]
@@ -133,7 +137,7 @@
   nil)
 
 (defn package-changes
-  [{:keys [repo-root snapshot? commit-sha]} {:keys [name dir adapter]}]
+  [{:keys [repo-root snapshot?]} {:keys [name commit-sha dir adapter]}]
   (let [tags (get-sorted-tags repo-root)]
     (if-let [latest-tag (->> tags
                              (filter #(string/starts-with? % name))
@@ -156,11 +160,11 @@
 (defn- bump-dependant
   [dependant config dependant-name]
   (let [{:keys [version]} dependant
-        {:keys [commit-sha snapshot? package-map]} config
+        {:keys [snapshot? package-map repo-root]} config
         dpkg (get package-map dependant-name)
         new-version (bump {:version version
                            :bump-type :build
-                           :commit-sha commit-sha
+                           :commit-sha (:commit-sha dpkg)
                            :snapshot? snapshot?})]
     (assoc dependant
            :version new-version

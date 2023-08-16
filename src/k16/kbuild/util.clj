@@ -4,12 +4,12 @@
    [k16.kbuild.git :as git]))
 
 (defn- update-dependant
-  [{:keys [commit-sha snapshot? package-map]} changes dependant-name]
+  [{:keys [snapshot? package-map]} changes dependant-name]
   (let [dpkg (get package-map dependant-name)
         {:keys [version] :as dependant} (get changes dependant-name)
         new-version (git/bump {:version version
                                :bump-type :build
-                               :commit-sha commit-sha
+                               :commit-sha (:commit-sha dpkg)
                                :snapshot? snapshot?})]
     (assoc dependant
            :version new-version
