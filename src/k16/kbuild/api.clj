@@ -8,34 +8,33 @@
    [malli.core :as m]
    [malli.transform :as mt]))
 
-(defn- print-stage-result
-  [stage-result]
-  (map (fn [[pkg-name {:keys [success? output]}]]
-         (if success?
-           (ansi/print-success pkg-name)
-           (ansi/print-error pkg-name))
-         (ansi/print-shifted output)
-         success?)
-       stage-result))
+(defn- print-stage-results
+  [stage-results]
+  (doseq [stage-result stage-results]
+    (doseq [[pkg-name {:keys [success? output]}] stage-result]
+      (if success?
+        (ansi/print-success pkg-name)
+        (ansi/print-error pkg-name))
+      (ansi/print-shifted output))))
 
 (defn- run-build
   [config changes]
-  (let [[success? results] (exec/build config changes)]
-    (doseq [stage-result results]
-      (print-stage-result stage-result))
+  (let [[success? stage-results] (exec/build config changes)]
+    (print-stage-results stage-results)
     success?))
 
 (defn- run-custom-cmd
   [config changes]
-  (ansi/assert-err! (:custom-cmd config) "custom command not specified")
-  (let [[_ results] (exec/custom-command config changes)
-        success? (->> results
-                      (map (fn [stage-result]
-                             (print-stage-result stage-result)))
-                      (filter not)
-                      (seq)
-                      (nil?))]
-    success?))
+  (ansi/assert-err! (:exec config) "custom command not specified")
+  (let [[_ stage-results] (exec/custom-command config changes)]
+    (print-stage-results stage-results)
+    (->> stage-results
+         (apply merge)
+         (vals)
+         (map :success?)
+         (filter not)
+         (seq)
+         (nil?))))
 
 (defn- run-release
   [config changes]
@@ -75,7 +74,7 @@
 
 (def ?RunParams
   [:map
-   [:mode [:enum :build :release :exec]]
+   [:exec [:or :string [:enum :build :release]]]
    [:repo-root {:default "."}
     :string]
    [:glob {:default "packages/*"}
@@ -84,8 +83,10 @@
     :boolean]
    [:snapshot? {:default true}
     :boolean]
-   [:custom-cmd {:optional true}
-    [:maybe :string]]
+   [:create-tags? {:default false}
+    :boolean]
+   [:include-unchanged? {:default true}
+    :boolean]
    [:build-cmd {:optional true}
     [:maybe :string]]
    [:release-cmd {:optional true}
@@ -96,34 +97,32 @@
   (if dry-run?
     (ansi/print-info "Starting kbuild in dry mode...")
     (ansi/print-info "Starting kbuild..."))
-  (let [{:keys [repo-root glob mode]
+  (let [{:keys [repo-root glob exec]
          :as run-params} (m/decode ?RunParams args mt/default-value-transformer)
         config (-> run-params
                    (merge (config/load-config repo-root glob))
                    (config/validate-config!))
         changes (git/scan-for-changes config)
         _ (ansi/assert-err! (seq (:build-order config)) "no packages to execute found")
-        success? (case mode
+        success? (case exec
                    :build (run-build config changes)
                    :release (run-release config changes)
-                   :exec (run-custom-cmd config changes))]
+                   (run-custom-cmd config changes))]
     (if success?
       (System/exit 0)
       (System/exit 1))))
 
 (comment
-  (def config (-> (config/load-config "../../transit/micro"
-                                      "packages/*")
-                  (merge {:snapshot? false
-                          :glob "packages/*"
-                          :mode :exec
-                          :dry-run? false})
-                  (config/validate-config!)))
-  (def packages (:packages config))
-  (def pkg (first packages))
-  @(:published? (git/package-changes config pkg))
+  (def args {:snapshot? true
+             :glob "packages/*"
+             :exec :build
+             :dry-run? false})
+  (def config (as-> (config/load-config "../../transit/micro" "packages/*") x
+                (merge args x)
+                (m/decode ?RunParams x mt/default-value-transformer)
+                (config/validate-config! x)))
   (def changes (git/scan-for-changes config))
-  (update-vals changes (fn [v] (update v :published? deref)))
+
   (run-build config changes)
   (run-release config changes)
 

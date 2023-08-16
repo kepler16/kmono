@@ -1,6 +1,5 @@
 (ns k16.kbuild.util
   (:require
-   [k16.kbuild.adapter :as adapter]
    [k16.kbuild.git :as git]))
 
 (defn- update-dependant
@@ -13,8 +12,7 @@
                                :snapshot? snapshot?})]
     (assoc dependant
            :version new-version
-           :published? (adapter/release-published?
-                        (:adapter dpkg) new-version))))
+           :changed? (not= version new-version))))
 
 (defn ensure-dependent-builds
   [config changes graph]

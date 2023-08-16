@@ -34,17 +34,16 @@
 
 (def ?Config
   [:map {:closed true}
-   [:mode [:enum :build :exec :release]]
+   [:exec [:or :string [:enum :build :release]]]
    [:glob :string]
    [:dry-run? :boolean]
    [:snapshot? :boolean]
+   [:include-unchanged? :boolean]
+   [:create-tags? :boolean]
    [:repo-root :string]
    [:packages ?Packages]
    [:package-map ?PackageMap]
    [:graph ?Graph]
-   [:build-order [:maybe ?BuildOrder]]
-   [:build-cmd {:optional true} [:maybe :string]]
-   [:release-cmd {:optional true} [:maybe :string]]
-   [:custom-cmd {:optional true} [:maybe :string]]])
+   [:build-order [:maybe ?BuildOrder]]])
 
 

@@ -2,7 +2,6 @@
   (:require
    [babashka.process :as bp]
    [clojure.string :as string]
-   [k16.kbuild.adapter :as adapter]
    [k16.kbuild.config-schema :as config.schema]
    [k16.kbuild.dry :as dry]
    [promesa.core :as p]))
@@ -134,7 +133,7 @@
   nil)
 
 (defn package-changes
-  [{:keys [repo-root snapshot?]} {:keys [name commit-sha dir adapter]}]
+  [{:keys [repo-root snapshot? create-tags?]} {:keys [name commit-sha dir]}]
   (if-let [tags (get-sorted-tags repo-root)]
     (if-let [latest-tag (->> tags
                              (filter #(string/starts-with? % name))
@@ -146,11 +145,12 @@
           (let [version (bump {:version current-version
                                :bump-type bump-type
                                :commit-sha commit-sha
-                               :snapshot? snapshot?})]
+                               :snapshot? snapshot?})
+                changed? (not= current-version version)]
             {:version version
-             :published? (adapter/release-published? adapter version)
+             :changed? changed?
              ;; create a new tag only if version is changed
-             :tag (when-not (not= current-version version)
+             :tag (when (and create-tags? changed? (not snapshot?))
                     (str name "@" version))
              :package-name name})))
       (throw (ex-info (str "ERROR: latest tag for [" name "] not found")
@@ -167,30 +167,29 @@
                            :snapshot? snapshot?})]
     (assoc dependant
            :version new-version
-           :published? (adapter/release-published?
-                        (:adapter dpkg) new-version))))
+           :changed? (not= new-version version))))
 
 (defn ensure-dependent-builds
   [config changes]
-  (p/loop [changes' changes
-           cursor (keys changes)]
-    (if-let [{:keys [published? package-name]} (get changes' (first cursor))]
-      (if-not @published?
+  (loop [changes' changes
+         cursor (keys changes)]
+    (if-let [{:keys [changed? package-name]} (get changes' (first cursor))]
+      (if-not changed?
         (let [dependants-to-bump (->> (:graph config)
                                       (map (fn [[pkg-name deps]]
                                              (when (and (contains? deps package-name)
                                                         (-> changes
                                                             (get pkg-name)
-                                                            :published?
+                                                            :changed?
                                                             (deref)))
                                                pkg-name)))
                                       (remove nil?))]
-          (p/recur (reduce (fn [chgs dpn-name]
-                             (update chgs dpn-name bump-dependant config dpn-name))
-                           changes'
-                           dependants-to-bump)
-                   (rest cursor)))
-        (p/recur changes' (rest cursor)))
+          (recur (reduce (fn [chgs dpn-name]
+                           (update chgs dpn-name bump-dependant config dpn-name))
+                         changes'
+                         dependants-to-bump)
+                 (rest cursor)))
+        (recur changes' (rest cursor)))
       changes')))
 
 (defn scan-for-changes
@@ -201,8 +200,7 @@
   [{:keys [packages] :as config}]
   (->> packages
        (into {} (map (fn [pkg] [(:name pkg) (package-changes config pkg)])))
-       (ensure-dependent-builds config)
-       (deref)))
+       (ensure-dependent-builds config)))
 
 (defn create-tags!
   {:malli/schema [:=> [:cat config.schema/?Config [:sequential :string]] :boolean]}

@@ -54,6 +54,6 @@
        (string/split-lines)
        (map #(str "\t" %))
        (string/join "\n")
-       (print))
+       (println))
   (println))
 

@@ -13,43 +13,51 @@
 
 (defn- run-external-cmd
   [config changes pkg-name cmd-type]
-  (let [change (get changes pkg-name)]
-    (if (not @(:published? change))
-      (let [pkg-map (:package-map config)
-            pkg (get pkg-map pkg-name)
-            deps-env (-> pkg :adapter (adapter/prepare-deps-env changes))
-            version (get-in changes [pkg-name :version])
-            ext-cmd (if (:dry-run? config)
-                      (case cmd-type
-                        :build-cmd dry/fake-build-cmd
-                        :release-cmd dry/fake-release-cmd
-                        dry/fake-cusrom-cmd)
-                      (or (get pkg cmd-type)
-                          (get config cmd-type)))
-            _ (ansi/assert-err! ext-cmd (str "Command of type [" cmd-type "] could not be found"))
-            _ (ansi/print-info "\t" (str pkg-name "@" version " => " ext-cmd))
-            build-result (bp/process {:extra-env
-                                      {"KBUILD_DEPS_ENV" deps-env
-                                       "KBUILD_PKG_VERSION" version
-                                       "KBUILD_PKG_NAME" pkg-name}
-                                      :out :string
-                                      :err :string
-                                      :dir (:dir pkg)}
-                                     ext-cmd)]
-        [pkg-name build-result])
-      [pkg-name {:skipped? true}])))
+  (let [pkg-map (:package-map config)
+        pkg (get pkg-map pkg-name)
+        pkg-deps-env (-> pkg :adapter (adapter/prepare-deps-env changes))
+        version (get-in changes [pkg-name :version])
+        ext-cmd (if (:dry-run? config)
+                  (case cmd-type
+                    :build-cmd dry/fake-build-cmd
+                    :release-cmd dry/fake-release-cmd
+                    dry/fake-cusrom-cmd)
+                  (or (get pkg cmd-type)
+                      (get config cmd-type)))
+        _ (ansi/assert-err! ext-cmd (str "Command of type [" cmd-type "] could not be found"))
+        _ (ansi/print-info "\t" (str pkg-name "@" version " => " ext-cmd))
+        build-result (bp/process {:extra-env
+                                  {"KBUILD_PKG_DEPS" pkg-deps-env
+                                   "KBUILD_PKG_VERSION" version
+                                   "KBUILD_PKG_NAME" pkg-name}
+                                  :out :string
+                                  :err :string
+                                  :dir (:dir pkg)}
+                                 ext-cmd)]
+    [pkg-name build-result]))
 
 (defn build-package
   [config changes pkg-name]
-  (run-external-cmd config changes pkg-name :build-cmd))
+  (let [change (get changes pkg-name)]
+    (if (or (:changed? change) (:include-unchanged? config))
+      (run-external-cmd config changes pkg-name :build-cmd)
+      [pkg-name {:skipped? true}])))
 
 (defn release-package
   [config changes pkg-name]
-  (run-external-cmd config changes pkg-name :release-cmd))
+  (let [pkg-map (:package-map config)
+        pkg (get pkg-map pkg-name)
+        version (get-in changes [pkg-name :version])]
+    (if (-> pkg :adapter (adapter/release-published? version))
+      (run-external-cmd config changes pkg-name :release-cmd)
+      [pkg-name {:skipped? true}])))
 
 (defn package-custom-command
   [config changes pkg-name]
-  (run-external-cmd config changes pkg-name :custom-cmd))
+  (let [change (get changes pkg-name)]
+    (if (or (:changed? change) (:include-unchanged? config))
+      (run-external-cmd config changes pkg-name :exec)
+      [pkg-name {:skipped? true}])))
 
 (defn get-milis
   []

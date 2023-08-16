@@ -85,7 +85,8 @@
                      (finally
                        (try (fs/delete-tree local-repo)
                             (catch Throwable _))))))
-             (p/timeout timeout-ms (str "Timeout resolving mvn version for package " coord))))))))
+             (p/timeout timeout-ms (str "Timeout resolving mvn version for package " coord))
+             (deref)))))))
 
 (comment
   (def timeout-ms 3000)
