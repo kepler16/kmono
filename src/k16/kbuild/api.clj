@@ -70,7 +70,7 @@
           (ansi/print-error "creating and pushing git tags")
           (ansi/print-shifted (ex-message ex))
           (ansi/print-shifted (:body (ex-data ex)))))
-      (println "No tags has been created"))
+      (ansi/print-info "no tags has been created"))
     (empty? failed-releases)))
 
 (def ?RunParams
