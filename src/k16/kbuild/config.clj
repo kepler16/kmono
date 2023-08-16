@@ -5,8 +5,9 @@
    [clojure.string :as string]
    [flatland.ordered.set :as oset]
    [k16.kbuild.adapter :as adapter]
-   [k16.kbuild.config-schema :as schema]
    [k16.kbuild.adapters.clojure-deps :as clj.deps]
+   [k16.kbuild.ansi :as ansi]
+   [k16.kbuild.config-schema :as schema]
    [k16.kbuild.git :as git]
    [malli.core :as m]
    [malli.error :as me]))
@@ -50,7 +51,7 @@
 (defn create-graph
   {:malli/schema [:=> [:cat schema/?Packages] schema/?Graph]}
   [packages]
-  (println "Creating graph...")
+  (ansi/print-info "creating graph...")
   (reduce (fn [acc {:keys [name depends-on]}]
             (assoc acc name (or (set depends-on) #{})))
           {}
@@ -126,13 +127,13 @@
   ([repo-root]
    (load-config repo-root "packages/*"))
   ([repo-root glob]
-   (assert repo-root "Config dir is not specified")
-   (println "Loading config...")
+   (ansi/assert-err! repo-root "config dir is not specified")
+   (ansi/print-info "loading config...")
    (let [config (create-config repo-root glob)
          packages (:packages config)]
-     (println (count packages) "packages found: ")
+     (ansi/print-info (count packages) "packages found: ")
      (doseq [pkg packages]
-       (println "\t" (:name pkg)))
+       (ansi/print-info "\t" (:name pkg)))
      (if-let [err (m/explain schema/?Packages packages)]
        (throw (ex-info "Config validation error" {:body (me/humanize err)}))
        (let [graph (create-graph packages)]

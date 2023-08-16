@@ -11,10 +11,10 @@
 (defn- print-stage-result
   [stage-result]
   (map (fn [[pkg-name {:keys [success? output]}]]
-         (println (str (if success?
-                         (ansi/green "**** [OK] ")
-                         (ansi/red "**** [ERROR] ")) pkg-name))
-         (println output)
+         (if success?
+           (ansi/print-success pkg-name)
+           (ansi/print-error pkg-name))
+         (ansi/print-shifted output)
          success?)
        stage-result))
 
@@ -27,7 +27,7 @@
 
 (defn- run-custom-cmd
   [config changes]
-  (assert (:custom-cmd config) "Custom command not specified")
+  (ansi/assert-err! (:custom-cmd config) "custom command not specified")
   (let [[_ results] (exec/custom-command config changes)
         success? (->> results
                       (map (fn [stage-result]
@@ -39,45 +39,39 @@
 
 (defn- run-release
   [config changes]
-  (println "Releasing...")
-  (let [[success? stage-results] (exec/release config changes)
+  (ansi/print-info "releasing...")
+  (let [[_ stage-results] (exec/release config changes)
         all-results (apply merge stage-results)
         failed-releases (into {}
                               (filter (fn [[_ result]]
                                         (not (:success? result))))
                               all-results)
-        success-releases (into []
-                               (comp
-                                (filter (fn [[_ result]]
-                                          (:success? result)))
-                                (map first))
-                               all-results)
-        tags-to-create (->> success-releases
+        released-packages (into []
+                                (comp
+                                 (filter (fn [[_ result]]
+                                           (:success? result)))
+                                 (map first))
+                                all-results)
+        tags-to-create (->> released-packages
                             (map (fn [pkg-name]
                                    (get-in changes [pkg-name :tag])))
                             (remove nil?))]
     (doseq [[pkg-name result] failed-releases]
-      (println (ansi/red "**** [ERROR] ") pkg-name "failed to release:")
-      (let [shifted-output (->> result
-                             :output
-                             (string/split-lines)
-                             (map #(str "\t" %))
-                             (string/join))]
-        (println (str shifted-output "\n"))))
-    (println)
+      (ansi/print-error pkg-name "failed to release")
+      (ansi/print-shifted (:output result)))
     (if (seq tags-to-create)
       (try
-        (println "Creating tags for successful results")
+        (ansi/print-info "creating tags for successful results")
         (git/create-tags! config tags-to-create)
         (git/push-tags! config)
-        (println (str "Tags created and pushed: \n\t "
-                      (string/join "\n\t " tags-to-create)))
+        (ansi/print-success "tags created and pushed")
+        (ansi/print-shifted (string/join "\n" tags-to-create))
         (catch Throwable ex
-          (println "Error creating and pushing git tags:")
-          (println (ex-message ex))
-          (println (:body (ex-data ex)))))
+          (ansi/print-error "creating and pushing git tags")
+          (ansi/print-shifted (ex-message ex))
+          (ansi/print-shifted (:body (ex-data ex)))))
       (println "No tags has been created"))
-    success?))
+    (empty? failed-releases)))
 
 (def ?RunParams
   [:map
@@ -100,22 +94,22 @@
 (defn run
   [{:keys [dry-run?] :as args}]
   (if dry-run?
-    (println "Starting kbuild in dry mode...")
-    (println "Starting kbuild..."))
+    (ansi/print-info "Starting kbuild in dry mode...")
+    (ansi/print-info "Starting kbuild..."))
   (let [{:keys [repo-root glob mode]
          :as run-params} (m/decode ?RunParams args mt/default-value-transformer)
         config (-> run-params
                    (merge (config/load-config repo-root glob))
                    (config/validate-config!))
         changes (git/scan-for-changes config)
-        _ (assert (seq (:build-order config)) "No packages to build found")
+        _ (ansi/assert-err! (seq (:build-order config)) "no packages to execute found")
         success? (case mode
                    :build (run-build config changes)
                    :release (run-release config changes)
                    :exec (run-custom-cmd config changes))]
-    #_(if success?
-        (System/exit 0)
-        (System/exit 1))))
+    (if success?
+      (System/exit 0)
+      (System/exit 1))))
 
 (comment
   (def config (-> (config/load-config "../../transit/micro"
@@ -127,6 +121,7 @@
       (merge {:custom-cmd "just test"})
       (config/validate-config!))
   (def changes (git/scan-for-changes config))
+  (update-vals changes (fn [v] (update v :published? deref)))
   (run-build config changes)
   (run-release config changes)
 

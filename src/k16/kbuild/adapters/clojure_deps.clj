@@ -69,19 +69,22 @@
        (release-published? [_ version]
          (-> (p/vthread
               (let [;; ignore user's local repository cache
-                    local-repo (str ".kbuild/" package-path "/.m2")]
-                (deps.util.session/with-session
-                  (let [;; ignoring user's machine local m2 repo
-                        versions (->> (deps.ext/find-versions
-                                       (symbol coord)
-                                       nil
-                                       :mvn {:mvn/local-repo local-repo
-                                             :mvn/repos
-                                             (merge deps.util.maven/standard-repos
-                                                    (:mvn/repos deps-edn))})
-                                      (map :mvn/version)
-                                      (set))]
-                    (contains? versions version)))))
+                    local-repo (str package-path "/.kbuild/" artifact "/.m2")]
+                (try (deps.util.session/with-session
+                       (let [;; ignoring user's machine local m2 repo
+                             versions (->> (deps.ext/find-versions
+                                            (symbol coord)
+                                            nil
+                                            :mvn {:mvn/local-repo local-repo
+                                                  :mvn/repos
+                                                  (merge deps.util.maven/standard-repos
+                                                         (:mvn/repos deps-edn))})
+                                           (map :mvn/version)
+                                           (set))]
+                         (contains? versions version)))
+                     (finally
+                       (try (fs/delete-tree local-repo)
+                            (catch Throwable _))))))
              (p/timeout timeout-ms (str "Timeout resolving mvn version for package " coord))))))))
 
 (comment

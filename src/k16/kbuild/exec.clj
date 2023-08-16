@@ -1,11 +1,12 @@
 (ns k16.kbuild.exec
   (:require
    [babashka.process :as bp]
-   [k16.kbuild.proc :as kbuild.proc]
    [k16.kbuild.adapter :as adapter]
+   [k16.kbuild.ansi :as ansi]
    [k16.kbuild.config-schema :as config.schema]
    [k16.kbuild.dry :as dry]
-   [k16.kbuild.git :as git]))
+   [k16.kbuild.git :as git]
+   [k16.kbuild.proc :as kbuild.proc]))
 
 (def ?JobResult
   [:tuple :boolean kbuild.proc/?ProcsResult])
@@ -25,8 +26,8 @@
                         dry/fake-cusrom-cmd)
                       (or (get pkg cmd-type)
                           (get config cmd-type)))
-            _ (assert ext-cmd (str "Command of type [" cmd-type "] could not be found"))
-            _ (println "\t" (str pkg-name "@" version " => " ext-cmd))
+            _ (ansi/assert-err! ext-cmd (str "Command of type [" cmd-type "] could not be found"))
+            _ (ansi/print-info "\t" (str pkg-name "@" version " => " ext-cmd))
             build-result (bp/process {:extra-env
                                       {"KBUILD_DEPS_ENV" deps-env
                                        "KBUILD_PKG_VERSION" version
@@ -67,7 +68,7 @@
                                      build-stage))
                            build-order)
         global-start (get-milis)]
-    (println (count stages-to-run) "parallel stages to run...")
+    (ansi/print-info (count stages-to-run) "parallel stages to run...")
     (loop [stages stages-to-run
            idx 1
            stage-results []]
@@ -76,23 +77,23 @@
               prefix (str "#" idx)
               start-time (get-milis)
               _ (println)
-              _ (println prefix "stage started" (str "(" (count stage) " packages)"))
+              _ (ansi/print-info prefix "stage started" (str "(" (count stage) " packages)"))
               op-procs (->> stage
                             (map (partial operation-fn config changes))
                             (remove nil?))
               [success? stage-result] (kbuild.proc/await-procs
-                                        op-procs terminate-on-fail?)]
+                                       op-procs terminate-on-fail?)]
           (if success?
-            (do (println prefix "stage finished in"
-                         (- (get-milis) start-time)
-                         "ms\n")
+            (do (ansi/print-info prefix "stage finished in"
+                                 (- (get-milis) start-time)
+                                 "ms\n")
                 (recur (rest stages) (inc idx) (conj stage-results stage-result)))
-            (do (println prefix "stage failed")
-                (println "Terminating")
+            (do (ansi/print-error prefix "stage failed")
+                (ansi/print-error "terminating")
                 (doseq [[_ proc] op-procs]
                   (bp/destroy-tree proc))
                 [false (conj stage-results stage-result)])))
-        (do (println "Total time:" (- (get-milis) global-start) "ms")
+        (do (ansi/print-info "Total time:" (- (get-milis) global-start) "ms")
             [true stage-results])))))
 
 (defn build
