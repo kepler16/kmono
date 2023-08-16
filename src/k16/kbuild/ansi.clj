@@ -14,6 +14,12 @@
        (apply str chunks)
        "\033[0m"))
 
+(defn cyan
+  [& chunks]
+  (str "\033[36m"
+       (apply str chunks)
+       "\033[0m"))
+
 (defn blue
   [& chunks]
   (str "\033[34m"
@@ -47,6 +53,7 @@
   (->> output
        (string/split-lines)
        (map #(str "\t" %))
-       (string/join))
+       (string/join)
+       (print))
   (println))
 
