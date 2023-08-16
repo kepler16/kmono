@@ -57,8 +57,13 @@
                                    (get-in changes [pkg-name :tag])))
                             (remove nil?))]
     (doseq [[pkg-name result] failed-releases]
-      (println pkg-name "failed to release:")
-      (println (str (:output result) "\n")))
+      (println (ansi/red "**** [ERROR] ") pkg-name "failed to release:")
+      (let [shifted-output (->> result
+                             :output
+                             (string/split-lines)
+                             (map #(str "\t" %))
+                             (string/join))]
+        (println (str shifted-output "\n"))))
     (println)
     (if (seq tags-to-create)
       (try
