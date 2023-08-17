@@ -84,8 +84,10 @@
   [config changes pkg-name]
   (let [pkg-map (:package-map config)
         pkg (get pkg-map pkg-name)
-        version (get-in changes [pkg-name :version])]
-    (if (-> pkg :adapter (adapter/release-published? version) (not))
+        version (get-in changes [pkg-name :version])
+        changed? (get-in changes [pkg-name :changed?])]
+    (if (and changed?
+             (-> pkg :adapter (adapter/release-published? version) (not)))
       (run-external-cmd config changes pkg-name :release-cmd)
       [pkg-name {:skipped? true}])))
 
