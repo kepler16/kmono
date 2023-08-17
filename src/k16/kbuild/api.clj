@@ -51,9 +51,13 @@
                                            (:success? result)))
                                  (map first))
                                 all-results)
+        create-tags? (:create-tags? config)
+        snapshot? (:snapshot? config)
         tags-to-create (->> released-packages
                             (map (fn [pkg-name]
-                                   (get-in changes [pkg-name :tag])))
+                                   (let [{:keys [changed? version]} (get changes pkg-name)]
+                                     (when (and create-tags? changed? (not snapshot?))
+                                       (str pkg-name "@" version)))))
                             (remove nil?))]
     (doseq [[pkg-name result] failed-releases]
       (ansi/print-error pkg-name "failed to release")
@@ -113,8 +117,9 @@
       (System/exit 1))))
 
 (comment
-  (def args {:snapshot? true
+  (def args {:snapshot? false
              :glob "packages/*"
+             :create-tags? true
              :exec :build
              :dry-run? false})
   (def config (as-> (config/load-config "../../transit/micro" "packages/*") x
@@ -122,6 +127,13 @@
                 (m/decode ?RunParams x mt/default-value-transformer)
                 (config/validate-config! x)))
   (def changes (git/scan-for-changes config))
+
+  (def create-tags? true)
+  (def snapshot? false)
+  (let [pkg-name "transit-engineering/http"]
+    (let [{:keys [changed? version]} (get changes pkg-name)]
+      (when (and create-tags? changed? (not snapshot?))
+        (str pkg-name "@" version))))
 
   (run-build config changes)
   (run-release config changes)

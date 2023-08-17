@@ -76,8 +76,6 @@
    :string
    [:map
     [:version :string]
-    [:tag {:optional true}
-     [:maybe :string]]
     [:package-name :string]
     [:published? :boolean]]])
 
@@ -149,9 +147,6 @@
                 changed? (not= :none bump-type)]
             {:version version
              :changed? changed?
-             ;; create a new tag only if version is changed
-             :tag (when (and create-tags? changed? (not snapshot?))
-                    (str name "@" version))
              :package-name name})))
       (throw (ex-info (str "ERROR: latest tag for [" name "] not found")
                       {:body name})))))
