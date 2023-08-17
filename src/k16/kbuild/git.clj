@@ -180,8 +180,7 @@
                                              (when (and (contains? deps package-name)
                                                         (-> changes
                                                             (get pkg-name)
-                                                            :changed?
-                                                            (deref)))
+                                                            :changed?))
                                                pkg-name)))
                                       (remove nil?))]
           (recur (reduce (fn [chgs dpn-name]
