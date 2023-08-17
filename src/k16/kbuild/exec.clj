@@ -36,29 +36,6 @@
                                  ext-cmd)]
     [pkg-name build-result]))
 
-(defn build-package
-  [config changes pkg-name]
-  (let [change (get changes pkg-name)]
-    (if (or (:changed? change) (:include-unchanged? config))
-      (run-external-cmd config changes pkg-name :build-cmd)
-      [pkg-name {:skipped? true}])))
-
-(defn release-package
-  [config changes pkg-name]
-  (let [pkg-map (:package-map config)
-        pkg (get pkg-map pkg-name)
-        version (get-in changes [pkg-name :version])]
-    (if (-> pkg :adapter (adapter/release-published? version))
-      (run-external-cmd config changes pkg-name :release-cmd)
-      [pkg-name {:skipped? true}])))
-
-(defn package-custom-command
-  [config changes pkg-name]
-  (let [change (get changes pkg-name)]
-    (if (or (:changed? change) (:include-unchanged? config))
-      (run-external-cmd config changes pkg-name :exec)
-      [pkg-name {:skipped? true}])))
-
 (defn get-milis
   []
   (.getTime (java.util.Date.)))
@@ -95,6 +72,29 @@
                 [false (conj stage-results stage-result)])))
         (do (ansi/print-info "Total time:" (- (get-milis) global-start) "ms")
             [true stage-results])))))
+
+(defn build-package
+  [config changes pkg-name]
+  (let [change (get changes pkg-name)]
+    (if (or (:changed? change) (:include-unchanged? config))
+      (run-external-cmd config changes pkg-name :build-cmd)
+      [pkg-name {:skipped? true}])))
+
+(defn release-package
+  [config changes pkg-name]
+  (let [pkg-map (:package-map config)
+        pkg (get pkg-map pkg-name)
+        version (get-in changes [pkg-name :version])]
+    (if (-> pkg :adapter (adapter/release-published? version) (not))
+      (run-external-cmd config changes pkg-name :release-cmd)
+      [pkg-name {:skipped? true}])))
+
+(defn package-custom-command
+  [config changes pkg-name]
+  (let [change (get changes pkg-name)]
+    (if (or (:changed? change) (:include-unchanged? config))
+      (run-external-cmd config changes pkg-name :exec)
+      [pkg-name {:skipped? true}])))
 
 (defn build
   {:malli/schema [:=> [:cat config.schema/?Config git/?Changes] ?JobResult]}
