@@ -146,7 +146,7 @@
                                :bump-type bump-type
                                :commit-sha commit-sha
                                :snapshot? snapshot?})
-                changed? (not= current-version version)]
+                changed? (not= :none bump-type)]
             {:version version
              :changed? changed?
              ;; create a new tag only if version is changed
