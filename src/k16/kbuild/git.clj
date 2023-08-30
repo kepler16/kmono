@@ -100,35 +100,7 @@
     (throw (ex-info "Version does not match pattern `major.minor.patch[.build]`"
                     {:body (str "version: " version)}))))
 
-(comment
-  (def version "1.77.2.3")
 
-  (= "2.0.0.0" (bump {:version version
-                      :bump-type :major
-                      :commit-sha "deadbee"
-                      :snapshot? false}))
-  (= "1.78.0.0" (bump {:version version
-                       :bump-type :minor
-                       :commit-sha "deadbee"
-                       :snapshot? false}))
-  (= "1.77.3.0" (bump {:version version
-                       :bump-type :patch
-                       :commit-sha "deadbee"
-                       :snapshot? false}))
-  (= "1.77.3.0-deadbee.dev" (bump {:version version
-                                   :bump-type :patch
-                                   :commit-sha "deadbee"
-                                   :snapshot? true}))
-  (= "1.77.2.4" (bump {:version version
-                       :bump-type :build
-                       :commit-sha "deadbee"
-                       :snapshot? false}))
-  (= "1.77.2.3" (bump {:version version
-                       :bump-type :none
-                       :commit-sha "deadbee"
-                       :snapshot? false}))
-
-  nil)
 
 (defn package-changes
   [{:keys [repo-root snapshot?]} {:keys [name commit-sha dir]}]
@@ -152,10 +124,10 @@
        :changed? true
        :package-name name})))
 
-(defn- bump-dependant
+(defn- bump-dependand
   [dependant config dependant-name]
   (let [{:keys [version]} dependant
-        {:keys [snapshot? package-map repo-root]} config
+        {:keys [snapshot? package-map]} config
         dpkg (get package-map dependant-name)
         new-version (bump {:version version
                            :bump-type :build
@@ -165,24 +137,25 @@
            :version new-version
            :changed? (not= new-version version))))
 
-(defn ensure-dependent-builds
+(defn ensure-dependend-builds
   [config changes]
   (loop [changes' changes
          cursor (keys changes)]
     (if-let [{:keys [changed? package-name]} (get changes' (first cursor))]
-      (if-not changed?
-        (let [dependants-to-bump (->> (:graph config)
+      (if changed?
+        (let [dependands-to-bump (->> (:graph config)
                                       (map (fn [[pkg-name deps]]
                                              (when (and (contains? deps package-name)
                                                         (-> changes
                                                             (get pkg-name)
-                                                            :changed?))
+                                                            :changed?
+                                                            (not)))
                                                pkg-name)))
                                       (remove nil?))]
           (recur (reduce (fn [chgs dpn-name]
-                           (update chgs dpn-name bump-dependant config dpn-name))
+                           (update chgs dpn-name bump-dependand config dpn-name))
                          changes'
-                         dependants-to-bump)
+                         dependands-to-bump)
                  (rest cursor)))
         (recur changes' (rest cursor)))
       changes')))
@@ -195,7 +168,7 @@
   [{:keys [packages] :as config}]
   (->> packages
        (into {} (map (fn [pkg] [(:name pkg) (package-changes config pkg)])))
-       (ensure-dependent-builds config)))
+       (ensure-dependend-builds config)))
 
 (defn create-tags!
   {:malli/schema [:=> [:cat config.schema/?Config [:sequential :string]] :boolean]}
@@ -252,5 +225,5 @@
                  :tag nil,
                  :package-name "lib-4"}})
 
-  (= expected-changes @(ensure-dependent-builds {:graph graph} changes))
+  (= expected-changes @(ensure-dependend-builds {:graph graph} changes))
   nil)
