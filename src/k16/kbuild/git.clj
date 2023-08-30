@@ -133,26 +133,29 @@
 (defn package-changes
   [{:keys [repo-root snapshot?]} {:keys [name commit-sha dir]}]
   (if-let [tags (get-sorted-tags repo-root)]
-    (let [latest-tag (->> tags (filter #(string/starts-with? % name)) (first))
-          current-version (if latest-tag
-                            (second (string/split latest-tag #"@"))
-                            "0.0.0")
-          bump-type (-> (subdir-changes dir latest-tag)
-                        (bump-type))]
-      (when (version? current-version)
-        (let [version (bump {:version current-version
-                             :bump-type bump-type
-                             :commit-sha commit-sha
-                             :snapshot? snapshot?})
-              changed? (not= :none bump-type)]
-          {:version version
-           :changed? changed?
-           :package-name name})))))
+    (if-let [latest-tag (->> tags
+                             (filter #(string/starts-with? % name))
+                             (first))]
+      (let [[_ current-version] (string/split latest-tag #"@")
+            bump-type (-> (subdir-changes dir latest-tag)
+                          (bump-type))]
+        (when (version? current-version)
+          (let [version (bump {:version current-version
+                               :bump-type bump-type
+                               :commit-sha commit-sha
+                               :snapshot? snapshot?})
+                changed? (not= :none bump-type)]
+            {:version version
+             :changed? changed?
+             :package-name name})))
+      {:version "0.0.0.0"
+       :changed? true
+       :package-name name})))
 
 (defn- bump-dependant
   [dependant config dependant-name]
   (let [{:keys [version]} dependant
-        {:keys [snapshot? package-map]} config
+        {:keys [snapshot? package-map repo-root]} config
         dpkg (get package-map dependant-name)
         new-version (bump {:version version
                            :bump-type :build
