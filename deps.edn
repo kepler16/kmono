@@ -12,5 +12,6 @@
 
  :aliases {:dev {:extra-paths ["dev"]}
            :lib {:k16/metabuild {:kind :jar}}
+           :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.86.1355"}}}
            :meta {:deps {kepler16/metabuild {:mvn/version "0.7.0"}}
                   :ns-default k16.metabuild.api}}}

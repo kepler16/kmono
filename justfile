@@ -8,3 +8,5 @@ build:
 release: build
     clojure -T:meta deploy :repository \"{{ maven_server }}\" :lib {{ library }} :version \"{{ version }}\"
 
+test:
+    clojure -M:test -m "kaocha.runner"
