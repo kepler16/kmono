@@ -100,8 +100,6 @@
     (throw (ex-info "Version does not match pattern `major.minor.patch[.build]`"
                     {:body (str "version: " version)}))))
 
-
-
 (defn package-changes
   [{:keys [repo-root snapshot?]} {:keys [name commit-sha dir]}]
   (if-let [tags (get-sorted-tags repo-root)]
@@ -120,7 +118,9 @@
             {:version version
              :changed? changed?
              :package-name name})))
-      {:version "0.0.0.0"
+      {:version (if snapshot?
+                  (str "0.0.0.0-" commit-sha "-SNAPSHOT")
+                  "0.0.0.0")
        :changed? true
        :package-name name})))
 
