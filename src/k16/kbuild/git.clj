@@ -102,27 +102,27 @@
 
 (defn package-changes
   [{:keys [repo-root snapshot?]} {:keys [name commit-sha dir]}]
-  (if-let [tags (get-sorted-tags repo-root)]
-    (if-let [latest-tag (->> tags
-                             (filter #(string/starts-with? % name))
-                             (first))]
-      (let [[_ current-version] (string/split latest-tag #"@")
-            bump-type (-> (subdir-changes dir latest-tag)
-                          (bump-type))]
-        (when (version? current-version)
-          (let [version (bump {:version current-version
-                               :bump-type bump-type
-                               :commit-sha commit-sha
-                               :snapshot? snapshot?})
-                changed? (not= :none bump-type)]
-            {:version version
-             :changed? changed?
-             :package-name name})))
+  (or (when-let [tags (get-sorted-tags repo-root)]
+        (when-let [latest-tag (->> tags
+                                   (filter #(string/starts-with? % name))
+                                   (first))]
+          (let [[_ current-version] (string/split latest-tag #"@")
+                bump-type (-> (subdir-changes dir latest-tag)
+                              (bump-type))]
+            (when (version? current-version)
+              (let [version (bump {:version current-version
+                                   :bump-type bump-type
+                                   :commit-sha commit-sha
+                                   :snapshot? snapshot?})
+                    changed? (not= :none bump-type)]
+                {:version version
+                 :changed? changed?
+                 :package-name name})))))
       {:version (if snapshot?
                   (str "0.0.0.0-" commit-sha "-SNAPSHOT")
                   "0.0.0.0")
        :changed? true
-       :package-name name})))
+       :package-name name}))
 
 (defn- bump-dependand
   [dependant config dependant-name]
