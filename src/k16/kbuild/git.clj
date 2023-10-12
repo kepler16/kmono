@@ -101,7 +101,8 @@
                     {:body (str "version: " version)}))))
 
 (defn package-changes
-  [{:keys [repo-root snapshot?]} {:keys [name commit-sha dir]}]
+  [{:keys [repo-root snapshot? include-unchanged?]}
+   {:keys [name commit-sha dir]}]
   (or (when-let [tags (get-sorted-tags repo-root)]
         (when-let [latest-tag (->> tags
                                    (filter #(string/starts-with? % name))
@@ -110,11 +111,13 @@
                 bump-type (-> (subdir-changes dir latest-tag)
                               (bump-type))]
             (when (version? current-version)
-              (let [version (bump {:version current-version
-                                   :bump-type bump-type
-                                   :commit-sha commit-sha
-                                   :snapshot? snapshot?})
-                    changed? (not= :none bump-type)]
+              (let [changed? (or (not= :none bump-type) include-unchanged?)
+                    version (if changed?
+                              (bump {:version current-version
+                                     :bump-type bump-type
+                                     :commit-sha commit-sha
+                                     :snapshot? snapshot?})
+                              current-version)]
                 {:version version
                  :changed? changed?
                  :package-name name})))))
