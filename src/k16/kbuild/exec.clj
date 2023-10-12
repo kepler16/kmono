@@ -68,7 +68,8 @@
             (do (ansi/print-error prefix "stage failed")
                 (ansi/print-error "terminating")
                 (doseq [[_ proc] op-procs]
-                  (bp/destroy-tree proc))
+                  (when-not (:skipped? proc)
+                    (bp/destroy-tree proc)))
                 [false (conj stage-results stage-result)])))
         (do (ansi/print-info "Total time:" (- (get-milis) global-start) "ms")
             [true stage-results])))))
