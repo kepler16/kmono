@@ -10,7 +10,14 @@
         metosin/malli {:mvn/version "0.11.0"}
         org.flatland/ordered {:mvn/version "1.15.11"}}
 
- :aliases {:dev {:extra-paths ["dev"]}
+ :aliases {:dev {:extra-paths ["dev"]
+                 :classpath-overrides {org.clojure/clojure nil}
+                 :extra-deps {com.github.flow-storm/clojure {:mvn/version "1.11.1-11"}
+                              com.github.flow-storm/flow-storm-dbg {:mvn/version "3.8.3"}}
+                 :jvm-opts ["-Dclojure.storm.instrumentEnable=true"
+                            "-Dclojure.storm.traceEnable=true"
+                            "-Dflowstorm.theme=dark"
+                            "-Dclojure.storm.instrumentOnlyPrefixes=k16."]}
            :lib {:k16/metabuild {:kind :jar}}
            :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.86.1355"}}}
            :meta {:deps {kepler16/metabuild {:mvn/version "0.7.0"}}
