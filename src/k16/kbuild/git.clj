@@ -105,7 +105,7 @@
    {:keys [name commit-sha dir]}]
   (or (when-let [tags (get-sorted-tags repo-root)]
         (when-let [latest-tag (->> tags
-                                   (filter #(string/starts-with? % name))
+                                   (filter #(string/starts-with? % (str name "@")))
                                    (first))]
           (let [[_ current-version] (string/split latest-tag #"@")
                 bump-type (-> (subdir-changes dir latest-tag)
