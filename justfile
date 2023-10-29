@@ -1,8 +1,8 @@
 test *ARGS:
     clojure -T:kmono run :exec "\"just test\"" {{ ARGS }}
 
-build-packages *ARGS:
+build *ARGS:
     clojure -T:kmono run :exec :build {{ ARGS }}
 
-release-packages *ARGS:
+release *ARGS:
     clojure -T:kmono run :exec :release {{ ARGS }}

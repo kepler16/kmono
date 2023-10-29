@@ -1,4 +1,5 @@
-{:aliases {:dev {:classpath-overrides {org.clojure/clojure nil}
+{:mvn/repos {"github-kepler" {:url "https://maven.pkg.github.com/kepler16/*"}}
+ :aliases {:dev {:classpath-overrides {org.clojure/clojure nil}
                  :extra-deps {kepler16/kmono {:local/root "packages/kmono"}
                               com.github.flow-storm/clojure {:mvn/version "1.11.1-11"}
                               com.github.flow-storm/flow-storm-dbg {:mvn/version "3.8.3"}}

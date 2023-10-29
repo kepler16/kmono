@@ -1,6 +1,6 @@
 library := "kepler16/kmono"
-version := "$KBUILD_PKG_VERSION"
-maven_server := "github-kepler"
+version := "$KMONO_PKG_VERSION"
+maven_server := "github-kepler-kmono"
 
 test:
     clojure -M:test -m "kaocha.runner"
@@ -8,6 +8,6 @@ test:
 build:
     clojure -T:meta run :alias lib :lib {{ library }} :version \"{{ version }}\"
 
-release: test build
+release:
     clojure -T:meta deploy :repository \"{{ maven_server }}\" :lib {{ library }} :version \"{{ version }}\"
 

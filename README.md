@@ -1,1 +1,1 @@
-# kmono - monorepo build/release tool
+# 👘 kmono - monorepo build/release tool

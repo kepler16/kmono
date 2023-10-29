@@ -1,4 +1,5 @@
-{:mvn/repos {"github-kepler" {:url "https://maven.pkg.github.com/kepler16/kmono"}}
+{:mvn/repos {"github-kepler" {:url "https://maven.pkg.github.com/kepler16/*"}
+             "github-kepler-kmono" {:url "https://maven.pkg.github.com/kepler16/kmono"}}
  :kmono/config {:group kepler16
                 :build-cmd "just build"
                 :release-cmd "just release"}
@@ -15,5 +16,5 @@
 
  :aliases {:lib {:k16/metabuild {:kind :jar}}
            :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.86.1355"}}}
-           :meta {:deps {kepler16/metabuild {:mvn/version "0.7.0"}}
+           :meta {:deps {kepler16/metabuild {:mvn/version "0.10.0"}}
                   :ns-default k16.metabuild.api}}}

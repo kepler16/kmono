@@ -28,3 +28,4 @@ config-override.edn
 .lsp
 .portal
 
+!.github
