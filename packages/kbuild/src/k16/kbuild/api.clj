@@ -117,11 +117,12 @@
       (System/exit 1))))
 
 (comment
-  (def args {:snapshot? false
-             :glob "packages/*"
-             :create-tags? true
+  (def args {:snapshot? true
+             :glob "*"
+             :create-tags? false
              :exec :build
              :dry-run? false})
+  (config/load-config "." "packages/*") 
   (def config (as-> (config/load-config "../../transit/micro" "packages/*") x
                 (merge args x)
                 (m/decode ?RunParams x mt/default-value-transformer)
@@ -138,8 +139,9 @@
   (run-build config changes)
   (run-release config changes)
 
-  (run {:mode :exec
-        :repo-root "../../transit/micro"
-        :custom-cmd "just test"})
+  (run {:snapshot? true
+        :create-tags? false
+        :exec :build
+        :dry-run? false})
 
   nil)
