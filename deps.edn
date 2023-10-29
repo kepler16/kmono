@@ -1,2 +1,10 @@
-{:deps {k16/kbuild {:local/root "./packages/kbuild"}}
- :aliases {:kbuild {:ns-default k16.kbuild.api}}}
+{:aliases {:dev {:classpath-overrides {org.clojure/clojure nil}
+                 :extra-deps {kepler16/kmono {:local/root "packages/kmono"}
+                              com.github.flow-storm/clojure {:mvn/version "1.11.1-11"}
+                              com.github.flow-storm/flow-storm-dbg {:mvn/version "3.8.3"}}
+                 :jvm-opts ["-Dclojure.storm.instrumentEnable=true"
+                            "-Dclojure.storm.traceEnable=true"
+                            "-Dflowstorm.theme=dark"
+                            "-Dclojure.storm.instrumentOnlyPrefixes=k16."]}
+           :kmono {:deps {kepler16/kmono {:local/root "packages/kmono"}}
+                   :ns-default k16.kmono.api}}}

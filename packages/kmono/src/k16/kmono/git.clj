@@ -1,10 +1,9 @@
-(ns k16.kbuild.git
+(ns k16.kmono.git
   (:require
    [babashka.process :as bp]
    [clojure.string :as string]
-   [k16.kbuild.config-schema :as config.schema]
-   [k16.kbuild.dry :as dry]
-   [promesa.core :as p]))
+   [k16.kmono.config-schema :as config.schema]
+   [k16.kmono.dry :as dry]))
 
 (defn- out->strings
   [{:keys [out err] :as result}]
@@ -164,7 +163,7 @@
       changes')))
 
 (defn scan-for-changes
-  "Takes a repo path and kbuild config map. Scans all packages and determines
+  "Takes a repo path and kmono config map. Scans all packages and determines
   version, tag, and should it be built. Build is always true in case of
   fallback_version. Returns a promise containing changes"
   {:malli/schema [:=> [:cat config.schema/?Config] ?Changes]}
@@ -201,32 +200,3 @@
       (do (println (ex-message ex))
           false))))
 
-(comment
-  (def graph {"lib-1" #{}
-              "lib-2" #{"lib-1"}
-              "lib-3" #{"lib-2"}
-              "lib-4" #{}})
-
-  (def changes {"lib-1"
-                {:version "1.79.1.1-8adecdc.dev",
-                 :published? (p/resolved false)
-                 :tag nil,
-                 :package-name "lib-1"},
-                "lib-2"
-                {:version "1.79.1",
-                 :published? (p/resolved false),
-                 :tag nil,
-                 :package-name "lib-2"},
-                "lib-3"
-                {:version "1.79.1",
-                 :published? (p/resolved false),
-                 :tag nil,
-                 :package-name "lib-3"},
-                "lib-4"
-                {:version "1.79.1",
-                 :published? (p/resolved false),
-                 :tag nil,
-                 :package-name "lib-4"}})
-
-  (= expected-changes @(ensure-dependend-builds {:graph graph} changes))
-  nil)

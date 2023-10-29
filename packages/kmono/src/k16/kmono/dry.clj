@@ -1,4 +1,4 @@
-(ns k16.kbuild.dry)
+(ns k16.kmono.dry)
 
 (def fake-release-cmd "ping k42.com -c 2")
 (def fake-cusrom-cmd "ping k42.com -c 5")

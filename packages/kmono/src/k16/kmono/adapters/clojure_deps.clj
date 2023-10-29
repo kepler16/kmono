@@ -1,4 +1,4 @@
-(ns k16.kbuild.adapters.clojure-deps
+(ns k16.kmono.adapters.clojure-deps
   (:require
    [promesa.core :as p]
    [babashka.fs :as fs]
@@ -7,7 +7,7 @@
    [clojure.tools.deps.extensions.maven]
    [clojure.tools.deps.util.maven :as deps.util.maven]
    [clojure.tools.deps.util.session :as deps.util.session]
-   [k16.kbuild.adapter :refer [Adapter]]))
+   [k16.kmono.adapter :refer [Adapter]]))
 
 (defn- local?
   [[_ coord]]
@@ -44,7 +44,7 @@
    (let [deps-edn (-> (fs/file package-path "deps.edn")
                       (slurp)
                       (edn/read-string))
-         {:keys [group artifact] :as config} (-> (:kbuild/config deps-edn)
+         {:keys [group artifact] :as config} (-> (:kmono/config deps-edn)
                                                  (ensure-artifact package-path))
          coord (str group "/" artifact)
          managed-deps (get-local-deps config deps-edn)]
@@ -64,12 +64,12 @@
 
        (get-managed-deps [_] managed-deps)
 
-       (get-kbuild-config [_] config)
+       (get-kmono-config [_] config)
 
        (release-published? [_ version]
          (-> (p/vthread
               (let [;; ignore user's local repository cache
-                    local-repo (str package-path "/.kbuild/" artifact "/.m2")]
+                    local-repo (str package-path "/.kmono/" artifact "/.m2")]
                 (try (deps.util.session/with-session
                        (let [;; ignoring user's machine local m2 repo
                              versions (->> (deps.ext/find-versions
@@ -88,52 +88,3 @@
              (p/timeout timeout-ms (str "Timeout resolving mvn version for package " coord))
              (deref)))))))
 
-(comment
-  (def timeout-ms 3000)
-  (def result (-> (p/future
-                    (let [;; ignore user's local repository cache
-                          local-repo "./.m2"
-                          version "1.1.1"]
-                      (try
-                        (deps.util.session/with-session
-                          (let [versions (->> (deps.ext/find-versions
-                                               'transit-engineering/telemetry.clj
-                                               nil
-                                               :mvn {:mvn/local-repo local-repo
-                                                     :mvn/repos
-                                                     (merge deps.util.maven/standard-repos
-                                                            {"github-transit" {:url "https://maven.pkg.github.com/transit-engineering/micro"}
-                                                             "github-kepler" {:url "https://maven.pkg.github.com/kepler16/*"}})})
-                                              (map :mvn/version)
-                                              (set))]
-                            versions
-                            #_(contains? versions version)))
-                        (finally
-                     ;; cleanup
-                          (try (fs/delete-tree local-repo)
-                               (catch Throwable _))))))
-                  (p/timeout timeout-ms "Timeout resolving mvn version for package")))
-  @result
-
-  (def p (-> (p/do (p/delay 3000))
-             (p/timeout 200)
-             (p/catch #(throw
-                        (ex-info
-                         "Timeout !!!"
-                         {:msg (ex-message %)
-                          :cause %})))))
-  @p
-  (deps.util.session/with-session
-    (def vers (->> (deps.ext/find-versions 'transit-engineering/telemetry.clj
-                                           nil
-                                           :mvn
-                                           {:mvn/local-repo "./m2"
-                                            :mvn/repos
-                                            (merge deps.util.maven/standard-repos
-                                                   {"github-transit" {:url "https://maven.pkg.github.com/transit-engineering/micro"}
-                                                    "github-kepler" {:url "https://maven.pkg.github.com/kepler16/*"}})})
-                   (map :mvn/version)
-                   (set))))
-  (fs/delete-tree "./m2")
-  (contains? vers "1.79.1.1-8adecdc")
-  nil)

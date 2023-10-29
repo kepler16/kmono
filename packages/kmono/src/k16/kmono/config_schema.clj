@@ -1,4 +1,4 @@
-(ns k16.kbuild.config-schema
+(ns k16.kmono.config-schema
   (:require
    [malli.util :as mu]))
 

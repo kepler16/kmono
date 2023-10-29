@@ -1,7 +1,7 @@
-(ns k16.kbuild.proc
+(ns k16.kmono.proc
   (:require
    [babashka.process :as bp]
-   [k16.kbuild.ansi :as ansi]))
+   [k16.kmono.ansi :as ansi]))
 
 (def ?PackageName :string)
 

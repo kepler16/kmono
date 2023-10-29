@@ -1,7 +1,7 @@
-(ns k16.kbuild.git-test
+(ns k16.kmono.git-test
   (:require
    [clojure.test :refer [deftest testing is]]
-   [k16.kbuild.git :as git]))
+   [k16.kmono.git :as git]))
 
 (def config
   {:packages [{:name "Z"}

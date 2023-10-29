@@ -1,14 +1,14 @@
-(ns k16.kbuild.config
+(ns k16.kmono.config
   (:require
    [babashka.fs :as fs]
    [clojure.set :as set]
    [clojure.string :as string]
    [flatland.ordered.set :as oset]
-   [k16.kbuild.adapter :as adapter]
-   [k16.kbuild.adapters.clojure-deps :as clj.deps]
-   [k16.kbuild.ansi :as ansi]
-   [k16.kbuild.config-schema :as schema]
-   [k16.kbuild.git :as git]
+   [k16.kmono.adapter :as adapter]
+   [k16.kmono.adapters.clojure-deps :as clj.deps]
+   [k16.kmono.ansi :as ansi]
+   [k16.kmono.config-schema :as schema]
+   [k16.kmono.git :as git]
    [malli.core :as m]
    [malli.error :as me]))
 
@@ -28,7 +28,7 @@
 
 (defn- create-package-config [package-dir]
   (let [adapter (get-adapter package-dir)
-        kb-pkg-config (->> (adapter/get-kbuild-config adapter)
+        kb-pkg-config (->> (adapter/get-kmono-config adapter)
                            (assert-schema! schema/?KbuldPackageConfig))
         artifact (or (:artifact kb-pkg-config)
                      (symbol (fs/file-name package-dir)))
@@ -146,15 +146,4 @@
           :package-map (->pkg-map packages)
           :graph graph
           :build-order (parallel-topo-sort graph)})))))
-
-(comment
-
-  (def config (load-config "/Users/armed/Developer/k16/transit/micro"))
-  (def graph (create-graph (:packages config)))
-  (def topo (parallel-topo-sort graph))
-
-  (let [p (second packages)]
-    (-> p :adapter (adapter/get-managed-deps p)))
-
-  nil)
 

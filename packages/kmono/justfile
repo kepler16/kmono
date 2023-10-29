@@ -1,4 +1,4 @@
-library := "kepler16/kbuild"
+library := "kepler16/kmono"
 version := "$KBUILD_PKG_VERSION"
 maven_server := "github-kepler"
 

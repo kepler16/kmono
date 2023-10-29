@@ -1,10 +1,10 @@
-(ns k16.kbuild.api
+(ns k16.kmono.api
   (:require
    [clojure.string :as string]
-   [k16.kbuild.ansi :as ansi]
-   [k16.kbuild.config :as config]
-   [k16.kbuild.exec :as exec]
-   [k16.kbuild.git :as git]
+   [k16.kmono.ansi :as ansi]
+   [k16.kmono.config :as config]
+   [k16.kmono.exec :as exec]
+   [k16.kmono.git :as git]
    [malli.core :as m]
    [malli.transform :as mt]))
 
@@ -99,8 +99,8 @@
 (defn run
   [{:keys [dry-run?] :as args}]
   (if dry-run?
-    (ansi/print-info "Starting kbuild in dry mode...")
-    (ansi/print-info "Starting kbuild..."))
+    (ansi/print-info "Starting kmono in dry mode...")
+    (ansi/print-info "Starting kmono..."))
   (let [{:keys [repo-root glob exec]
          :as run-params} (m/decode ?RunParams args mt/default-value-transformer)
         config (-> run-params
@@ -118,12 +118,11 @@
 
 (comment
   (def args {:snapshot? true
-             :glob "*"
              :create-tags? false
              :exec :build
              :dry-run? false})
-  (config/load-config "." "packages/*") 
-  (def config (as-> (config/load-config "../../transit/micro" "packages/*") x
+  (config/load-config "." ".")
+  (def config (as-> (config/load-config "." "packages/*") x
                 (merge args x)
                 (m/decode ?RunParams x mt/default-value-transformer)
                 (config/validate-config! x)))

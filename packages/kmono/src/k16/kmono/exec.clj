@@ -1,15 +1,15 @@
-(ns k16.kbuild.exec
+(ns k16.kmono.exec
   (:require
    [babashka.process :as bp]
-   [k16.kbuild.adapter :as adapter]
-   [k16.kbuild.ansi :as ansi]
-   [k16.kbuild.config-schema :as config.schema]
-   [k16.kbuild.dry :as dry]
-   [k16.kbuild.git :as git]
-   [k16.kbuild.proc :as kbuild.proc]))
+   [k16.kmono.adapter :as adapter]
+   [k16.kmono.ansi :as ansi]
+   [k16.kmono.config-schema :as config.schema]
+   [k16.kmono.dry :as dry]
+   [k16.kmono.git :as git]
+   [k16.kmono.proc :as kmono.proc]))
 
 (def ?JobResult
-  [:tuple :boolean kbuild.proc/?ProcsResult])
+  [:tuple :boolean kmono.proc/?ProcsResult])
 
 (defn- run-external-cmd
   [config changes pkg-name cmd-type]
@@ -27,9 +27,9 @@
         _ (ansi/assert-err! ext-cmd (str "Command of type [" cmd-type "] could not be found"))
         _ (ansi/print-info "\t" (str pkg-name "@" version " => " ext-cmd))
         build-result (bp/process {:extra-env
-                                  {"KBUILD_PKG_DEPS" pkg-deps-env
-                                   "KBUILD_PKG_VERSION" version
-                                   "KBUILD_PKG_NAME" pkg-name}
+                                  {"KMONO_PKG_DEPS" pkg-deps-env
+                                   "KMONO_PKG_VERSION" version
+                                   "KMONO_PKG_NAME" pkg-name}
                                   :out :string
                                   :err :string
                                   :dir (:dir pkg)}
@@ -58,7 +58,7 @@
               op-procs (->> stage
                             (map (partial operation-fn config changes))
                             (remove nil?))
-              [success? stage-result] (kbuild.proc/await-procs
+              [success? stage-result] (kmono.proc/await-procs
                                        op-procs terminate-on-fail?)]
           (if success?
             (do (ansi/print-info prefix "stage finished in"
@@ -114,23 +114,3 @@
   [config changes]
   (run-external-cmds config changes package-custom-command false))
 
-(comment
-  (def repo-path "/Users/armed/Developer/k16/transit/micro")
-  (def config (config.schema/load-config repo-path))
-  (def changes (git/scan-for-changes repo-path (:packages config)))
-  (into []
-        (comp
-         (filter (fn [[_ change]]
-                   (:build? change)))
-         (map second)
-         (map :package-name))
-        changes)
-  (:package-map config)
-  (build repo-path config)
-  (def release-result (release config changes))
-  (:build-order config)
-  (into {} (map (juxt :name identity)) (:packages config))
-  (adapter/prepare-deps-env (:adapter (second (:packages config)))
-                            changes)
-  (git/get-sorted-tags repo-path)
-  nil)
