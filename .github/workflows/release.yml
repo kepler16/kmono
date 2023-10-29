@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      GITHUB_USERNAME: ${{ github.actor }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USERNAME: ${{ secrets.ORG_GITHUB_ACTOR }}
+      GITHUB_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN }}
 
     steps:
       - name: Checkout git repo
