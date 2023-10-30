@@ -2,7 +2,7 @@
 
 ## Overview
 
-kmono is a build tool designed specifically for managing Clojure monorepos. With features like automatic change detection via git, semantic versioning through commit prefixes, and parallel build processing, kmono aims to simplify and automate your monorepo experience.
+kmono is a command runner tool designed specifically for managing Clojure monorepos. With features like automatic change detection via git, semantic versioning through commit prefixes, and parallel excution, kmono aims to simplify and automate your monorepo experience.
 
 ## Quick Start
 
@@ -52,7 +52,7 @@ Run a custom command:
 clojure -T:kmono run :exec \"just test\"
 ```
 
-During each command following environment variables are passed:
+During each command following environment variables are available for each package:
 - `KMONO_PKG_VERSION` - version of a package
 - `KMONO_PKG_DEPS` - dependency overrides for a package
 - `KMONO_PKG_NAME` - full name of a package artifact, e.g. `com.example/my-lib`
@@ -79,10 +79,10 @@ Package-specific configurations are done within each `deps.edn` file under the `
                ;; maven's artifactId
                ;; this is optional and inferred from a package's dir name
                :artifact my-lib
-               ;; below are two builtin commands
+               ;; below are two builtin commands, each package must provide this commands
                ;; run :exec :build
                :build-cmd "just build"
-               ;; run  :exec :release
+               ;; run :exec :release
                :release-cmd "just release"}
 ```
 
@@ -101,8 +101,14 @@ Package-specific configurations are done within each `deps.edn` file under the `
 
 ## What kmono is not
 
-- Not a build tool - it doesn't build, only runs commands
+- Not a build tool - it doesn't know how to build a package, it only runs a provided build command
 - Not a release tool - see above
+
+## Which means that
+
+- Each package must know how to build itself and provide a command
+- Each package must know how to release itself and provide a command
+- Each package can provide additional custom commands e.g. `just test`
 
 ## Future Plans
 
