@@ -127,10 +127,12 @@ If a package directory has `kmono.edn` file it will be preferred. Configuration 
  :release-cmd "just release"
  ;; since we are not relying on deps.edn's local/root anymore
  ;; list of local packages this package depends on
- :local-deps ["group1/package1" "group1/package2"]}
+ :local-deps [group1/package1 group1/package2]}
 ```
 ### Differences from deps.edn
 
 - Package can be any non deps.edn project and even non clojure
 - In deps.edn projects kmono overrides local deps by storing extra deps map in `KMONO_PKG_DEPS`, for generic packages
-`KMONO_PKG_DEPS` env variable contains semicolon separated package name/version: `group1/package1@1.0.0.0;group2/package2@1.0.0.0`
+`KMONO_PKG_DEPS` env variable contains semicolon separated package name/version: `group1/package1@1.0.0.0;group2/package2@1.0.0.0`.
+Package's build tool must know how to handle that.
+
