@@ -119,9 +119,9 @@
 (comment
   (def args {:snapshot? true
              :create-tags? false
-             :exec :build
+             :exec :release
              :dry-run? false})
-  (config/load-config "." ".")
+  (config/load-config "../../k42/agent")
   (def config (as-> (config/load-config "." "packages/*") x
                 (merge args x)
                 (m/decode ?RunParams x mt/default-value-transformer)
@@ -138,9 +138,10 @@
   (run-build config changes)
   (run-release config changes)
 
-  (run {:snapshot? true
+  (run {:snapshot? false
+        :repo-root "../../k42/agent"
         :create-tags? false
-        :exec :build
+        :exec :release
         :dry-run? false})
 
   nil)
