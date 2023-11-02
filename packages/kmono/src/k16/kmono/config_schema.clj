@@ -11,6 +11,10 @@
     [:vector :keyword]]
    [:release-cmd {:optional true}
     :string]
+   [:local-deps {:optional true}
+    [:or
+     [:vector :symbol]
+     [:vector :string]]]
    [:build-cmd {:optional true}
     :string]])
 
