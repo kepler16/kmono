@@ -21,19 +21,21 @@
                   (case cmd-type
                     :build-cmd dry/fake-build-cmd
                     :release-cmd dry/fake-release-cmd
-                    dry/fake-cusrom-cmd)
+                    dry/fake-custom-cmd)
                   (or (get pkg cmd-type)
                       (get config cmd-type)))
         _ (ansi/assert-err! ext-cmd (str "Command of type [" cmd-type "] could not be found"))
         _ (ansi/print-info "\t" (str pkg-name "@" version " => " ext-cmd))
-        build-result (bp/process {:extra-env
-                                  {"KMONO_PKG_DEPS" pkg-deps-env
-                                   "KMONO_PKG_VERSION" version
-                                   "KMONO_PKG_NAME" pkg-name}
-                                  :out :string
-                                  :err :string
-                                  :dir (:dir pkg)}
-                                 ext-cmd)]
+        build-result (if (or (nil? ext-cmd) (= :skip ext-cmd))
+                       {:skipped? true}
+                       (bp/process {:extra-env
+                                    {"KMONO_PKG_DEPS" pkg-deps-env
+                                     "KMONO_PKG_VERSION" version
+                                     "KMONO_PKG_NAME" pkg-name}
+                                    :out :string
+                                    :err :string
+                                    :dir (:dir pkg)}
+                                   ext-cmd))]
     [pkg-name build-result]))
 
 (defn get-milis

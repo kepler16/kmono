@@ -4,7 +4,31 @@
 
 kmono is a command runner tool designed specifically for managing Clojure monorepos. With features like automatic change detection via git, semantic versioning through commit prefixes, and parallel excution, kmono aims to simplify and automate your monorepo experience.
 
-## Quick Start
+## Features
+
+- **Change Detection**: Calculates changes per package by parsing git history for each package directory.
+- **Semantic Versioning**: Uses Angular-style commit prefixes to determine the type of version bump.
+- **Dependency Graph**: Creates a graph of interdependent packages and builds them in parallel groups.
+- **Local Dependency Management**: Replaces `local/root` dependencies with real version numbers during the build.
+
+## What kmono is not
+
+- Not a build tool - it doesn't know how to build a package, it only runs a provided build command
+- Not a release tool - see above
+
+## Which means that
+
+- Each package must know how to build itself and provide a command
+- Each package must know how to release itself and provide a command
+- Each package can provide additional custom commands e.g. `just test`
+
+## Limitations
+
+- Relies on git tags for versioning.
+- Requires a baseline tag; otherwise, the version defaults to `0.0.0.0`.
+- Currently only Clojure deps.edn specific.
+
+## Quick Start (deps.edn projects)
 
 **Directory Structure**
 
@@ -57,10 +81,10 @@ During each command following environment variables are available for each packa
 - `KMONO_PKG_DEPS` - dependency overrides for a package
 - `KMONO_PKG_NAME` - full name of a package artifact, e.g. `com.example/my-lib`
 
-## Additional CLI arguments
+### Additional CLI arguments
 
 One can pass this CLI args to `-T:kmono` command
-- `:include-unchanged?` - `boolean`, should kmono include unchanged packages into build process (default `false`)
+- `:include-unchanged?` -jk `boolean`, should kmono include unchanged packages into build process (default `false`)
 - `:snapshot?` - `boolean`, whether release is a snapshot, useful when releasing from PR branch (default `true`)
 - `:create-tags?` - `boolean`, should kmono create new baseline tags after release. Usually baseline tags are created on master releases, not snapshots (default `false`)
 - `:glob` - `string`, where to search for packages, defaults to `"packages/*"`
@@ -69,7 +93,7 @@ One can pass this CLI args to `-T:kmono` command
 - `:repo-root` - `string`, root of the monorepo, defaults to `"."`
 - `:dry-run?` - `boolean`, dry run to check command output (default `false`)
 
-## Configuration
+### Package configuration
 
 Package-specific configurations are done within each `deps.edn` file under the `:kmono/config` key:
 
@@ -86,32 +110,29 @@ Package-specific configurations are done within each `deps.edn` file under the `
                :release-cmd "just release"}
 ```
 
-## Features
+## Quick start (kmono.edn) - experimental 
 
-- **Change Detection**: Calculates changes per package by parsing git history for each package directory.
-- **Semantic Versioning**: Uses Angular-style commit prefixes to determine the type of version bump.
-- **Dependency Graph**: Creates a graph of interdependent packages and builds them in parallel groups.
-- **Local Dependency Management**: Replaces `local/root` dependencies with real version numbers during the build.
+If a package directory has `kmono.edn` file it will be preferred. Configuration schema is the same, but without `:kmono/config` top level key:
 
-## Limitations
+```clj
+{;; maven artifact's group
+ :group com.example
+ ;; maven's artifactId
+ ;; this is optional and inferred from a package's dir name
+ :artifact my-lib
+ ;; below are two builtin commands, each package must provide this commands
+ ;; run :exec :build
+ :build-cmd "just build"
+ ;; run :exec :release
+ :release-cmd "just release"
+ ;; since we are not relying on deps.edn's local/root anymore
+ ;; list of local packages this package depends on
+ :local-deps [group1/package1 group1/package2]}
+```
+### Differences from deps.edn
 
-- Relies on git tags for versioning.
-- Requires a baseline tag; otherwise, the version defaults to `0.0.0.0`.
-- Currently only Clojure deps.edn specific.
-
-## What kmono is not
-
-- Not a build tool - it doesn't know how to build a package, it only runs a provided build command
-- Not a release tool - see above
-
-## Which means that
-
-- Each package must know how to build itself and provide a command
-- Each package must know how to release itself and provide a command
-- Each package can provide additional custom commands e.g. `just test`
-
-## Future Plans
-
-- Support for `kmono.edn` as an alternative config file.
-- Extend support to other programming languages by handling local dependencies more generically.
+- Package can be any non deps.edn project and even non clojure
+- In deps.edn projects kmono overrides local deps by storing extra deps map in `KMONO_PKG_DEPS`, for generic packages
+`KMONO_PKG_DEPS` env variable contains semicolon separated package name/version: `group1/package1@1.0.0.0;group2/package2@1.0.0.0`.
+Package's build tool must know how to handle that.
 

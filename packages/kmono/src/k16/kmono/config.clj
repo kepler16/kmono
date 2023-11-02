@@ -6,6 +6,7 @@
    [flatland.ordered.set :as oset]
    [k16.kmono.adapter :as adapter]
    [k16.kmono.adapters.clojure-deps :as clj.deps]
+   [k16.kmono.adapters.kmono-edn :as kmono.edn]
    [k16.kmono.ansi :as ansi]
    [k16.kmono.config-schema :as schema]
    [k16.kmono.git :as git]
@@ -14,7 +15,9 @@
 
 (defn get-adapter
   [pkg-dir]
-  (clj.deps/->adapter (fs/file pkg-dir)))
+  (if (fs/exists? (fs/file pkg-dir "kmono.edn"))
+    (kmono.edn/->adapter (fs/file pkg-dir))
+    (clj.deps/->adapter (fs/file pkg-dir))))
 
 (defn- assert-schema!
   [?schema value]
@@ -29,7 +32,7 @@
 (defn- create-package-config [package-dir]
   (let [adapter (get-adapter package-dir)
         kb-pkg-config (->> (adapter/get-kmono-config adapter)
-                           (assert-schema! schema/?KbuldPackageConfig))
+                           (assert-schema! schema/?KmonoPackageConfig))
         artifact (or (:artifact kb-pkg-config)
                      (symbol (fs/file-name package-dir)))
         pkg-name (str (:group kb-pkg-config) "/" artifact)
