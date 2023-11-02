@@ -3,7 +3,7 @@
    [malli.util :as mu]))
 
 (def ?KmonoPackageConfig
-  [:map
+  [:map {:closed true}
    [:group [:or :string :symbol]]
    [:artifact {:optional true}
     [:maybe [:or :string :symbol]]]
