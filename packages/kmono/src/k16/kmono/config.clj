@@ -32,7 +32,7 @@
 (defn- create-package-config [package-dir]
   (let [adapter (get-adapter package-dir)
         kb-pkg-config (->> (adapter/get-kmono-config adapter)
-                           (assert-schema! schema/?KbuldPackageConfig))
+                           (assert-schema! schema/?KmonoPackageConfig))
         artifact (or (:artifact kb-pkg-config)
                      (symbol (fs/file-name package-dir)))
         pkg-name (str (:group kb-pkg-config) "/" artifact)

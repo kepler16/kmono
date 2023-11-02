@@ -2,7 +2,7 @@
   (:require
    [malli.util :as mu]))
 
-(def ?KbuldPackageConfig
+(def ?KmonoPackageConfig
   [:map
    [:group [:or :string :symbol]]
    [:artifact {:optional true}
@@ -11,11 +11,11 @@
     [:vector :keyword]]
    [:release-cmd {:optional true}
     :string]
-   [:build-cmd {:optional true} 
+   [:build-cmd {:optional true}
     :string]])
 
 (def ?Package
-  (-> ?KbuldPackageConfig
+  (-> ?KmonoPackageConfig
       (mu/required-keys [:artifact])
       (mu/assoc :depends-on [:vector :string])
       (mu/assoc :commit-sha :string)
