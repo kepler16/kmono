@@ -11,7 +11,8 @@
     [:vector :keyword]]
    [:release-cmd {:optional true}
     :string]
-   [:build-cmd :string]])
+   [:build-cmd {:optional true} 
+    :string]])
 
 (def ?Package
   (-> ?KbuldPackageConfig
