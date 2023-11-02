@@ -21,7 +21,7 @@
                   (case cmd-type
                     :build-cmd dry/fake-build-cmd
                     :release-cmd dry/fake-release-cmd
-                    dry/fake-cusrom-cmd)
+                    dry/fake-custom-cmd)
                   (or (get pkg cmd-type)
                       (get config cmd-type)))
         _ (ansi/assert-err! ext-cmd (str "Command of type [" cmd-type "] could not be found"))
