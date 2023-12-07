@@ -21,9 +21,11 @@
 (def ?Package
   (-> ?KmonoPackageConfig
       (mu/required-keys [:artifact])
-      (mu/assoc :depends-on [:vector :string])
-      (mu/assoc :commit-sha :string)
-      (mu/assoc :name :string)))
+      (mu/merge [:map
+                 [:depends-on [:vector :string]]
+                 [:commit-sha :string]
+                 [:name :string]
+                 [:dir :string]])))
 
 (def ?Packages
   [:vector ?Package])

@@ -37,7 +37,10 @@
                      (symbol (fs/file-name package-dir)))
         pkg-name (str (:group kb-pkg-config) "/" artifact)
         pkg-commit-sha (git/subdir-commit-sha package-dir)]
-
+    (assert pkg-commit-sha
+            (str "Failed to get commit-sha. Given package directory ["
+                 package-dir
+                 "] has no git history"))
     (let [pkg-config (merge kb-pkg-config
                             {:artifact (or (:artifact kb-pkg-config)
                                            (symbol (fs/file-name package-dir)))
@@ -145,6 +148,7 @@
          (assert-missing-deps! graph)
          (assert-cycles! graph)
          {:repo-root repo-root
+          :glob glob
           :packages packages
           :package-map (->pkg-map packages)
           :graph graph
