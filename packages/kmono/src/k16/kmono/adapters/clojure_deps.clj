@@ -31,7 +31,7 @@
           (filter local?)
           (map first)))))
 
-(defn- read-deps-edn
+(defn read-deps-edn!
   [package-path]
   (try
     (-> (fs/file package-path "deps.edn")
@@ -39,14 +39,15 @@
         (edn/read-string))
     (catch Throwable e
       (throw (ex-info "Could not read deps.edn file"
-                      {:event "read-deps-edn"}
+                      {:package-path package-path
+                       :event "read-deps-edn"}
                       e)))))
 
 (defn ->adapter
   ([package-path]
    (->adapter package-path 10000))
   ([package-path timeout-ms]
-   (let [deps-edn (read-deps-edn package-path)
+   (let [deps-edn (read-deps-edn! package-path)
          {:keys [group artifact] :as config}
          (-> (:kmono/config deps-edn)
              (adapter/ensure-artifact package-path))
