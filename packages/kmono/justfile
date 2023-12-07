@@ -8,6 +8,22 @@ test:
 build:
     clojure -T:meta run :alias lib :lib {{ library }} :version \"{{ version }}\"
 
+build-uber-native:
+    clojure -T:meta run :alias uber :include-aliases '[:native]' :uber-file \"target/kmono-uber.jar\"
+
 release:
     clojure -T:meta deploy :repository \"{{ maven_server }}\" :lib {{ library }} :version \"{{ version }}\"
+
+native-image:
+  $GRAALVM_HOME/bin/native-image \
+    -jar target/kmono-uber.jar \
+    --no-fallback \
+    --features=clj_easy.graal_build_time.InitClojureClasses \
+    --report-unsupported-elements-at-runtime \
+    -o target/kmono \
+    -H:+UnlockExperimentalVMOptions \
+    -H:+ReportExceptionStackTraces \
+    --initialize-at-build-time=org.eclipse.aether.transport.http.HttpTransporterFactory
+
+build-native: build-uber-native native-image
 

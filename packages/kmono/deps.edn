@@ -15,6 +15,10 @@
         org.flatland/ordered {:mvn/version "1.15.11"}}
 
  :aliases {:lib {:k16/metabuild {:kind :jar}}
-           :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.86.1355"}}}
+           :uber {:k16/metabuild {:kind :uber
+                                  :main k16.kmono.main}}
+           :native {:extra-deps {com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}}
+           :test {:extra-paths ["test"]
+                  :extra-deps {lambdaisland/kaocha {:mvn/version "1.86.1355"}}}
            :meta {:deps {kepler16/metabuild {:mvn/version "0.10.0"}}
                   :ns-default k16.metabuild.api}}}
