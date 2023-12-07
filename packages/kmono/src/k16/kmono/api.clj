@@ -176,9 +176,9 @@
   (run-release config changes)
 
   (run {:snapshot? false
-         :repo-root "../../k42/agent"
-         :create-tags? false
-         :exec :release
-         :dry-run? false})
+        :repo-root "../../k42/agent"
+        :create-tags? false
+        :exec :release
+        :dry-run? false})
 
   nil)
