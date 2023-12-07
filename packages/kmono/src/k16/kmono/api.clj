@@ -132,8 +132,9 @@
                              "[cider.nrepl/cider-middleware]"]}})
 
 (defn repl
-  [{:keys [aliases package-aliases repo-root glob]}]
+  [{:keys [aliases package-aliases repo-root glob] :as params}]
   (ansi/print-info "Starting kmono REPL...")
+  (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
   (let [config (config/load-config repo-root glob)
         package-overrides (repl.deps/construct-sdeps-overrides!
                            config package-aliases)
