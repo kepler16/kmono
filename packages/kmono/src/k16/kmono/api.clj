@@ -5,6 +5,7 @@
    [k16.kmono.config :as config]
    [k16.kmono.exec :as exec]
    [k16.kmono.git :as git]
+   [k16.kmono.repl.deps :as repl.deps]
    [malli.core :as m]
    [malli.transform :as mt]))
 
@@ -115,6 +116,36 @@
     (if success?
       (System/exit 0)
       (System/exit 1))))
+
+(def ?ReplParams
+  [:map
+   [:aliases {:optional true}
+    [:vector :keyword]]
+   [:packages-aliases {:optional true}
+    [:vector :keyword]]])
+
+(def nrepl-overrides
+  {:kmono-nrepl {:extra-deps {'cider/cider-nrepl {:mvn/version "0.44.0"}}
+                 :main-opts ["-m"
+                             "nrepl.cmdline"
+                             "--middleware"
+                             "[cider.nrepl/cider-middleware]"]}})
+
+(defn repl
+  [{:keys [aliases package-aliases repo-root glob]}]
+  (ansi/print-info "Starting kmono REPL...")
+  (let [config (config/load-config repo-root glob)
+        package-overrides (repl.deps/construct-sdeps-overrides!
+                           config package-aliases)
+        sdeps-overrides (merge package-overrides nrepl-overrides)
+        sdeps ["-Sdeps" (str "\"" (pr-str sdeps-overrides) "\"")]
+        main-opts (if (or (seq package-aliases) (seq aliases))
+                    [(str "-M"
+                          (string/join aliases)
+                          (string/join package-aliases)
+                          ":kmono-nrepl")]
+                    ["-M"])]
+    (concat ["clojure"] sdeps main-opts)))
 
 (comment
   (def args {:snapshot? true

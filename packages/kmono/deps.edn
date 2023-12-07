@@ -12,7 +12,8 @@
         org.apache.maven.resolver/maven-resolver-api {:mvn/version "1.9.15"}
         org.clojure/tools.deps {:mvn/version "0.18.1354"}
         metosin/malli {:mvn/version "0.11.0"}
-        org.flatland/ordered {:mvn/version "1.15.11"}}
+        org.flatland/ordered {:mvn/version "1.15.11"}
+        org.clojure/tools.cli {:mvn/version "1.0.219"}}
 
  :aliases {:lib {:k16/metabuild {:kind :jar}}
            :uber {:k16/metabuild {:kind :uber
