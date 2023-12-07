@@ -51,9 +51,9 @@ jobs:
               "username": "${{ github.actor }}",
               "password": "${{ secrets.GITHUB_TOKEN }}"}]
 
-      # - name: Test
-      #   run: |
-      #     just test ":snapshot?" ${{ github.ref_name != 'master' }}
+      - name: Test
+        run: |
+          just test
 
       - name: Build
         run: |
