@@ -87,9 +87,7 @@
           (:show-help? options)
           (print-help run-title summary)
 
-          :else (do
-                  (println "run mode")
-                  (api/run options))))
+          :else (api/run options)))
       repl?
       (let [{:keys [options summary errors]}
             (tools.cli/parse-opts opts repl-cli-opts)]
@@ -100,9 +98,7 @@
 
           (:show-help? options) (print-help repl-title summary)
 
-          :else (do
-                  (println "repl mode")
-                  (println (api/repl options)))))
+          :else (api/repl options)))
 
       help?
       (let [run-summary (-> (tools.cli/parse-opts [] run-cli-opts)

@@ -1,5 +1,6 @@
 (ns k16.kmono.api
   (:require
+   [babashka.process :as bp]
    [clojure.string :as string]
    [k16.kmono.ansi :as ansi]
    [k16.kmono.config :as config]
@@ -124,7 +125,7 @@
    [:packages-aliases {:optional true}
     [:vector :keyword]]])
 
-(def nrepl-overrides
+(def nrepl-alias
   {:kmono-nrepl {:extra-deps {'cider/cider-nrepl {:mvn/version "0.44.0"}}
                  :main-opts ["-m"
                              "nrepl.cmdline"
@@ -135,18 +136,22 @@
   [{:keys [aliases package-aliases repo-root glob] :as params}]
   (ansi/print-info "Starting kmono REPL...")
   (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
-  (let [config (config/load-config repo-root glob)
-        package-overrides (repl.deps/construct-sdeps-overrides!
-                           config package-aliases)
-        sdeps-overrides (merge package-overrides nrepl-overrides)
-        sdeps ["-Sdeps" (str "\"" (pr-str sdeps-overrides) "\"")]
-        main-opts (if (or (seq package-aliases) (seq aliases))
-                    [(str "-M"
-                          (string/join aliases)
-                          (string/join package-aliases)
-                          ":kmono-nrepl")]
-                    ["-M"])]
-    (concat ["clojure"] sdeps main-opts)))
+  (binding [*print-namespace-maps* false]
+    (let [config (config/load-config repo-root glob)
+          package-overrides (repl.deps/construct-sdeps-overrides!
+                             config package-aliases)
+          sdeps-overrides (update package-overrides :aliases merge nrepl-alias)
+          sdeps (str "-Sdeps '" (pr-str sdeps-overrides) "'")
+          main-opts (if (or (seq package-aliases) (seq aliases))
+                      (str "-M"
+                           (string/join aliases)
+                           (string/join package-aliases)
+                           ":kmono-nrepl")
+                      "-M")
+          clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
+      (ansi/print-info "running clojure...")
+      (println (ansi/green clojure-cmd))
+      (bp/shell clojure-cmd))))
 
 (comment
   (def args {:snapshot? true
@@ -171,9 +176,9 @@
   (run-release config changes)
 
   (run {:snapshot? false
-        :repo-root "../../k42/agent"
-        :create-tags? false
-        :exec :release
-        :dry-run? false})
+         :repo-root "../../k42/agent"
+         :create-tags? false
+         :exec :release
+         :dry-run? false})
 
   nil)
