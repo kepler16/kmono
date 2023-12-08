@@ -2,6 +2,7 @@
   (:require
    [babashka.fs :as fs]
    [babashka.process :as bp]
+   [clojure.pprint :as pprint]
    [clojure.string :as string]
    [clojure.walk :as walk]
    [k16.kmono.adapters.clojure-deps :as clj.deps]
@@ -101,16 +102,24 @@
                              "--middleware"
                              "[cider.nrepl/cider-middleware]"]}})
 
+(defn- print-clojure-cmd
+  [sdeps-overrides args-str]
+  (ansi/print-shifted (ansi/green "\nclojure -Sdeps"))
+  (ansi/print-shifted (ansi/green (str (with-out-str
+                                         (pprint/pprint sdeps-overrides))
+                                       "\n" args-str))))
+
 (defn- cp!
-  [{:keys [package-aliases aliases cp-file]} sdeps]
+  [{:keys [package-aliases aliases cp-file]} sdeps-overrides]
   (let [cp-opts (str "-A"
                      (string/join aliases)
                      (string/join package-aliases))
+        sdeps (str "-Sdeps '" (pr-str sdeps-overrides) "'")
         clojure-cmd (string/join " " ["clojure" sdeps cp-opts "-Spath"])]
     (if (seq cp-file)
       (do
         (ansi/print-info "Saving classpath to a file:" cp-file)
-        (ansi/print-raw (ansi/green clojure-cmd))
+        (print-clojure-cmd sdeps-overrides (str cp-opts " -Spath"))
         (bp/shell {:out cp-file} clojure-cmd))
       (bp/shell clojure-cmd))))
 
@@ -121,10 +130,9 @@
   (let [config (config/load-config repo-root glob)
         package-overrides (construct-sdeps-overrides!
                            config package-aliases)
-        sdeps-overrides (update package-overrides :aliases merge nrepl-alias)
-        sdeps (str "-Sdeps '" (pr-str sdeps-overrides) "'")]
+        sdeps-overrides (update package-overrides :aliases merge nrepl-alias)]
     (cp! (assoc params :package-aliases (-> package-overrides :aliases (keys)))
-         sdeps)))
+         sdeps-overrides)))
 
 (defn run-repl
   [{:keys [aliases package-aliases repo-root glob cp-file] :as params}]
@@ -142,8 +150,8 @@
                          ":kmono-nrepl")
           clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
       (when cp-file
-        (cp! params sdeps))
+        (cp! params sdeps-overrides))
       (ansi/print-info "Running clojure...")
-      (ansi/print-raw (ansi/green clojure-cmd))
+      (print-clojure-cmd sdeps-overrides main-opts)
       (bp/shell clojure-cmd))))
 
