@@ -4,7 +4,7 @@
    [k16.kmono.api :as api])
   (:gen-class))
 
-(def run-cli-opts
+(def run-cli-spec
   [["-h" "--help"
     "Show this help"
     :id :show-help?]
@@ -47,7 +47,7 @@
    description
    :default default-value])
 
-(def repl-cli-opts
+(def repl-cli-spec
   [["-h" "--help"
     "Show this help"
     :id :show-help?]
@@ -65,8 +65,8 @@
     :default "packages/*"]
    (cp-option nil "Classpath file name (default: do nothing)")])
 
-(def cp-cli-opts
-  (conj (butlast repl-cli-opts)
+(def cp-cli-spec
+  (conj (butlast repl-cli-spec)
         (cp-option nil "Classpath file name (default: print to output)")))
 
 (defn print-help
@@ -79,60 +79,44 @@
 (def repl-title "=== repl - start a REPL for monorepo ===")
 (def cp-title "=== cp - save/print a classpath ===")
 
+(defn make-handler
+  [cli-spec help-title run-fn]
+  (fn [opts]
+    (let [{:keys [options summary errors]}
+          (tools.cli/parse-opts opts cli-spec)]
+      (cond
+        errors (do
+                 (print-help help-title summary)
+                 (println errors))
+
+        (:show-help? options)
+        (print-help help-title summary)
+
+        :else (run-fn options)))))
+
+(def modes
+  {"run" (make-handler run-cli-spec run-title api/run)
+   "repl" (make-handler repl-cli-spec repl-title api/repl)
+   "cp" (make-handler cp-cli-spec cp-title api/generate-classpath!)
+   "help" (fn [_]
+            (let [run-summary (-> (tools.cli/parse-opts [] run-cli-spec)
+                                  :summary)
+                  repl-summary (-> (tools.cli/parse-opts [] repl-cli-spec)
+                                   :summary)
+                  cp-summary (-> (tools.cli/parse-opts [] cp-cli-spec)
+                                 :summary)]
+              (println "kmono <mode> opts...\n")
+              (println "Modes:")
+              (print-help run-title run-summary)
+              (print-help repl-title repl-summary)
+              (print-help cp-title cp-summary)))})
+
 (defn -main [& args]
   (let [mode (first args)
         opts (rest args)
-        repl? (= mode "repl")
-        run? (= mode "run")
-        cp? (= mode "cp")
-        help? (and (not repl?) (not run?) (not cp?))]
-    (cond
-      run?
-      (let [{:keys [options summary errors]}
-            (tools.cli/parse-opts opts run-cli-opts)]
-        (cond
-          errors (do
-                   (print-help run-title summary)
-                   (println errors))
-
-          (:show-help? options)
-          (print-help run-title summary)
-
-          :else (api/run options)))
-      repl?
-      (let [{:keys [options summary errors]}
-            (tools.cli/parse-opts opts repl-cli-opts)]
-        (cond
-          errors (do
-                   (print-help repl-title summary)
-                   (println errors))
-
-          (:show-help? options) (print-help repl-title summary)
-
-          :else (api/repl options)))
-
-      cp?
-      (let [{:keys [options summary errors]}
-            (tools.cli/parse-opts opts cp-cli-opts)]
-        (cond
-          errors (do
-                   (print-help cp-title summary)
-                   (println errors))
-
-          (:show-help? options) (print-help cp-title summary)
-
-          :else (api/generate-classpath! options)))
-
-      help?
-      (let [run-summary (-> (tools.cli/parse-opts [] run-cli-opts)
-                            :summary)
-            repl-summary (-> (tools.cli/parse-opts [] repl-cli-opts)
-                             :summary)]
-        (println "kmono <mode> opts...\n")
-        (println "Modes:")
-        (print-help run-title run-summary)
-        (print-help repl-title repl-summary)
-        (print-help cp-title repl-summary)))
+        mode-handler (or (get modes mode)
+                         (get modes "help"))]
+    (mode-handler opts)
     (System/exit 0)))
 
 (comment
