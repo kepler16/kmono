@@ -7,7 +7,10 @@
   (:gen-class))
 
 (def run-cli-opts
-  [["-x" "--exec CMD"
+  [["-h" "--help"
+    "Show this help"
+    :id :show-help?]
+   ["-x" "--exec CMD"
     "Command to exec [build, release, <custom cmd>]"
     :default :build
     :parse-fn (fn [cmd]
@@ -34,17 +37,23 @@
     "Should include unchanged packages flag (default: true)"
     :id :include-unchanged?
     :default true
-    :parse-fn #(Boolean/parseBoolean %)]
-   ["-h" "--help"
-    "Show this help"
-    :id :show-help?]])
+    :parse-fn #(Boolean/parseBoolean %)]])
 
 (defn- parse-aliases
   [aliases-arg]
   (->> aliases-arg (re-seq #"[/a-zA-Z0-9]+") (mapv keyword)))
 
+(defn- cp-option
+  [default-value description]
+  ["-f" "--cp-file FILENAME"
+   description
+   :default default-value])
+
 (def repl-cli-opts
-  [["-A" "--aliases :alias1:alias2:namespace/alias3"
+  [["-h" "--help"
+    "Show this help"
+    :id :show-help?]
+   ["-A" "--aliases :alias1:alias2:namespace/alias3"
     "List of aliases from root deps.edn"
     :parse-fn parse-aliases]
    ["-P" "--package-aliases :package/alias1:package/alias2"
@@ -56,9 +65,11 @@
    ["-g" "--glob GLOB"
     "A glob describing where to search for packages, (default: 'packages/*')"
     :default "packages/*"]
-   ["-h" "--help"
-    "Show this help"
-    :id :show-help?]])
+   (cp-option nil "Classpath file name (default: do nothing)")])
+
+(def cp-cli-opts
+  (conj (butlast repl-cli-opts)
+        (cp-option nil "Classpath file name (default: print to output)")))
 
 (defn print-help
   [title summary]
@@ -68,13 +79,15 @@
 
 (def run-title "=== run - execute command for monorepo ===")
 (def repl-title "=== repl - start a REPL for monorepo ===")
+(def cp-title "=== cp - save/print a classpath ===")
 
 (defn -main [& args]
   (let [mode (first args)
         opts (rest args)
         repl? (= mode "repl")
         run? (= mode "run")
-        help? (and (not repl?) (not run?))]
+        cp? (= mode "cp")
+        help? (and (not repl?) (not run?) (not cp?))]
     (cond
       run?
       (let [{:keys [options summary errors]}
@@ -100,6 +113,18 @@
 
           :else (api/repl options)))
 
+      cp?
+      (let [{:keys [options summary errors]}
+            (tools.cli/parse-opts opts cp-cli-opts)]
+        (cond
+          errors (do
+                   (print-help cp-title summary)
+                   (println errors))
+
+          (:show-help? options) (print-help cp-title summary)
+
+          :else (api/generate-classpath! options)))
+
       help?
       (let [run-summary (-> (tools.cli/parse-opts [] run-cli-opts)
                             :summary)
@@ -108,7 +133,9 @@
         (println "kmono <mode> opts...\n")
         (println "Modes:")
         (print-help run-title run-summary)
-        (print-help repl-title repl-summary)))))
+        (print-help repl-title repl-summary)
+        (print-help cp-title repl-summary)))
+    (System/exit 0)))
 
 (comment
   (-main "run" "-x" "build")

@@ -118,40 +118,14 @@
       (System/exit 0)
       (System/exit 1))))
 
-(def ?ReplParams
-  [:map
-   [:aliases {:optional true}
-    [:vector :keyword]]
-   [:packages-aliases {:optional true}
-    [:vector :keyword]]])
-
-(def nrepl-alias
-  {:kmono-nrepl {:extra-deps {'cider/cider-nrepl {:mvn/version "0.44.0"}}
-                 :main-opts ["-m"
-                             "nrepl.cmdline"
-                             "--middleware"
-                             "[cider.nrepl/cider-middleware]"]}})
-
 (defn repl
-  [{:keys [aliases package-aliases repo-root glob] :as params}]
-  (ansi/print-info "Starting kmono REPL...")
-  (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
-  (binding [*print-namespace-maps* false]
-    (let [config (config/load-config repo-root glob)
-          package-overrides (repl.deps/construct-sdeps-overrides!
-                             config package-aliases)
-          sdeps-overrides (update package-overrides :aliases merge nrepl-alias)
-          sdeps (str "-Sdeps '" (pr-str sdeps-overrides) "'")
-          main-opts (if (or (seq package-aliases) (seq aliases))
-                      (str "-M"
-                           (string/join aliases)
-                           (string/join package-aliases)
-                           ":kmono-nrepl")
-                      "-M")
-          clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
-      (ansi/print-info "running clojure...")
-      (println (ansi/green clojure-cmd))
-      (bp/shell clojure-cmd))))
+  [params]
+  (repl.deps/run-repl params))
+
+(defn generate-classpath!
+  [params]
+  (binding [ansi/*logs-enabled* (:cp-file params)]
+    (repl.deps/generate-classpath! params)))
 
 (comment
   (def args {:snapshot? true
