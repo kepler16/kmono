@@ -53,6 +53,11 @@
     (println ERROR_PREFIX msg)
     (System/exit 1)))
 
+(defn print-raw
+  [output]
+  (when *logs-enabled*
+    (println output)))
+
 (defn print-shifted
   [output]
   (when *logs-enabled*

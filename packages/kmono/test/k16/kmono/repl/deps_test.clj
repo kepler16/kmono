@@ -8,9 +8,11 @@
   (let [config (config/load-config "test/fixtures/example_repo")]
     (testing "Should extract aliases and relativize paths"
       (is (= '{:aliases
-               {:bar/test {:extra-deps {some/dependency {:mvn/version "1.0.0"}}
-                           :extra-paths ["packages/bar/test"]}
-                :foo/test {:extra-deps {kepler16/bar {:local/root "packages/bar"}}
-                           :extra-paths ["packages/foo/test"]}}}
+               {:kmono/package-deps {:extra-deps {packages/kepler16/bar-lib {:local/root "test/fixtures/example_repo/packages/bar"},
+                                                packages/kepler16/foo-lib {:local/root "test/fixtures/example_repo/packages/foo"}}}
+                :packages/bar.test {:extra-deps {some/dependency {:mvn/version "1.0.0"}}
+                                    :extra-paths ["packages/bar/test"]}
+                :packages/foo.test {:extra-deps {kepler16/bar {:local/root "packages/bar"}}
+                                    :extra-paths ["packages/foo/test"]}}}
              (repl.deps/construct-sdeps-overrides! config [:bar/test
                                                            :foo/test]))))))

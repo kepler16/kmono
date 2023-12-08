@@ -36,18 +36,18 @@
          form))
      aliases-map)))
 
-(defn- namespaced?
-  [kw]
-  (and (keyword? kw) (not (nil? (namespace kw)))))
+(defn all-packages-deps-alias
+  [packages]
+  (let [pkg-deps (reduce (fn [deps {:keys [name dir]}]
+                           (assoc deps
+                                  (symbol (str "packages/" name))
+                                  {:local/root dir}))
+                         {}
+                         packages)]
+    (when (seq pkg-deps)
+      {:kmono/package-deps {:extra-deps pkg-deps}})))
 
-(defn package-dependency-alias
-  [package-name package-dir]
-  (let [full-name (str "packages/" package-name)]
-    {(keyword full-name)
-     {:extra-deps
-      {(symbol full-name) {:local/root package-dir}}}}))
-
-(defn get-package-alias-map!
+(defn get-package-alias-map
   "Returns alias map from a given package/alias pair.
   Accepts kmono config (`config.schema/?Config`) and a package/alias pair as
   a namespaced keyord where namespace is a package name and a name is an alias,
@@ -57,22 +57,17 @@
   (let [pkg-alias (keyword package-alias)
         package-name (or (namespace pkg-alias) (name pkg-alias))
         package-dir (get package-dirs package-name)
-        base-alias (package-dependency-alias package-name package-dir)]
-    (assert package-name (str "Could not get package from package-alias ["
-                              package-alias "]"))
-    (if (namespaced? pkg-alias)
-      (let [alias-key (-> pkg-alias (name) (keyword))
-            _ (assert alias-key (str "Could not get alias from package-alias ["
-                                     package-alias "]"))
-            deps-edn (clj.deps/read-deps-edn! package-dir)
-            alias-name (keyword (str "packages/" package-name "." (name alias-key)))]
-        (merge
-         base-alias
-         {alias-name (relativize-paths
-                      repo-root
-                      package-dir
-                      (get-in deps-edn [:aliases alias-key]))}))
-      base-alias)))
+        alias-key (-> pkg-alias (name) (keyword))
+        _ (assert package-name (str "Could not get package from package-alias ["
+                                    package-alias "]"))
+        _ (assert alias-key (str "Could not get alias from package-alias ["
+                                 package-alias "]"))
+        deps-edn (clj.deps/read-deps-edn! package-dir)
+        alias-name (keyword (str "packages/" package-name "." (name alias-key)))]
+    {alias-name (relativize-paths
+                 repo-root
+                 package-dir
+                 (get-in deps-edn [:aliases alias-key]))}))
 
 (defn construct-sdeps-overrides!
   "Accepts kmono config and a collection pairs of package/alias and
@@ -84,13 +79,15 @@
                                  [(fs/file-name (fs/path (:dir pkg)))
                                   (:dir pkg)]))
                           (into {}))
-        aliases (into {}
-                      (comp
-                       (map (partial get-package-alias-map!
-                                     {:package-dirs package-dirs
-                                      :repo-root (:repo-root config)})))
-                      package-alias-pairs)]
-    {:aliases aliases}))
+        package-deps (all-packages-deps-alias (:packages config))
+        package-aliases (into {}
+                              (comp
+                               (map (partial get-package-alias-map
+                                             {:package-dirs package-dirs
+                                              :repo-root (:repo-root config)})))
+                              package-alias-pairs)
+        override {:aliases (merge package-deps package-aliases)}]
+    override))
 
 (def ?ReplParams
   [:map
@@ -108,16 +105,14 @@
 
 (defn- cp!
   [{:keys [package-aliases aliases cp-file]} sdeps]
-  (let [cp-opts (if (or (seq package-aliases) (seq aliases))
-                  (str "-A"
-                       (string/join aliases)
-                       (string/join package-aliases))
-                  "-A")
+  (let [cp-opts (str "-A"
+                     (string/join aliases)
+                     (string/join package-aliases))
         clojure-cmd (string/join " " ["clojure" sdeps cp-opts "-Spath"])]
     (if (seq cp-file)
       (do
         (ansi/print-info "Saving classpath to a file:" cp-file)
-        (println (ansi/green clojure-cmd))
+        (ansi/print-raw (ansi/green clojure-cmd))
         (bp/shell {:out cp-file} clojure-cmd))
       (bp/shell clojure-cmd))))
 
@@ -143,16 +138,14 @@
                              config package-aliases)
           sdeps-overrides (update package-overrides :aliases merge nrepl-alias)
           sdeps (str "-Sdeps '" (pr-str sdeps-overrides) "'")
-          main-opts (if (or (seq package-aliases) (seq aliases))
-                      (str "-M"
-                           (string/join aliases)
-                           (string/join (-> package-overrides :aliases (keys)))
-                           ":kmono-nrepl")
-                      "-M")
+          main-opts (str "-M"
+                         (string/join aliases)
+                         (string/join (-> package-overrides :aliases (keys)))
+                         ":kmono-nrepl")
           clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
       (when cp-file
         (cp! params sdeps))
       (ansi/print-info "Running clojure...")
-      (println (ansi/green clojure-cmd))
+      (ansi/print-raw (ansi/green clojure-cmd))
       (bp/shell clojure-cmd))))
 
