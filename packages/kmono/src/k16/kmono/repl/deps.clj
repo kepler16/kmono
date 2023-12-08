@@ -39,9 +39,7 @@
 (defn all-packages-deps-alias
   [packages]
   (let [pkg-deps (reduce (fn [deps {:keys [name dir]}]
-                           (assoc deps
-                                  (symbol (str "packages/" name))
-                                  {:local/root dir}))
+                           (assoc deps (symbol name) {:local/root dir}))
                          {}
                          packages)]
     (when (seq pkg-deps)

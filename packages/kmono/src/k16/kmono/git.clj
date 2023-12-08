@@ -33,9 +33,9 @@
 
 (defn subdir-changes
   [sub-dir tag]
-  (if-let [out (run-cmd! sub-dir
-                         "git log --pretty=format:\"%s\" "
-                         tag "..HEAD -- .")]
+  (when-let [out (run-cmd! sub-dir
+                           "git log --pretty=format:\"%s\" "
+                           tag "..HEAD -- .")]
     (if (coll? out)
       (vec out)
       [out])))

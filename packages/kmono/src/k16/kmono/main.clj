@@ -1,8 +1,6 @@
 (ns k16.kmono.main
   (:require
-   [clojure.pprint :as pprint]
    [clojure.tools.cli :as tools.cli]
-   [k16.kmono.repl.deps :as repl.deps]
    [k16.kmono.api :as api])
   (:gen-class))
 
