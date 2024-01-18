@@ -3,15 +3,7 @@ on: [push]
 
 jobs:
   build-and-publish:
-    permissions:
-      contents: write
-      packages: write
-
     runs-on: ubuntu-latest
-
-    env:
-      GITHUB_USERNAME: ${{ secrets.ORG_GITHUB_ACTOR }}
-      GITHUB_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN }}
 
     steps:
       - name: Checkout git repo
@@ -40,17 +32,6 @@ jobs:
         with:
           cli: latest
 
-      - uses: s4u/maven-settings-action@v2.4.1
-        with:
-          githubServer: false
-          servers: |
-            [{"id": "github-kepler",
-              "username": "${{ secrets.ORG_GITHUB_ACTOR }}",
-              "password": "${{ secrets.ORG_GITHUB_TOKEN }}"},
-             {"id": "github-kepler-kmono",
-              "username": "${{ github.actor }}",
-              "password": "${{ secrets.GITHUB_TOKEN }}"}]
-
       # - name: Test
       #   run: |
       #     just test ":snapshot?" ${{ github.ref_name != 'master' }}
@@ -60,6 +41,9 @@ jobs:
           just build ":snapshot?" ${{ github.ref_name != 'master' }}
 
       - name: Release
+        env:
+          CLOJARS_USERNAME: infrastructure-kepler16-com
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
         run: |
           just release \
             ":snapshot?" ${{ github.ref_name != 'master' }} \
