@@ -15,9 +15,8 @@
 
 (defn get-adapter
   [pkg-dir]
-  (if (fs/exists? (fs/file pkg-dir "kmono.edn"))
-    (kmono.edn/->adapter (fs/file pkg-dir))
-    (clj.deps/->adapter (fs/file pkg-dir))))
+  (or (kmono.edn/->adapter (fs/file pkg-dir))
+      (clj.deps/->adapter (fs/file pkg-dir))))
 
 (defn- assert-schema!
   [?schema value]
@@ -30,28 +29,32 @@
   (assert-schema! schema/?Config config))
 
 (defn- create-package-config [package-dir]
-  (let [adapter (get-adapter package-dir)
-        kb-pkg-config (->> (adapter/get-kmono-config adapter)
-                           (assert-schema! schema/?KmonoPackageConfig))
-        artifact (or (:artifact kb-pkg-config)
-                     (symbol (fs/file-name package-dir)))
-        pkg-name (str (:group kb-pkg-config) "/" artifact)
-        pkg-commit-sha (git/subdir-commit-sha package-dir)]
+  (when-let [adapter (get-adapter package-dir)]
+    (let [kb-pkg-config (->> (adapter/get-kmono-config adapter)
+                             (assert-schema! schema/?KmonoPackageConfig))
+          artifact (or (:artifact kb-pkg-config)
+                       (symbol (fs/file-name package-dir)))
+          pkg-name (str (:group kb-pkg-config) "/" artifact)
+          pkg-commit-sha (git/subdir-commit-sha package-dir)
 
-    (let [pkg-config (merge kb-pkg-config
+          pkg-config (merge kb-pkg-config
                             {:artifact (or (:artifact kb-pkg-config)
                                            (symbol (fs/file-name package-dir)))
                              :name pkg-name
                              :commit-sha pkg-commit-sha
                              :adapter adapter
                              :dir (str package-dir)})]
+
       (->> (assoc pkg-config :depends-on (adapter/get-managed-deps adapter))
            (assert-schema! schema/?Package)))))
 
 (defn- create-config
   [repo-root glob]
   (let [package-dirs (fs/glob repo-root glob)]
-    {:packages (mapv create-package-config package-dirs)}))
+    {:packages (->> package-dirs
+                    (map create-package-config)
+                    (remove nil?)
+                    vec)}))
 
 (defn create-graph
   {:malli/schema [:=> [:cat schema/?Packages] schema/?Graph]}
@@ -149,4 +152,3 @@
           :package-map (->pkg-map packages)
           :graph graph
           :build-order (parallel-topo-sort graph)})))))
-
