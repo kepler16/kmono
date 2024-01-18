@@ -58,15 +58,13 @@
 
            (prepare-deps-env [_ changes]
              (binding [*print-namespace-maps* false]
-               (str "'"
-                    {:deps
-                     (into {} (map
-                               (fn [dep]
-                                 [(symbol dep)
-                                  {:mvn/version
-                                   (get-in changes [dep :version])}]))
-                           managed-deps)}
-                    "'")))
+               (pr-str {:deps
+                        (into {} (map
+                                  (fn [dep]
+                                    [(symbol dep)
+                                     {:mvn/version
+                                      (get-in changes [dep :version])}]))
+                              managed-deps)})))
 
            (get-managed-deps [_] managed-deps)
 
