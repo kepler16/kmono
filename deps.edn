@@ -8,4 +8,4 @@
                               "-Dclojure.storm.instrumentOnlyPrefixes=k16."]}
            :dev {:extra-deps {kepler16/kmono {:local/root "packages/kmono"}}}
            :kmono {:deps {kepler16/kmono {:local/root "packages/kmono"}}
-                   :ns-default k16.kmono.api}}}
+                   :main-opts ["-m" "k16.kmono.main"]}}}
