@@ -1,6 +1,5 @@
 (ns k16.kmono.api
   (:require
-   [babashka.process :as bp]
    [clojure.string :as string]
    [k16.kmono.ansi :as ansi]
    [k16.kmono.config :as config]

@@ -47,7 +47,7 @@
   ([package-path]
    (->adapter package-path 10000))
   ([package-path timeout-ms]
-   (let [deps-edn (read-deps-edn package-path)
+   (let [deps-edn (read-deps-edn! package-path)
          kmono-config (:kmono/config deps-edn)]
      (when kmono-config
        (let [{:keys [group artifact] :as config}
