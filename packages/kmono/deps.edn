@@ -16,7 +16,6 @@
 
  :aliases {:build {:deps {local/build {:local/root "../../build"}}
                    :ns-default build}
-           :lib {:k16/metabuild {:kind :jar}}
            :native {:extra-deps {com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}}
            :test {:extra-paths ["test"]
                   :extra-deps {lambdaisland/kaocha {:mvn/version "1.86.1355"}}}}}

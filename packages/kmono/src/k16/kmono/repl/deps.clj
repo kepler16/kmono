@@ -110,7 +110,7 @@
                                        "\n" args-str))))
 
 (defn- cp!
-  [{:keys [package-aliases aliases cp-file]} sdeps-overrides]
+  [{:keys [package-aliases aliases repo-root cp-file]} sdeps-overrides]
   (let [cp-opts (str "-A"
                      (string/join aliases)
                      (string/join package-aliases))
@@ -120,8 +120,8 @@
       (do
         (ansi/print-info "Saving classpath to a file:" cp-file)
         (print-clojure-cmd sdeps-overrides (str cp-opts " -Spath"))
-        (bp/shell {:out cp-file} clojure-cmd))
-      (bp/shell clojure-cmd))))
+        (bp/shell {:dir repo-root :out cp-file} clojure-cmd))
+      (bp/shell {:dir repo-root} clojure-cmd))))
 
 (defn generate-classpath!
   [{:keys [package-aliases repo-root glob] :as params}]
