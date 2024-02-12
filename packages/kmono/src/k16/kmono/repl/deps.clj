@@ -56,14 +56,13 @@
   [{:keys [package-dirs repo-root]} package-alias]
   (let [package-name (or (namespace package-alias) (name package-alias))
         package-dir (get package-dirs package-name)
-        package-dir-parent (fs/file-name (fs/parent package-dir))
         alias-key (-> package-alias (name) (keyword))
         _ (assert package-name (str "Could not get package from package-alias ["
                                     package-alias "]"))
         _ (assert alias-key (str "Could not get alias from package-alias ["
                                  package-alias "]"))
         deps-edn (clj.deps/read-deps-edn! package-dir)
-        alias-name (keyword (str package-dir-parent "/" package-name "." (name alias-key)))]
+        alias-name (keyword (str "kmono.pkg/" package-name "." (name alias-key)))]
     {alias-name (or (relativize-paths
                      repo-root
                      package-dir
