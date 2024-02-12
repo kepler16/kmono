@@ -1,18 +1,17 @@
-library := "kepler16/kmono"
-version := "$KMONO_PKG_VERSION"
-maven_server := "github-kepler-kmono"
-
 test:
     clojure -M:test -m "kaocha.runner"
 
-build:
-    clojure -T:meta run :alias lib :lib {{ library }} :version \"{{ version }}\"
+clean:
+    clojure -T:build clean
+
+build: clean
+    clojure -T:build build
 
 build-uber-native:
     clojure -T:meta run :alias uber :include-aliases '[:native]' :uber-file \"target/kmono-uber.jar\"
 
 release:
-    clojure -T:meta deploy :repository \"{{ maven_server }}\" :lib {{ library }} :version \"{{ version }}\"
+    clojure -T:build release    
 
 native-image:
   $GRAALVM_HOME/bin/native-image \
@@ -26,4 +25,3 @@ native-image:
     --initialize-at-build-time=org.eclipse.aether.transport.http.HttpTransporterFactory
 
 build-native: build-uber-native native-image
-

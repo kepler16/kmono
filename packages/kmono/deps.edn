@@ -1,6 +1,5 @@
-{:mvn/repos {"github-kepler" {:url "https://maven.pkg.github.com/kepler16/*"}
-             "github-kepler-kmono" {:url "https://maven.pkg.github.com/kepler16/kmono"}}
- :kmono/config {:group kepler16
+{:kmono/config {:group com.kepler16
+                :artifact kmono
                 :build-cmd "just build"
                 :release-cmd "just release"}
  :paths ["src" "resources"]
@@ -15,7 +14,9 @@
         org.flatland/ordered {:mvn/version "1.15.11"}
         org.clojure/tools.cli {:mvn/version "1.0.219"}}
 
- :aliases {:lib {:k16/metabuild {:kind :jar}}
+ :aliases {:build {:deps {local/build {:local/root "../../build"}}
+                   :ns-default build}
+           :lib {:k16/metabuild {:kind :jar}}
            :uber {:k16/metabuild {:kind :uber
                                   :main k16.kmono.main}}
            :native {:extra-deps {com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}}

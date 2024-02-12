@@ -47,49 +47,48 @@
   ([package-path]
    (->adapter package-path 10000))
   ([package-path timeout-ms]
-   (let [deps-edn (read-deps-edn! package-path)
-         {:keys [group artifact] :as config}
-         (-> (:kmono/config deps-edn)
-             (adapter/ensure-artifact package-path))
-         coord (str group "/" artifact)
-         managed-deps (get-local-deps config deps-edn)]
-     (reify Adapter
+   (let [deps-edn (read-deps-edn package-path)
+         kmono-config (:kmono/config deps-edn)]
+     (when kmono-config
+       (let [{:keys [group artifact] :as config}
+             (-> kmono-config
+                 (adapter/ensure-artifact package-path))
+             coord (str group "/" artifact)
+             managed-deps (get-local-deps config deps-edn)]
+         (reify Adapter
 
-       (prepare-deps-env [_ changes]
-         (binding [*print-namespace-maps* false]
-           (str "'"
-                {:deps
-                 (into {} (map
-                           (fn [dep]
-                             [(symbol dep)
-                              {:mvn/version
-                               (get-in changes [dep :version])}]))
-                       managed-deps)}
-                "'")))
+           (prepare-deps-env [_ changes]
+             (binding [*print-namespace-maps* false]
+               (pr-str {:deps
+                        (into {} (map
+                                  (fn [dep]
+                                    [(symbol dep)
+                                     {:mvn/version
+                                      (get-in changes [dep :version])}]))
+                              managed-deps)})))
 
-       (get-managed-deps [_] managed-deps)
+           (get-managed-deps [_] managed-deps)
 
-       (get-kmono-config [_] config)
+           (get-kmono-config [_] config)
 
-       (release-published? [_ version]
-         (-> (p/vthread
-              (let [;; ignore user's local repository cache
-                    local-repo (str package-path "/.kmono/" artifact "/.m2")]
-                (try (deps.util.session/with-session
-                       (let [;; ignoring user's machine local m2 repo
-                             versions (->> (deps.ext/find-versions
-                                            (symbol coord)
-                                            nil
-                                            :mvn {:mvn/local-repo local-repo
-                                                  :mvn/repos
-                                                  (merge deps.util.maven/standard-repos
-                                                         (:mvn/repos deps-edn))})
-                                           (map :mvn/version)
-                                           (set))]
-                         (contains? versions version)))
-                     (finally
-                       (try (fs/delete-tree local-repo)
-                            (catch Throwable _))))))
-             (p/timeout timeout-ms (str "Timeout resolving mvn version for package " coord))
-             (deref)))))))
-
+           (release-published? [_ version]
+             (-> (p/vthread
+                  (let [;; ignore user's local repository cache
+                        local-repo (str package-path "/.kmono/" artifact "/.m2")]
+                    (try (deps.util.session/with-session
+                           (let [;; ignoring user's machine local m2 repo
+                                 versions (->> (deps.ext/find-versions
+                                                (symbol coord)
+                                                nil
+                                                :mvn {:mvn/local-repo local-repo
+                                                      :mvn/repos
+                                                      (merge deps.util.maven/standard-repos
+                                                             (:mvn/repos deps-edn))})
+                                               (map :mvn/version)
+                                               (set))]
+                             (contains? versions version)))
+                         (finally
+                           (try (fs/delete-tree local-repo)
+                                (catch Throwable _))))))
+                 (p/timeout timeout-ms (str "Timeout resolving mvn version for package " coord))
+                 (deref)))))))))

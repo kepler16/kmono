@@ -3,15 +3,7 @@ on: [push]
 
 jobs:
   build-and-publish:
-    permissions:
-      contents: write
-      packages: write
-
     runs-on: ubuntu-latest
-
-    env:
-      GITHUB_USERNAME: ${{ secrets.ORG_GITHUB_ACTOR }}
-      GITHUB_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN }}
 
     steps:
       - name: Checkout git repo
@@ -60,6 +52,9 @@ jobs:
           just build ":snapshot?" ${{ github.ref_name != 'master' }}
 
       - name: Release
+        env:
+          CLOJARS_USERNAME: infrastructure-kepler16-com
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
         run: |
           just release \
             ":snapshot?" ${{ github.ref_name != 'master' }} \
