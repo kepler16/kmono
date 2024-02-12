@@ -140,26 +140,32 @@
         (bp/shell {:dir repo-root :out cp-file} clojure-cmd))
       (bp/shell {:dir repo-root} clojure-cmd))))
 
+(defn- make-cp-params
+  [config {:keys [package-aliases] :as params}]
+  (let [package-overrides (construct-sdeps-overrides! config package-aliases)]
+    {:package-overrides package-overrides
+     :cp-params (assoc params
+                       :package-aliases
+                       (-> package-overrides :aliases (keys)))
+     :sdeps-overrides (update package-overrides :aliases merge nrepl-alias)}))
+
 (defn generate-classpath!
-  [{:keys [package-aliases repo-root glob] :as params}]
+  [{:keys [repo-root glob] :as params}]
   (ansi/print-info "Generating kmono REPL classpath...")
   (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
   (let [config (config/load-config repo-root glob)
-        package-overrides (construct-sdeps-overrides!
-                           config package-aliases)
-        sdeps-overrides (update package-overrides :aliases merge nrepl-alias)]
-    (cp! (assoc params :package-aliases (-> package-overrides :aliases (keys)))
-         sdeps-overrides)))
+        {:keys [cp-params sdeps-overrides]}
+        (make-cp-params config params)]
+    (cp! cp-params sdeps-overrides)))
 
 (defn run-repl
-  [{:keys [aliases package-aliases repo-root glob cp-file] :as params}]
+  [{:keys [aliases repo-root glob cp-file] :as params}]
   (ansi/print-info "Starting kmono REPL...")
   (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
   (binding [*print-namespace-maps* false]
     (let [config (config/load-config repo-root glob)
-          package-overrides (construct-sdeps-overrides!
-                             config package-aliases)
-          sdeps-overrides (update package-overrides :aliases merge nrepl-alias)
+          {:keys [cp-params package-overrides sdeps-overrides]}
+          (make-cp-params config params)
           sdeps (str "-Sdeps '" (pr-str sdeps-overrides) "'")
           main-opts (str "-M"
                          (string/join aliases)
@@ -167,7 +173,7 @@
                          ":kmono-nrepl")
           clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
       (when cp-file
-        (cp! params sdeps-overrides))
+        (cp! cp-params sdeps-overrides))
       (ansi/print-info "Running clojure...")
       (print-clojure-cmd sdeps-overrides main-opts)
       (bp/shell clojure-cmd))))
