@@ -1,3 +1,6 @@
+default:
+  @just --choose
+
 test *ARGS:
     clojure -T:kmono run :exec "\"just test\"" {{ ARGS }}
 
