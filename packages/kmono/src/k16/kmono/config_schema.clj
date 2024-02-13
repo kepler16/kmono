@@ -10,7 +10,7 @@
    [:aliases {:optional true}
     [:vector :keyword]]
    [:release-cmd {:optional true}
-    :string]
+    [:or [:= :skip] :string]]
    [:local-deps {:optional true}
     [:or
      [:vector :symbol]
