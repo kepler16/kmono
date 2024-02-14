@@ -4,6 +4,12 @@
    [k16.kmono.api :as api])
   (:gen-class))
 
+(defmacro package-version []
+  `(let [v# ~(or (System/getenv "KMONO_PKG_VERSION") "unset")]
+     v#))
+
+(defn get-version [] (package-version))
+
 (def run-cli-spec
   [["-h" "--help"
     "Show this help"
@@ -95,7 +101,9 @@
         :else (run-fn options)))))
 
 (def modes
-  {"run" (make-handler run-cli-spec run-title api/run)
+  {"--version" (fn [_]
+                 (println (str "kmono v" (get-version))))
+   "run" (make-handler run-cli-spec run-title api/run)
    "repl" (make-handler repl-cli-spec repl-title api/repl)
    "cp" (make-handler cp-cli-spec cp-title api/generate-classpath!)
    "help" (fn [_]
@@ -105,8 +113,9 @@
                                    :summary)
                   cp-summary (-> (tools.cli/parse-opts [] cp-cli-spec)
                                  :summary)]
-              (println "kmono <mode> opts...\n")
-              (println "Modes:")
+              (println (str "kmono v" (get-version) "\n"))
+              (println "USAGE: kmono <mode> opts...\n")
+              (println "MODES:")
               (print-help run-title run-summary)
               (print-help repl-title repl-summary)
               (print-help cp-title cp-summary)))})
