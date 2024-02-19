@@ -1,6 +1,5 @@
 (ns k16.kmono.adapters.clojure-deps
   (:require
-   [promesa.core :as p]
    [babashka.fs :as fs]
    [clojure.edn :as edn]
    [clojure.tools.deps.extensions :as deps.ext]
@@ -72,23 +71,27 @@
            (get-kmono-config [_] config)
 
            (release-published? [_ version]
-             (-> (p/vthread
-                  (let [;; ignore user's local repository cache
-                        local-repo (str package-path "/.kmono/" artifact "/.m2")]
-                    (try (deps.util.session/with-session
-                           (let [;; ignoring user's machine local m2 repo
-                                 versions (->> (deps.ext/find-versions
-                                                (symbol coord)
-                                                nil
-                                                :mvn {:mvn/local-repo local-repo
-                                                      :mvn/repos
-                                                      (merge deps.util.maven/standard-repos
-                                                             (:mvn/repos deps-edn))})
-                                               (map :mvn/version)
-                                               (set))]
-                             (contains? versions version)))
-                         (finally
-                           (try (fs/delete-tree local-repo)
-                                (catch Throwable _))))))
-                 (p/timeout timeout-ms (str "Timeout resolving mvn version for package " coord))
-                 (deref)))))))))
+             (let [fut (future
+                         (let [;; ignore user's local repository cache
+                               local-repo (str package-path "/.kmono/" artifact "/.m2")]
+                           (try (deps.util.session/with-session
+                                  (let [;; ignoring user's machine local m2 repo
+                                        versions (->> (deps.ext/find-versions
+                                                       (symbol coord)
+                                                       nil
+                                                       :mvn {:mvn/local-repo local-repo
+                                                             :mvn/repos
+                                                             (merge deps.util.maven/standard-repos
+                                                                    (:mvn/repos deps-edn))})
+                                                      (map :mvn/version)
+                                                      (set))]
+                                    (contains? versions version)))
+                                (finally
+                                  (try (fs/delete-tree local-repo)
+                                       (catch Throwable _))))))
+                   res (deref fut timeout-ms ::timed-out)]
+               (if (= ::timed-out res)
+                 (throw (ex-info "Timed out requesting remote repository for version check"
+                                 {:lib coord
+                                  :version version}))
+                 res)))))))))
