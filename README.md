@@ -2,18 +2,29 @@
 
 ## Overview
 
-kmono is a command runner tool designed specifically for managing Clojure monorepos. With features like automatic change detection via git, semantic versioning through commit prefixes, and parallel excution, kmono aims to simplify and automate your monorepo experience.
+**kmono** is a command runner tool designed specifically for managing Clojure monorepos.
+With features like automatic change detection via git, semantic versioning through
+commit prefixes, and parallel excution, kmono aims to simplify and automate your
+monorepo experience.
 
 ## Features
 
-- **Change Detection**: Calculates changes per package by parsing git history for each package directory.
-- **Semantic Versioning**: Uses Angular-style commit prefixes to determine the type of version bump.
-- **Dependency Graph**: Creates a graph of interdependent packages and builds them in parallel groups.
-- **Local Dependency Management**: Replaces `local/root` dependencies with real version numbers during the build.
+- **Change Detection**: Calculates changes per package by parsing git history
+for each package directory.
+- **Semantic Versioning**: Uses Angular-style commit prefixes to determine the
+type of version bump.
+- **Dependency Graph**: Creates a graph of interdependent packages and builds
+them in parallel groups.
+- **Local Dependency Management**: Replaces `local/root` dependencies with real
+version numbers during the build.
+- **Classpath Generation**: Generates a classpath for a specified root and package
+level aliases (useful for LSP).
+- **Repl Start**: Can start a REPL by adding root aliases or package level aliases.
 
 ## What kmono is not
 
-- Not a build tool - it doesn't know how to build a package, it only runs a provided build command
+- Not a build tool - it doesn't know how to build a package, it only runs a
+provided build command
 - Not a release tool - see above
 
 ## Which means that
@@ -46,7 +57,7 @@ repo-root
   └── deps.edn (for starting monorepo repl and kmono alias)
 ```
 
-**Basic Usage**
+**Basic Usage using as a Tool (the old way)**
 
 Root `deps.edn`:
 ```clojure
@@ -73,7 +84,110 @@ clojure -T:kmono run :exec :release
 Run a custom command:
 
 ```sh
-clojure -T:kmono run :exec \"just test\"
+clojure -T:kmono run :exec '"just test"'
+```
+
+Start a REPL:
+- `:aliases "[:dev]"` - use alias from root deps.edn (optional)
+- `:package-aliases "[:my-package/test]"` - add `:test` alias from `packages/my-package/deps.edn`,
+all paths (e.g. `:extra-paths`, `:local/root` etc.) are modified to be relative
+to root (optional).
+- `:cp-file '".kmonocp"'` - optionally generate a classpath file.
+```sh
+clojure -T:kmono repl :aliases "[:dev]" :package-aliases "[:my-package/test]" :cp-file '".kmonocp"'
+```
+
+Generate classpath to output:
+```sh
+clojure -T:kmono generate-classpath :aliases "[:dev]" :package-aliases "[:my-package/test]"
+```
+Generate classpath to a file:
+```sh
+clojure -T:kmono generate-classpath :aliases "[:dev]" :package-aliases "[:my-package/test]" :cp-file '".kmonocp"'
+```
+
+**Basic Usage using Main endpoint (preferred way)**
+
+Root `deps.edn`:
+```clojure
+{:deps {;; add local/root deps for all packages to start repo level REPL (optional)
+        {kepler16/package1 {:local/root "packages/package1"}}}
+ :aliases {:kmono {:deps {kepler16/kmono {:mvn/version "1.0.0.0"}}
+                   :main-opts ["-m" "k16.kmono.main"]}}}
+```
+
+All commands below runs against all changed packages.
+
+Display help:
+```sh
+clojure -M:kmono -h
+```
+outputs:
+```
+kmono <mode> opts...
+
+Modes:
+=== run - execute command for monorepo ===
+  -h, --help                                Show this help
+  -x, --exec CMD                :build      Command to exec [build, release, <custom cmd>]
+  -r, --repo-root PATH          .           Repository root (default: '.')
+  -g, --glob GLOB               packages/*  A glob describing where to search for packages, (default: 'packages/*')
+  -s, --snapshot FLAG           false       A snapshot flag (default: false)
+  -t, --create-tags FLAG        false       Should create tags flag (default: false)
+  -i, --include-unchanged FLAG  true        Should include unchanged packages flag (default: true)
+
+=== repl - start a REPL for monorepo ===
+  -h, --help                                                        Show this help
+  -A, --aliases :alias1:alias2:namespace/alias3                     List of aliases from root deps.edn
+  -P, --package-aliases :package/alias1:package/alias2              List of aliases from packages
+  -r, --repo-root PATH                                  .           Repository root (default: '.')
+  -g, --glob GLOB                                       packages/*  A glob describing where to search for packages, (default: 'packages/*')
+  -f, --cp-file FILENAME                                nil         Classpath file name (default: do nothing)
+
+=== cp - save/print a classpath ===
+  -h, --help                                                        Show this help
+  -A, --aliases :alias1:alias2:namespace/alias3                     List of aliases from root deps.edn
+  -P, --package-aliases :package/alias1:package/alias2              List of aliases from packages
+  -r, --repo-root PATH                                  .           Repository root (default: '.')
+  -g, --glob GLOB                                       packages/*  A glob describing where to search for packages, (default: 'packages/*')
+  -f, --cp-file FILENAME                                nil         Classpath file name (default: do nothing)
+```
+
+Build a package:
+
+```sh
+clojure -M:kmono run -x build
+```
+
+Deploy a package:
+
+```sh
+clojure -M:kmono run -x release
+```
+
+Run a custom command:
+
+```sh
+clojure -M:kmono run -x "just test"
+```
+
+Start a REPL:
+- `-A :dev` - use alias from root deps.edn (optional)
+- `-P :my-package/test` - add `:test` alias from `packages/my-package/deps.edn`,
+all paths (e.g. `:extra-paths`, `:local/root` etc.) are modified to be relative
+to root (optional).
+- `-f .kmonocp` - optionally generate a classpath file.
+```sh
+clojure -M:kmono repl -A :dev -P :my-package/test -f .kmonocp
+```
+
+Generate classpath to output:
+```sh
+clojure -M:kmono cp -A :dev -P :my-package/test
+```
+Generate classpath to a file:
+```sh
+clojure -M:kmono cp -A :dev -P :my-package/test -f .kmonocp
 ```
 
 During each command following environment variables are available for each package:

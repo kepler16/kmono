@@ -5,14 +5,16 @@
  :paths ["src" "resources"]
  :deps {babashka/process {:mvn/version "0.5.21"}
         babashka/fs {:mvn/version "0.4.19"}
-        funcool/promesa {:mvn/version "11.0.671"}
         org.slf4j/slf4j-api {:mvn/version "1.7.36"}
         org.slf4j/slf4j-simple {:mvn/version "1.7.36"}
         org.apache.maven.resolver/maven-resolver-api {:mvn/version "1.9.15"}
         org.clojure/tools.deps {:mvn/version "0.18.1354"}
         metosin/malli {:mvn/version "0.11.0"}
-        org.flatland/ordered {:mvn/version "1.15.11"}}
+        org.flatland/ordered {:mvn/version "1.15.11"}
+        org.clojure/tools.cli {:mvn/version "1.0.219"}}
 
  :aliases {:build {:deps {local/build {:local/root "../../build"}}
                    :ns-default build}
-           :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.86.1355"}}}}}
+           :native {:extra-deps {com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}}
+           :test {:extra-paths ["test"]
+                  :extra-deps {lambdaisland/kaocha {:mvn/version "1.86.1355"}}}}}

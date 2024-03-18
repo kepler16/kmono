@@ -1,0 +1,7 @@
+{:kmono/config {:group kepler16
+                :artifact foo-lib
+                :build-cmd "just build-and-install"
+                :release-cmd "just release"}
+ :paths ["src"]
+ :aliases {:test {:extra-paths ["test"]
+                  :extra-deps {kepler16/bar {:local/root "../bar"}}}}}

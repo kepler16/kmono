@@ -5,6 +5,7 @@
    [k16.kmono.config :as config]
    [k16.kmono.exec :as exec]
    [k16.kmono.git :as git]
+   [k16.kmono.repl.deps :as repl.deps]
    [malli.core :as m]
    [malli.transform :as mt]))
 
@@ -115,6 +116,15 @@
     (if success?
       (System/exit 0)
       (System/exit 1))))
+
+(defn repl
+  [params]
+  (repl.deps/run-repl params))
+
+(defn generate-classpath!
+  [params]
+  (binding [ansi/*logs-enabled* (:cp-file params)]
+    (repl.deps/generate-classpath! params)))
 
 (comment
   (def args {:snapshot? true

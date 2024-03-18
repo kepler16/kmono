@@ -26,7 +26,7 @@
   (b/write-pom {:class-dir class-dir
                 :lib lib
                 :version version
-                :basis @basis
+                :basis (b/create-basis)
                 :src-dirs ["src"]
                 :pom-data [[:description "Clojure monorepo tools"]
                            [:url "https://github.com/kepler16/kmono"]
@@ -40,6 +40,19 @@
 
   (b/jar {:class-dir class-dir
           :jar-file jar-file}))
+
+(defn uber-for-native [_]
+  (let [basis (b/create-basis {:aliases #{:native}})]
+   (clean nil)
+   (b/copy-dir {:src-dirs ["src"]
+                :target-dir class-dir})
+   (b/compile-clj {:basis basis
+                   :ns-compile '[k16.kmono.main]
+                   :class-dir class-dir})
+   (b/uber {:class-dir class-dir
+            :uber-file "target/kmono-uber.jar"
+            :basis basis
+            :main 'k16.kmono.main})))
 
 (defn release [_]
   (deps-deploy/deploy {:installer :remote

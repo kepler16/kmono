@@ -32,9 +32,20 @@ jobs:
         with:
           cli: latest
 
-      # - name: Test
-      #   run: |
-      #     just test ":snapshot?" ${{ github.ref_name != 'master' }}
+      - uses: s4u/maven-settings-action@v2.4.1
+        with:
+          githubServer: false
+          servers: |
+            [{"id": "github-kepler",
+              "username": "${{ secrets.ORG_GITHUB_ACTOR }}",
+              "password": "${{ secrets.ORG_GITHUB_TOKEN }}"},
+             {"id": "github-kepler-kmono",
+              "username": "${{ github.actor }}",
+              "password": "${{ secrets.GITHUB_TOKEN }}"}]
+
+      - name: Test
+        run: |
+          just test
 
       - name: Build
         run: |

@@ -29,3 +29,4 @@ config-override.edn
 .portal
 
 !.github
+bin

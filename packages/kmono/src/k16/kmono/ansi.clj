@@ -2,6 +2,8 @@
   (:require
    [clojure.string :as string]))
 
+(def ^:dynamic *logs-enabled* true)
+
 (defn red
   [& chunks]
   (str "\033[31m"
@@ -32,15 +34,18 @@
 
 (defn print-success
   [& v]
-  (apply println SUCCESS_PREFIX v))
+  (when *logs-enabled*
+    (apply println SUCCESS_PREFIX v)))
 
 (defn print-error
   [& v]
-  (apply println ERROR_PREFIX v))
+  (when *logs-enabled*
+    (apply println ERROR_PREFIX v)))
 
 (defn print-info
   [& v]
-  (apply println INFO_PREFIX v))
+  (when *logs-enabled*
+    (apply println INFO_PREFIX v)))
 
 (defn assert-err!
   [v msg]
@@ -48,12 +53,18 @@
     (println ERROR_PREFIX msg)
     (System/exit 1)))
 
+(defn print-raw
+  [output]
+  (when *logs-enabled*
+    (println output)))
+
 (defn print-shifted
   [output]
-  (->> output
-       (string/split-lines)
-       (map #(str "\t" %))
-       (string/join "\n")
-       (println))
-  (println))
+  (when *logs-enabled*
+    (->> output
+         (string/split-lines)
+         (map #(str "\t" %))
+         (string/join "\n")
+         (println))
+    (println)))
 
