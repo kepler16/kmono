@@ -130,7 +130,7 @@
         mode-handler (or (get modes mode)
                          (get modes "help"))]
     (mode-handler args)
-    #_(System/exit 0)))
+    (System/exit 0)))
 
 (comment
   (tools.cli/parse-opts ["run" "-x" "'just test'"] run-cli-spec)
