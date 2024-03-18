@@ -77,7 +77,7 @@
       (ansi/print-info "no tags has been created"))
     (empty? failed-releases)))
 
-(def ?RunParams
+(def ?RunOpts
   [:map
    [:exec [:or :string [:enum :build :release]]]
    [:repo-root {:default "."}
@@ -97,34 +97,50 @@
    [:release-cmd {:optional true}
     [:maybe :string]]])
 
+(defn arg->exec
+  [[_ exec-cmd]]
+  (if (or (= "build" exec-cmd)
+          (= "release" exec-cmd))
+    (keyword exec-cmd)
+    exec-cmd))
+
 (defn run
-  [{:keys [dry-run?] :as args}]
-  (if dry-run?
-    (ansi/print-info "Starting kmono in dry mode...")
-    (ansi/print-info "Starting kmono..."))
-  (let [{:keys [repo-root glob exec]
-         :as run-params} (m/decode ?RunParams args mt/default-value-transformer)
-        config (-> run-params
-                   (merge (config/load-config repo-root glob))
-                   (config/validate-config!))
-        changes (git/scan-for-changes config)
-        _ (ansi/assert-err! (seq (:build-order config)) "no packages to execute found")
-        success? (case exec
-                   :build (run-build config changes)
-                   :release (run-release config changes)
-                   (run-custom-cmd config changes))]
-    (if success?
-      (System/exit 0)
-      (System/exit 1))))
+  ([opts]
+   (run opts nil))
+  ([{:keys [exec dry-run?] :as opts} arguments]
+   (if dry-run?
+     (ansi/print-info "Starting kmono in dry mode...")
+     (ansi/print-info "Starting kmono..."))
+   (let [opts' (if (and (not exec) (seq arguments))
+                 (assoc opts :exec (arg->exec arguments))
+                 opts)
+         {:keys [repo-root glob exec]
+          :as run-params} (m/decode ?RunOpts opts' mt/default-value-transformer)
+         config (-> run-params
+                    (merge (config/load-config repo-root glob))
+                    (config/validate-config!))
+         changes (git/scan-for-changes config)
+         _ (ansi/assert-err! (seq (:build-order config)) "no packages to execute found")
+         success? (case exec
+                    :build (run-build config changes)
+                    :release (run-release config changes)
+                    (run-custom-cmd config changes))]
+     (if success?
+       (System/exit 0)
+       (System/exit 1)))))
 
 (defn repl
-  [params]
-  (repl.deps/run-repl params))
+  ([opts]
+   (repl opts nil))
+  ([opts _]
+   (repl.deps/run-repl opts)))
 
 (defn generate-classpath!
-  [params]
-  (binding [ansi/*logs-enabled* (:cp-file params)]
-    (repl.deps/generate-classpath! params)))
+  ([opts]
+   (generate-classpath! opts nil))
+  ([opts _]
+   (binding [ansi/*logs-enabled* (:cp-file opts)]
+     (repl.deps/generate-classpath! opts))))
 
 (comment
   (def args {:snapshot? true
@@ -134,7 +150,7 @@
   (config/load-config "../../k42/agent")
   (def config (as-> (config/load-config "." "packages/*") x
                 (merge args x)
-                (m/decode ?RunParams x mt/default-value-transformer)
+                (m/decode ?RunOpts x mt/default-value-transformer)
                 (config/validate-config! x)))
   (def changes (git/scan-for-changes config))
 

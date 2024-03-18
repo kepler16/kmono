@@ -16,7 +16,6 @@
     :id :show-help?]
    ["-x" "--exec CMD"
     "Command to exec [build, release, <custom cmd>]"
-    :default :build
     :parse-fn (fn [cmd]
                 (if (or (= cmd "release") (= cmd "build"))
                   (keyword cmd)
@@ -84,14 +83,17 @@
   (println summary)
   (println))
 
-(def run-title "=== run - execute command for monorepo ===")
+(def run-title
+  (str "=== run - execute command for monorepo ===\n"
+       " run <exec> [opts...]\n"
+       " run -x <exec> [opts...]"))
 (def repl-title "=== repl - start a REPL for monorepo ===")
 (def cp-title "=== cp - save/print a classpath ===")
 
 (defn make-handler
   [cli-spec help-title run-fn]
   (fn [opts]
-    (let [{:keys [options summary errors]}
+    (let [{:keys [options summary errors arguments]}
           (tools.cli/parse-opts opts cli-spec)]
       (cond
         errors (do
@@ -101,7 +103,7 @@
         (:show-help? options)
         (print-help help-title summary)
 
-        :else (run-fn options)))))
+        :else (run-fn options arguments)))))
 
 (def modes
   {"--version" (fn [_]
@@ -125,13 +127,14 @@
 
 (defn -main [& args]
   (let [mode (first args)
-        opts (rest args)
         mode-handler (or (get modes mode)
                          (get modes "help"))]
-    (mode-handler opts)
-    (System/exit 0)))
+    (mode-handler args)
+    #_(System/exit 0)))
 
 (comment
+  (tools.cli/parse-opts ["run" "-x" "'just test'"] run-cli-spec)
+  (-main "-h")
   (-main "run" "-x" "build")
   (-main "repl" "-A" ":foo:bar" "-P" "kmono/test")
   nil)
