@@ -57,6 +57,9 @@
   [["-h" "--help"
     "Show this help"
     :id :show-help?]
+   ["-v" "--verbose"
+    "Print additional info"
+    :id :verbose?]
    ["-A" "--aliases :alias1:alias2:namespace/alias3"
     "List of aliases from root deps.edn"
     :parse-fn parse-aliases]

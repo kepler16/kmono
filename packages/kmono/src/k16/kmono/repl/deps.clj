@@ -127,7 +127,7 @@
                                        "\n" args-str))))
 
 (defn- cp!
-  [{:keys [package-aliases aliases repo-root cp-file]} sdeps-overrides]
+  [{:keys [verbose? package-aliases aliases repo-root cp-file]} sdeps-overrides]
   (let [cp-opts (str "-A"
                      (string/join aliases)
                      (string/join package-aliases))
@@ -136,7 +136,8 @@
     (if (seq cp-file)
       (do
         (ansi/print-info "Saving classpath to a file:" cp-file)
-        (print-clojure-cmd sdeps-overrides (str cp-opts " -Spath"))
+        (when verbose?
+          (print-clojure-cmd sdeps-overrides (str cp-opts " -Spath")))
         (bp/shell {:dir repo-root :out cp-file} clojure-cmd))
       (bp/shell {:dir repo-root} clojure-cmd))))
 
@@ -159,7 +160,7 @@
     (cp! cp-params sdeps-overrides)))
 
 (defn run-repl
-  [{:keys [aliases repo-root glob cp-file] :as params}]
+  [{:keys [aliases repo-root glob cp-file verbose?] :as params}]
   (ansi/print-info "Starting kmono REPL...")
   (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
   (binding [*print-namespace-maps* false]
@@ -175,6 +176,7 @@
       (when cp-file
         (cp! cp-params sdeps-overrides))
       (ansi/print-info "Running clojure...")
-      (print-clojure-cmd sdeps-overrides main-opts)
+      (when verbose?
+        (print-clojure-cmd sdeps-overrides main-opts))
       (bp/shell clojure-cmd))))
 
