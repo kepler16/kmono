@@ -61,7 +61,7 @@ jobs:
             "password": "${{ secrets.GITHUB_TOKEN }}"}]
 
     - name: Build Native Image
-      run: just build-native
+      run: just build-native ":snapshot?" false
 
     - name: Pack binary
       run: |
