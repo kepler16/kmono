@@ -8,6 +8,7 @@
    [k16.kmono.adapters.clojure-deps :as clj.deps]
    [k16.kmono.ansi :as ansi]
    [k16.kmono.config :as config]
+   [k16.kmono.util :as util]
    [malli.core :as m]))
 
 (def path-aliases #{:paths :extra-paths :replace-paths :local/root})
@@ -61,7 +62,7 @@
                                     package-alias "]"))
         _ (assert alias-key (str "Could not get alias from package-alias ["
                                  package-alias "]"))
-        deps-edn (clj.deps/read-deps-edn! package-dir)
+        deps-edn (clj.deps/read-pkg-deps! package-dir)
         alias-name (keyword (str "kmono.pkg/" package-name "." (name alias-key)))]
     {alias-name (or (relativize-paths
                      repo-root
@@ -143,12 +144,19 @@
 
 (defn- make-cp-params
   [config {:keys [package-aliases] :as params}]
-  (let [package-overrides (construct-sdeps-overrides! config package-aliases)]
+  (let [package-overrides (construct-sdeps-overrides! config package-aliases)
+        local-deps-file (fs/file (:repo-root config) "deps.local.edn")
+        deps-local-overrides (when (fs/exists? local-deps-file)
+                               (util/read-deps-edn! local-deps-file))]
     {:package-overrides package-overrides
      :cp-params (assoc params
                        :package-aliases
                        (-> package-overrides :aliases (keys)))
-     :sdeps-overrides (update package-overrides :aliases merge nrepl-alias)}))
+     :sdeps-overrides (update package-overrides
+                              :aliases
+                              merge
+                              nrepl-alias
+                              deps-local-overrides)}))
 
 (defn generate-classpath!
   [{:keys [repo-root glob] :as params}]

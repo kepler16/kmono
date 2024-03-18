@@ -6,7 +6,8 @@
    [clojure.tools.deps.extensions.maven]
    [clojure.tools.deps.util.maven :as deps.util.maven]
    [clojure.tools.deps.util.session :as deps.util.session]
-   [k16.kmono.adapter :as adapter :refer [Adapter]]))
+   [k16.kmono.adapter :as adapter :refer [Adapter]]
+   [k16.kmono.util :as util]))
 
 (defn- local?
   [[_ coord]]
@@ -30,23 +31,15 @@
           (filter local?)
           (map first)))))
 
-(defn read-deps-edn!
+(defn read-pkg-deps!
   [package-path]
-  (try
-    (-> (fs/file package-path "deps.edn")
-        (slurp)
-        (edn/read-string))
-    (catch Throwable e
-      (throw (ex-info "Could not read deps.edn file"
-                      {:package-path package-path
-                       :event "read-deps-edn"}
-                      e)))))
+  (util/read-deps-edn! (fs/path package-path "deps.edn")))
 
 (defn ->adapter
   ([package-path]
    (->adapter package-path 10000))
   ([package-path timeout-ms]
-   (let [deps-edn (read-deps-edn! package-path)
+   (let [deps-edn (read-pkg-deps! package-path)
          kmono-config (:kmono/config deps-edn)]
      (when kmono-config
        (let [{:keys [group artifact] :as config}
