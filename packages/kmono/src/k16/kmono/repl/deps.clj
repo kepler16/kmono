@@ -21,12 +21,21 @@
            :path path})
   (fs/relativize root (fs/path package-dir path)))
 
+(defn- strip-extra-parent
+  "JRE 8 workaround"
+  [str-path]
+  (if (string/starts-with? str-path "../")
+    (subs str-path 3)
+    str-path))
+
 (defn relativize-paths
   "Relativise paths from package alias opts to work in repo root context"
   [repo-root package-dir aliases-map]
   (when (seq aliases-map)
     (letfn [(relativize [path]
-              (str (relativize-path repo-root package-dir path)))]
+              (-> (relativize-path repo-root package-dir path)
+                  (str)
+                  (strip-extra-parent)))]
       (walk/postwalk
        (fn [form]
          (if (map-entry? form)
