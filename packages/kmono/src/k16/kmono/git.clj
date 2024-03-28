@@ -155,7 +155,11 @@
                                                pkg-name)))
                                       (remove nil?))]
           (recur (reduce (fn [chgs dpn-name]
-                           (update chgs dpn-name bump-dependand config dpn-name))
+                           ;; NOTE: we want to bump only once
+                           (if (= (get-in chgs [dpn-name :version])
+                                  (get-in changes [dpn-name :version]))
+                             (update chgs dpn-name bump-dependand config dpn-name)
+                             chgs))
                          changes'
                          dependands-to-bump)
                  (rest cursor)))
