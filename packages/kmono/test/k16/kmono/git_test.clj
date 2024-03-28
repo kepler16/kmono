@@ -1,6 +1,8 @@
 (ns k16.kmono.git-test
   (:require
-   [clojure.test :refer [deftest testing is]]
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
+   [clojure.test :refer [deftest is testing]]
    [k16.kmono.git :as git]))
 
 (def config
@@ -69,9 +71,9 @@
                                  :commit-sha "deadbee"
                                  :snapshot? false})))
     (is (= "1.77.3.0-deadbee-SNAPSHOT" (git/bump {:version version
-                                                   :bump-type :patch
-                                                   :commit-sha "deadbee"
-                                                   :snapshot? true})))
+                                                  :bump-type :patch
+                                                  :commit-sha "deadbee"
+                                                  :snapshot? true})))
     (is (= "1.77.2.4" (git/bump {:version version
                                  :bump-type :build
                                  :commit-sha "deadbee"
@@ -80,3 +82,55 @@
                                  :bump-type :none
                                  :commit-sha "deadbee"
                                  :snapshot? false})))))
+
+(deftest dependent-single-bump-test
+  (let [config (edn/read-string
+                (slurp (io/resource "fixtures/dependents_config.edn")))
+        changes {"transit-engineering/runtime-api"
+                 {:version "0.15.1.0",
+                  :changed? true,
+                  :package-name "transit-engineering/runtime-api"},
+                 "transit-engineering/jollibee.ext"
+                 {:version "0.0.0.9",
+                  :changed? false,
+                  :package-name "transit-engineering/jollibee.ext"},
+                 "transit-engineering/session-notification.ext"
+                 {:version "0.6.0.3",
+                  :changed? false,
+                  :package-name "transit-engineering/session-notification.ext"},
+                 "transit-engineering/runtime"
+                 {:version "2.10.0.30",
+                  :changed? false,
+                  :package-name "transit-engineering/runtime"},
+                 "transit-engineering/robinsons-loyalty.ext"
+                 {:version "0.1.1.0",
+                  :changed? false,
+                  :package-name "transit-engineering/robinsons-loyalty.ext"},
+                 "transit-engineering/swing.ext"
+                 {:version "0.1.0.5",
+                  :changed? false,
+                  :package-name "transit-engineering/swing.ext"},
+                 "transit-engineering/telemetry.ext"
+                 {:version "0.0.1.0",
+                  :changed? true,
+                  :package-name "transit-engineering/telemetry.ext"},
+                 "transit-engineering/healthchecker.ext"
+                 {:version "0.0.2.9",
+                  :changed? false,
+                  :package-name "transit-engineering/healthchecker.ext"},
+                 "transit-engineering/scan-hook.ext"
+                 {:version "0.4.0.0",
+                  :changed? true,
+                  :package-name "transit-engineering/scan-hook.ext"},
+                 "transit-engineering/agent.ext"
+                 {:version "0.12.0.6",
+                  :changed? false,
+                  :package-name "transit-engineering/agent.ext"},
+                 "transit-engineering/scan-training.ext"
+                 {:version "0.0.0.19",
+                  :changed? false,
+                  :package-name "transit-engineering/scan-training.ext"}}]
+    (is (= "2.10.0.31" (-> (git/ensure-dependend-builds config changes)
+                           (get "transit-engineering/runtime")
+                           :version)))))
+
