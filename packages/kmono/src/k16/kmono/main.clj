@@ -62,6 +62,9 @@
    ["-A" "--aliases :alias1:alias2:namespace/alias3"
     "List of aliases from root deps.edn"
     :parse-fn parse-aliases]
+   ["-M" "--main-aliases :alias1:alias2"
+    "List of main aliases from root deps.edn"
+    :parse-fn parse-aliases]
    ["-P" "--package-aliases :package/alias1:package/alias2:*/alias3"
     "List of aliases from packages (asterisk means all packages)"
     :parse-fn parse-aliases]
