@@ -44,7 +44,7 @@
 
 (defn parse-aliases
   [aliases-arg]
-  (->> aliases-arg (re-seq #"[/a-zA-Z0-9\*\./]+") (mapv keyword)))
+  (->> aliases-arg (re-seq #"[^:]+") (mapv keyword)))
 
 (defn- cp-option
   [default-value description]
