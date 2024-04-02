@@ -117,13 +117,15 @@
 
 (def ?ReplParams
   [:map
+   [:main-aliases {:optional true}
+    [:vector :keyword]]
    [:aliases {:optional true}
     [:vector :keyword]]
    [:packages-aliases {:optional true}
     [:vector :keyword]]])
 
 (def nrepl-alias
-  {:kmono-nrepl {:extra-deps {'cider/cider-nrepl {:mvn/version "0.44.0"}}
+  {:kmono/nrepl {:extra-deps {'cider/cider-nrepl {:mvn/version "0.44.0"}}
                  :main-opts ["-m"
                              "nrepl.cmdline"
                              "--middleware"
@@ -139,8 +141,8 @@
 (defn- cp!
   [{:keys [verbose? package-aliases aliases repo-root cp-file]} sdeps-overrides]
   (let [cp-opts (str "-A"
-                     (string/join aliases)
-                     (string/join package-aliases))
+                     (string/join package-aliases)
+                     (string/join aliases))
         sdeps (str "-Sdeps '" (pr-str sdeps-overrides) "'")
         clojure-cmd (string/join " " ["clojure" sdeps cp-opts "-Spath"])]
     (if (seq cp-file)
@@ -177,7 +179,7 @@
     (cp! cp-params sdeps-overrides)))
 
 (defn run-repl
-  [{:keys [aliases repo-root glob cp-file verbose?] :as params}]
+  [{:keys [main-aliases aliases repo-root glob cp-file verbose?] :as params}]
   (ansi/print-info "Starting kmono REPL...")
   (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
   (binding [*print-namespace-maps* false]
@@ -186,9 +188,15 @@
           (make-cp-params config params)
           sdeps (str "-Sdeps '" (pr-str sdeps-overrides) "'")
           main-opts (str "-M"
-                         (string/join aliases)
                          (string/join (-> package-overrides :aliases (keys)))
-                         ":kmono-nrepl")
+                         (string/join aliases)
+                         (if (seq main-aliases)
+                           (do (ansi/print-info
+                                "Using custom main aliases" main-aliases)
+                               (string/join main-aliases))
+                           (do (ansi/print-info
+                                "Using default main alias :kmono/repl")
+                               ":kmono/nrepl")))
           clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
       (when cp-file
         (cp! cp-params sdeps-overrides))
