@@ -1,6 +1,7 @@
 (ns k16.kmono.git
   (:require
    [babashka.process :as bp]
+   [clojure.set :as set]
    [clojure.string :as string]
    [k16.kmono.config-schema :as config.schema]
    [k16.kmono.dry :as dry]))
@@ -41,22 +42,22 @@
       [out])))
 
 (def change-type
-  {:patch #{:fix :patch :release}
-   ;; happens on any change to package
-   :build (constantly true)
-   :minor #{:minor :feat}
-   :major #{:major :breaking}})
+  {:patch #{"fix" "patch" "release"}
+   :minor #{"minor" "feat"}
+   :major #{"major" "breaking"}})
+
+(def prefixes (apply set/union (vals change-type)))
+
+(defn find-prefix
+  [message]
+  (when-let [msg-prefix (second (re-find #"(:?.+):.+" message))]
+    (some (fn [p] (when (string/starts-with? msg-prefix p) p))
+          prefixes)))
 
 (defn bump-type
   [changes]
-  (if-let [prefixes (some->> changes
-                             (seq)
-                             (map (fn [c]
-                                    (-> (string/split c #":")
-                                        (first)
-                                        (string/trim)
-                                        (keyword)))))]
-    (condp some (set prefixes)
+  (if-let [chahge-prefixes (some->> changes (seq) (map find-prefix))]
+    (condp some (set chahge-prefixes)
       (change-type :major) :major
       (change-type :minor) :minor
       (change-type :patch) :patch
