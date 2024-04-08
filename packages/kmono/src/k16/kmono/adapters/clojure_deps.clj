@@ -33,15 +33,16 @@
 
 (defn read-pkg-deps!
   [package-path]
-  (util/read-deps-edn! (fs/path package-path "deps.edn")))
+  (let [deps-file (fs/path package-path "deps.edn")]
+    (when (fs/exists? deps-file)
+      (util/read-deps-edn! deps-file))))
 
 (defn ->adapter
   ([package-path]
    (->adapter package-path 10000))
   ([package-path timeout-ms]
-   (let [deps-edn (read-pkg-deps! package-path)
-         kmono-config (:kmono/config deps-edn)]
-     (when kmono-config
+   (when-let [deps-edn (read-pkg-deps! package-path)]
+     (when-let [kmono-config (some-> deps-edn :kmono/config)]
        (let [{:keys [group artifact] :as config}
              (-> kmono-config
                  (adapter/ensure-artifact package-path))
