@@ -1,10 +1,16 @@
 (ns k16.kmono.git
   (:require
+   [babashka.fs :as fs]
    [babashka.process :as bp]
    [clojure.set :as set]
    [clojure.string :as string]
    [k16.kmono.config-schema :as config.schema]
    [k16.kmono.dry :as dry]))
+
+(defn git-initialzied?
+  [repo-root]
+  (let [git-dir (fs/file repo-root ".git")]
+    (and (fs/exists? git-dir) (fs/directory? git-dir))))
 
 (defn- out->strings
   [{:keys [out err] :as result}]
@@ -100,32 +106,38 @@
     (throw (ex-info "Version does not match pattern `major.minor.patch[.build]`"
                     {:body (str "version: " version)}))))
 
+(defn non-git-pkg-changes [snapshot? commit-sha]
+  {:version (if snapshot?
+              (str "0.0.0.0-" commit-sha "-SNAPSHOT")
+              "0.0.0.0")
+   :changed? true
+   :package-name name})
+
 (defn package-changes
   [{:keys [repo-root snapshot? include-unchanged?]}
    {:keys [name commit-sha dir]}]
-  (or (when-let [tags (get-sorted-tags repo-root)]
-        (when-let [latest-tag (->> tags
-                                   (filter #(string/starts-with? % (str name "@")))
-                                   (first))]
-          (let [[_ current-version] (string/split latest-tag #"@")
-                bump-type (-> (subdir-changes dir latest-tag)
-                              (bump-type))]
-            (when (version? current-version)
-              (let [changed? (or (not= :none bump-type) include-unchanged?)
-                    version (if changed?
-                              (bump {:version current-version
-                                     :bump-type bump-type
-                                     :commit-sha commit-sha
-                                     :snapshot? snapshot?})
-                              current-version)]
-                {:version version
-                 :changed? changed?
-                 :package-name name})))))
-      {:version (if snapshot?
-                  (str "0.0.0.0-" commit-sha "-SNAPSHOT")
-                  "0.0.0.0")
-       :changed? true
-       :package-name name}))
+  (or (and (git-initialzied? repo-root)
+           (when-let [latest-tag (some->>
+                                  repo-root
+                                  (get-sorted-tags)
+                                  (filter #(string/starts-with? % (str name "@")))
+                                  (first))]
+             (let [[_ current-version] (string/split latest-tag #"@")
+                   bump-type (-> (subdir-changes dir latest-tag)
+                                 (bump-type))]
+               (when (version? current-version)
+                 (let [changed? (or (not= :none bump-type)
+                                    include-unchanged?)
+                       version (if changed?
+                                 (bump {:version current-version
+                                        :bump-type bump-type
+                                        :commit-sha commit-sha
+                                        :snapshot? snapshot?})
+                                 current-version)]
+                   {:version version
+                    :changed? changed?
+                    :package-name name})))))
+      (non-git-pkg-changes snapshot? commit-sha)))
 
 (defn- bump-dependand
   [dependant config dependant-name]
