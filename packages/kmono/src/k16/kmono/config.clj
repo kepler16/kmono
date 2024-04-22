@@ -28,14 +28,15 @@
   [config]
   (assert-schema! schema/?Config config))
 
-(defn- create-package-config [package-dir]
+(defn- create-package-config [git-repo? package-dir]
   (when-let [adapter (get-adapter package-dir)]
     (let [kb-pkg-config (->> (adapter/get-kmono-config adapter)
                              (assert-schema! schema/?KmonoPackageConfig))
           artifact (or (:artifact kb-pkg-config)
                        (symbol (fs/file-name package-dir)))
           pkg-name (str (:group kb-pkg-config) "/" artifact)
-          pkg-commit-sha (or (git/subdir-commit-sha package-dir)
+          pkg-commit-sha (or (when git-repo?
+                               (git/subdir-commit-sha package-dir))
                              "untracked")
           pkg-config (merge kb-pkg-config
                             {:artifact (or (:artifact kb-pkg-config)
@@ -50,9 +51,10 @@
 
 (defn- create-config
   [repo-root glob]
-  (let [package-dirs (fs/glob repo-root glob)]
+  (let [package-dirs (fs/glob repo-root glob)
+        git-repo? (git/git-initialzied? repo-root)]
     {:packages (->> package-dirs
-                    (map create-package-config)
+                    (map (partial create-package-config git-repo?))
                     (remove nil?)
                     vec)}))
 
