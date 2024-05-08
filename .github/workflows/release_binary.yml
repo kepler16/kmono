@@ -46,6 +46,7 @@ jobs:
       run: echo "release_tag=$(git tag -l 'com.kepler16/kmono@*' | sort -V | tail -n 1)" >> $GITHUB_OUTPUT
 
     - name: Check gh release exists
+      id: check-release-exists
       run: |
         if gh release view ${{ steps.release-tag.outputs.release_tag }} --json tagName; then
           echo "release_exists=true" >> $GITHUB_OUTPUT
