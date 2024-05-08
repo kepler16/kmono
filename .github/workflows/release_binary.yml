@@ -10,6 +10,7 @@ on:
 
 jobs:
   build:
+    if: ${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'com.kepler16/kmono@') }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, macos-latest-xlarge]
