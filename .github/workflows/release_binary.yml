@@ -1,16 +1,16 @@
-name: Release Binary
+name: Release Binary 👘
 
 on:
-  push:
-    tags:
-      - 'com.kepler16/kmono@*'
+  workflow_run:
+    workflows: ["Publish kmono 👘"]
+    types:
+      - completed
     branches:
       - master
-  workflow_dispatch:
 
 jobs:
   build:
-    if: ${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'com.kepler16/kmono@') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, macos-latest-xlarge]
