@@ -97,6 +97,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: needs.build.outputs.release_exists == 'false'
+    env:
+      GITHUB_USERNAME: ${{ secrets.ORG_GITHUB_ACTOR }}
+      GITHUB_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
 
