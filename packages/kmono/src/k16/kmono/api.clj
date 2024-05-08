@@ -1,6 +1,6 @@
 (ns k16.kmono.api
   (:require
-   [babashka.process.pprint]
+   [babashka.fs :as fs]
    [clojure.string :as string]
    [k16.kmono.ansi :as ansi]
    [k16.kmono.config :as config]
@@ -130,11 +130,22 @@
        (System/exit 0)
        (System/exit 1)))))
 
+(defn- relativize-to-repo-root
+  [repo-root path]
+  (when path
+    (if (fs/absolute? path)
+      (fs/path path)
+      (fs/path repo-root path))))
+
 (defn repl
   ([opts]
    (repl opts nil))
-  ([opts _]
-   (repl.deps/run-repl opts)))
+  ([{:keys [repo-root cp-file configure-lsp?] :as opts} _]
+   (let [cp-file' (when configure-lsp?
+                    (or (relativize-to-repo-root repo-root cp-file)
+                        (relativize-to-repo-root repo-root ".lsp/.kmonocp")))
+         opts' (assoc opts :cp-file (str cp-file'))]
+     (repl.deps/run-repl opts'))))
 
 (defn generate-classpath!
   ([opts]
@@ -142,6 +153,13 @@
   ([opts _]
    (binding [ansi/*logs-enabled* (:cp-file opts)]
      (repl.deps/generate-classpath! opts))))
+
+(defn generate-deps!
+  ([opts]
+   (generate-deps! opts nil))
+  ([opts _]
+   (binding [ansi/*logs-enabled* (:deps-file opts)]
+     (repl.deps/generate-deps! opts))))
 
 (comment
   (def args {:snapshot? true

@@ -52,6 +52,12 @@
    description
    :default default-value])
 
+(defn- deps-option
+  [default-value description]
+  ["-d" "--deps-file FILENAME"
+   description
+   :default default-value])
+
 (def repl-cli-spec
   [["-h" "--help"
     "Show this help"
@@ -74,11 +80,19 @@
    ["-g" "--glob GLOB"
     "A glob describing where to search for packages, (default: 'packages/*')"
     :default "packages/*"]
-   (cp-option nil "Classpath file name (default: do nothing)")])
+   ["-l" "--configure-lsp"
+    (str "Set repl specific `:project-specs` in `.lsp/config.edn`, "
+         "requires cp-file to be set (default: true)")
+    :id :configure-lsp?]
+   (cp-option nil "Save classpath file for LSP use (default: do nothing)")])
 
 (def cp-cli-spec
-  (conj (butlast repl-cli-spec)
+  (conj (drop-last 2 repl-cli-spec)
         (cp-option nil "Classpath file name (default: print to output)")))
+
+(def deps-cli-spec
+  (conj (drop-last 2 repl-cli-spec)
+        (deps-option nil "Creates a deps file")))
 
 (defn print-help
   [title summary]
@@ -92,6 +106,7 @@
        " run -x <exec> [opts...]"))
 (def repl-title "=== repl - start a REPL for monorepo ===")
 (def cp-title "=== cp - save/print a classpath ===")
+(def deps-title "=== deps - save/print a combined deps file ===")
 
 (defn make-handler
   [cli-spec help-title run-fn]
@@ -114,30 +129,36 @@
    "run" (make-handler run-cli-spec run-title api/run)
    "repl" (make-handler repl-cli-spec repl-title api/repl)
    "cp" (make-handler cp-cli-spec cp-title api/generate-classpath!)
+   "deps" (make-handler deps-cli-spec deps-title api/generate-deps!)
    "help" (fn [_]
             (let [run-summary (-> (tools.cli/parse-opts [] run-cli-spec)
                                   :summary)
                   repl-summary (-> (tools.cli/parse-opts [] repl-cli-spec)
                                    :summary)
                   cp-summary (-> (tools.cli/parse-opts [] cp-cli-spec)
-                                 :summary)]
+                                 :summary)
+                  deps-summary (-> (tools.cli/parse-opts [] deps-cli-spec)
+                                   :summary)]
               (println (str "kmono v" (get-version) "\n"))
               (println "USAGE: kmono <mode> opts...\n")
               (println "MODES:")
               (print-help run-title run-summary)
               (print-help repl-title repl-summary)
-              (print-help cp-title cp-summary)))})
+              (print-help cp-title cp-summary)
+              (print-help deps-title deps-summary)))})
 
 (defn -main [& args]
   (let [mode (first args)
         mode-handler (or (get modes mode)
                          (get modes "help"))]
     (mode-handler args)
-    (System/exit 0)))
+    #_(System/exit 0)))
 
 (comment
+  (require '[k16.kmono.ansi :as ansi])
   (tools.cli/parse-opts ["run" "-x" "'just test'"] run-cli-spec)
   (-main "-h")
+  (-main "deps" "-P" ":*/test")
   (-main "run" "-x" "build")
-  (-main "repl" "-A" ":foo:bar" "-P" "kmono/test")
+  (-main "repl" "-A" ":foo:bar" "-P" "kmono/test" "-l")
   nil)
