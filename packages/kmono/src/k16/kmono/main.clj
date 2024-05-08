@@ -152,7 +152,7 @@
         mode-handler (or (get modes mode)
                          (get modes "help"))]
     (mode-handler args)
-    #_(System/exit 0)))
+    (System/exit 0)))
 
 (comment
   (require '[k16.kmono.ansi :as ansi])
