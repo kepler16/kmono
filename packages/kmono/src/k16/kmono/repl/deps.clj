@@ -2,6 +2,7 @@
   (:require
    [babashka.fs :as fs]
    [babashka.process :as bp]
+   [clojure.edn :as edn]
    [clojure.pprint :as pprint]
    [clojure.string :as string]
    [clojure.walk :as walk]
@@ -178,8 +179,51 @@
         (make-cp-params config params)]
     (cp! cp-params sdeps-overrides)))
 
+(defn generate-deps!
+  [{:keys [repo-root glob deps-file] :as params}]
+  (ansi/print-info "Generating kmono deps.edn...")
+  (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
+  (let [config (config/load-config repo-root glob)
+        {:keys [sdeps-overrides]} (make-cp-params config params)
+        project-deps-file (fs/file repo-root "deps.edn")
+        project-deps (when (fs/exists? project-deps-file)
+                       (util/read-deps-edn! project-deps-file))
+        kmono-deps (binding [*print-namespace-maps* false]
+                     (with-out-str
+                       (pprint/pprint
+                        (merge project-deps sdeps-overrides))))]
+    (if deps-file
+      (spit deps-file kmono-deps)
+      (do
+        (println "kmono deps.edn")
+        (println kmono-deps)))))
+
+(defn create-project-specs
+  [cp-file]
+  [{:project-path "deps.edn"
+    :classpath-cmd ["cat" cp-file]}])
+
+(defn configure-lsp!
+  [{:keys [repo-root cp-file]}]
+  (let [lsp-config-file (fs/file repo-root ".lsp/config.edn")
+        lsp-config (when (fs/exists? lsp-config-file)
+                     (try
+                       (-> lsp-config-file
+                           (slurp)
+                           (edn/read-string))
+                       (catch Throwable _ {})))
+        project-specs (create-project-specs cp-file)
+        with-project-specs
+        (assoc lsp-config :project-specs project-specs)]
+    (ansi/print-info "Setting project-specs for lsp config")
+    (spit lsp-config-file
+          (with-out-str
+            (binding [*print-namespace-maps* false]
+              (pprint/pprint with-project-specs))))))
+
 (defn run-repl
-  [{:keys [main-aliases aliases repo-root glob cp-file verbose?] :as params}]
+  [{:keys [main-aliases aliases repo-root glob cp-file configure-lsp? verbose?]
+    :as params}]
   (ansi/print-info "Starting kmono REPL...")
   (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
   (binding [*print-namespace-maps* false]
@@ -200,6 +244,8 @@
           clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
       (when cp-file
         (cp! cp-params sdeps-overrides))
+      (when configure-lsp?
+        (configure-lsp! params))
       (ansi/print-info "Running clojure...")
       (when verbose?
         (print-clojure-cmd sdeps-overrides main-opts))

@@ -17,3 +17,6 @@ build-native *ARGS:
 
 release *ARGS:
     clojure -T:kmono run :exec :release {{ ARGS }}
+
+repl *ARGS:
+    clojure -M:kmono repl -A {{ ARGS }} -P ':*/test' -l -v

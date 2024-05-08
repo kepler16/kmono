@@ -1,4 +1,5 @@
 {:deps {local/build {:local/root "build"}}
  
  :aliases {:kmono {:deps {com.kepler16/kmono {:local/root "packages/kmono"}}
+                   :main-opts [-m k16.kmono.main]
                    :ns-default k16.kmono.api}}}
