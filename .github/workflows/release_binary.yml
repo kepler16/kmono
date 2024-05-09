@@ -77,9 +77,6 @@ jobs:
             "username": "${{ github.actor }}",
             "password": "${{ secrets.GITHUB_TOKEN }}"}]
 
-    - name: Build Uber for Native Image
-      run: just build-uber ":snapshot?" false
-
     - name: Build Native Image
       run: just build-native ":snapshot?" false
 
