@@ -172,7 +172,6 @@
      :sdeps-overrides (update package-overrides
                               :aliases
                               merge
-                              nrepl-alias
                               deps-local-overrides)}))
 
 (defn generate-classpath!
@@ -235,7 +234,6 @@
     (let [config (config/load-config repo-root glob)
           {:keys [cp-params package-overrides sdeps-overrides]}
           (make-cp-params config params)
-          sdeps (str "-Sdeps '" (pr-str sdeps-overrides) "'")
           main-opts (str "-M"
                          (string/join (-> package-overrides :aliases (keys)))
                          (string/join aliases)
@@ -246,6 +244,10 @@
                            (do (ansi/print-info
                                 "Using default main alias :kmono/repl")
                                ":kmono/nrepl")))
+          with-nrepl-alias (if-not (seq main-aliases)
+                             (update sdeps-overrides :aliases merge nrepl-alias)
+                             sdeps-overrides)
+          sdeps (str "-Sdeps '" (pr-str with-nrepl-alias) "'")
           clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
       (when cp-file
         (cp! cp-params sdeps-overrides))
