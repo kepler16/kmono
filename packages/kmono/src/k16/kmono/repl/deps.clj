@@ -141,21 +141,22 @@
 
 (defn- cp!
   [{:keys [verbose? package-aliases aliases repo-root cp-file]} sdeps-overrides]
-  (let [cp-opts (str "-A"
-                     (string/join package-aliases)
-                     (string/join aliases))
+  (let [all-aliases (str (string/join package-aliases)
+                         (string/join aliases))
+        cp-aliases-opt (when (seq all-aliases)
+                         (str "-A" all-aliases))
         ;; to avoid "use -M instead of -A" deprecation warning
         sdeps-overrides' (update sdeps-overrides
                                  :aliases
                                  update-vals
                                  #(dissoc % :main-opts))
         sdeps (str "-Sdeps '" (pr-str sdeps-overrides') "'")
-        clojure-cmd (string/join " " ["clojure" sdeps cp-opts "-Spath"])]
+        clojure-cmd (string/join " " ["clojure" sdeps cp-aliases-opt "-Spath"])]
     (if (seq cp-file)
       (do
         (ansi/print-info "Saving classpath to a file:" cp-file)
         (when verbose?
-          (print-clojure-cmd sdeps-overrides' (str cp-opts " -Spath")))
+          (print-clojure-cmd sdeps-overrides' (str cp-aliases-opt " -Spath")))
         (bp/shell {:dir repo-root :out cp-file} clojure-cmd))
       (bp/shell {:dir repo-root} clojure-cmd))))
 
