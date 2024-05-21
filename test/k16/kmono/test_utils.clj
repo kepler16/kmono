@@ -53,7 +53,9 @@
         cmds))
 
 (defn initialize-git! []
-  (shell-commands! ["git init -q"
+  (shell-commands! ["git init -q --initial-branch=main"
+                    "git config user.email \"kmono@test.com\""
+                    "git config user.name \"kmono\""
                     "git add ."
                     "git commit -m 'initial commit'"]))
 
