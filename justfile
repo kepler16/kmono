@@ -1,11 +1,12 @@
 default:
-  @just --choose
+    @just --choose
 
 clean:
     clojure -T:build clean
 
 build-uber-native: clean
-    clojure -T:build uber-for-native
+    clojure -T:kmono run :exec '"clojure -T:build uber-for-native"'
+    
 
 native-image:
     $GRAALVM_HOME/bin/native-image \
