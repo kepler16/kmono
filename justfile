@@ -4,9 +4,8 @@ default:
 clean:
     clojure -T:build clean
 
-build-uber-native: clean
-    clojure -T:kmono run :exec '"clojure -T:build uber-for-native"'
-    
+build-uber-native *ARGS: clean
+    clojure -T:kmono run :exec '"clojure -T:build uber-for-native"' {{ ARGS }}
 
 native-image:
     $GRAALVM_HOME/bin/native-image \
@@ -19,7 +18,9 @@ native-image:
       -H:+ReportExceptionStackTraces \
       --initialize-at-build-time=org.eclipse.aether.transport.http.HttpTransporterFactory
 
-build-native *ARGS: build-uber-native native-image
+build-native *ARGS:
+    just build-uber-native {{ ARGS }} && \
+    just native-image && \
     rm -rf ./bin && mkdir bin && \
     cp target/kmono ./bin/kmono
 
