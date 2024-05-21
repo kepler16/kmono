@@ -22,7 +22,8 @@
 (defn clean [_]
   (b/delete {:path "target"}))
 
-(defn build [_]
+(defn build [opts]
+  (clean opts)
   (b/write-pom {:class-dir class-dir
                 :lib lib
                 :version version
