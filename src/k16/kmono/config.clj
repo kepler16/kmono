@@ -57,7 +57,9 @@
 (defn- create-config
   [repo-root glob]
   (let [package-dirs (conj (fs/glob repo-root glob)
-                           (fs/absolutize (fs/path repo-root)))]
+                           (-> (fs/path repo-root)
+                               (fs/normalize)
+                               (fs/absolutize)))]
     {:packages (->> package-dirs
                     (map (partial create-package-config repo-root glob))
                     (remove nil?)
