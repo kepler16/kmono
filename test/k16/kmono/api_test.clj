@@ -46,6 +46,7 @@
     (testing "Make feat changes to p1 and release again"
       (spit (fs/file repo-root "packages/p1/src/foo.clj")
             "(ns foo)\n(println :hello)")
+      (Thread/sleep 100)
       (test-utils/shell-commands! ["git add ."
                                    "git commit -m 'feat: p1 foo added'"])
       (is (= [true
@@ -63,6 +64,7 @@
       (spit (fs/file repo-root "packages/p2/src/bar.clj")
             "(ns bar)\n(println :hello_bar)")
       (spit (fs/file repo-root "src/lol.clj") "(ns lol)")
+      (Thread/sleep 100)
       (test-utils/shell-commands! ["git add ."
                                    "git commit -m 'fix: root and p2 bugs'"])
       (is (= [true

@@ -50,7 +50,7 @@
         (mapv (fn [cmd]
                 (let [result (bp/shell {:dir repo-root
                                         :out :string} cmd)]
-                  (Thread/sleep 20)
+                  (Thread/sleep 50)
                   [cmd result]))
               cmds)))
 
