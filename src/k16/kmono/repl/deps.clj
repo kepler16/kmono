@@ -9,6 +9,7 @@
    [k16.kmono.adapters.clojure-deps :as clj.deps]
    [k16.kmono.ansi :as ansi]
    [k16.kmono.config :as config]
+   [k16.kmono.config-schema :as config.schema]
    [k16.kmono.util :as util]
    [malli.core :as m]))
 
@@ -98,8 +99,9 @@
 (defn construct-sdeps-overrides!
   "Accepts kmono config and a collection pairs of package/alias and
   returns a string for -Sdeps argument"
-  [config package-alias-pairs]
-  (let [package-dirs (->> config
+  [config]
+  (let [package-alias-pairs (:package-aliases config)
+        package-dirs (->> config
                           :packages
                           (map (fn [pkg]
                                  [(fs/file-name (fs/normalize
@@ -144,7 +146,7 @@
                                          (pprint/pprint sdeps-overrides))
                                        "\n" args-str))))
 
-(defn- cp!
+(defn cp!
   [{:keys [verbose? package-aliases aliases repo-root cp-file]} sdeps-overrides]
   (let [all-aliases (str (string/join package-aliases)
                          (string/join aliases))
@@ -166,13 +168,13 @@
       (bp/shell {:dir repo-root} clojure-cmd))))
 
 (defn- make-cp-params
-  [config {:keys [package-aliases] :as params}]
-  (let [package-overrides (construct-sdeps-overrides! config package-aliases)
+  [config]
+  (let [package-overrides (construct-sdeps-overrides! config)
         local-deps-file (fs/file (:repo-root config) "deps.local.edn")
         deps-local-overrides (when (fs/exists? local-deps-file)
                                (util/read-deps-edn! local-deps-file))]
     {:package-overrides package-overrides
-     :cp-params (assoc params
+     :cp-params (assoc config
                        :package-aliases
                        (-> package-overrides :aliases (keys)))
      :sdeps-overrides (update package-overrides
@@ -184,17 +186,17 @@
   [{:keys [repo-root glob] :as params}]
   (ansi/print-info "Generating kmono REPL classpath...")
   (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
-  (let [config (config/load-config repo-root glob)
+  (let [config (merge (config/load-config repo-root glob) params)
         {:keys [cp-params sdeps-overrides]}
-        (make-cp-params config params)]
+        (make-cp-params config)]
     (cp! cp-params sdeps-overrides)))
 
 (defn generate-deps!
   [{:keys [repo-root glob deps-file] :as params}]
   (ansi/print-info "Generating kmono deps.edn...")
   (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
-  (let [config (config/load-config repo-root glob)
-        {:keys [sdeps-overrides]} (make-cp-params config params)
+  (let [config (merge (config/load-config repo-root glob) params)
+        {:keys [sdeps-overrides]} (make-cp-params config)
         project-deps-file (fs/file repo-root "deps.edn")
         project-deps (when (fs/exists? project-deps-file)
                        (util/read-deps-edn! project-deps-file))
@@ -215,31 +217,33 @@
 
 (defn configure-lsp!
   [{:keys [repo-root cp-file]}]
-  (let [lsp-config-file (fs/file repo-root ".lsp/config.edn")
-        lsp-config (when (fs/exists? lsp-config-file)
-                     (try
-                       (-> lsp-config-file
-                           (slurp)
-                           (edn/read-string))
-                       (catch Throwable _ {})))
-        project-specs (create-project-specs cp-file)
-        with-project-specs
-        (assoc lsp-config :project-specs project-specs)]
-    (ansi/print-info "Setting project-specs for lsp config")
-    (spit lsp-config-file
-          (with-out-str
-            (binding [*print-namespace-maps* false]
-              (pprint/pprint with-project-specs))))))
+  (when (seq cp-file)
+    (let [lsp-config-file (fs/file repo-root ".lsp/config.edn")
+          lsp-config (when (fs/exists? lsp-config-file)
+                       (try
+                         (-> lsp-config-file
+                             (slurp)
+                             (edn/read-string))
+                         (catch Throwable _ {})))
+          project-specs (create-project-specs cp-file)
+          with-project-specs
+          (assoc lsp-config :project-specs project-specs)]
+      (ansi/print-info "Setting project-specs for lsp config")
+      (spit lsp-config-file
+            (with-out-str
+              (binding [*print-namespace-maps* false]
+                (pprint/pprint with-project-specs)))))))
 
 (defn run-repl
-  [{:keys [main-aliases aliases repo-root glob cp-file configure-lsp? verbose?]
-    :as params}]
+  [{:keys [repo-root glob] :as params}]
   (ansi/print-info "Starting kmono REPL...")
-  (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
   (binding [*print-namespace-maps* false]
-    (let [config (config/load-config repo-root glob)
+    (let [{:keys [main-aliases aliases cp-file configure-lsp? verbose?]
+           :as config}
+          (merge (config/load-config repo-root glob) params)
+          _ (config.schema/assert-schema! ?ReplParams "REPL params error" config)
           {:keys [cp-params package-overrides sdeps-overrides]}
-          (make-cp-params config params)
+          (make-cp-params config)
           main-opts (str "-M"
                          (string/join (-> package-overrides :aliases (keys)))
                          (string/join aliases)
@@ -255,10 +259,10 @@
                              sdeps-overrides)
           sdeps (str "-Sdeps '" (pr-str with-nrepl-alias) "'")
           clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
-      (when cp-file
+      (when (seq cp-file)
         (cp! cp-params sdeps-overrides))
       (when configure-lsp?
-        (configure-lsp! params))
+        (configure-lsp! config))
       (ansi/print-info "Running clojure...")
       (when verbose?
         (print-clojure-cmd sdeps-overrides main-opts))

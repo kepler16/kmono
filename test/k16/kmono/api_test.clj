@@ -3,6 +3,7 @@
    [babashka.fs :as fs]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [k16.kmono.api :as api]
+   [k16.kmono.repl.deps :as repl.deps]
    [k16.kmono.test-utils :as test-utils :refer [repo-root]]))
 
 (use-fixtures :each test-utils/repo-fixture)
@@ -95,3 +96,25 @@
              (api/-run release-opts nil)))
       (is (= #{"kmono-test/root-module@0.0.0.0"}
              (set (test-utils/get-tags)))))))
+
+(deftest cp-workplace-test
+  (let [release-opts {:repo-root repo-root}]
+    (spit (fs/file repo-root "deps.edn")
+          (str {:kmono/workspace {:group "kmono-wp-test"
+                                  :glob "packages/*"
+                                  :aliases [:dev]
+                                  :package-aliases [:*/test]
+                                  :build-cmd "echo 'build root'"
+                                  :release-cmd "echo 'release root'"}
+                :deps {}
+                :paths ["src"]}))
+    (testing "Derive params from workspace"
+      (with-redefs [repl.deps/cp! (fn [{:keys [package-aliases
+                                               aliases]}
+                                       sdeps-overrides]
+                                    (is (= [:kmono/package-deps
+                                            :kmono.pkg/p2.test
+                                            :kmono.pkg/p1.test]
+                                           package-aliases))
+                                    (is (= [:dev] aliases)))]
+        (api/generate-classpath! release-opts nil)))))
