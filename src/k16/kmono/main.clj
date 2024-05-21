@@ -154,11 +154,3 @@
     (mode-handler args)
     (System/exit 0)))
 
-(comment
-  (require '[k16.kmono.ansi :as ansi])
-  (tools.cli/parse-opts ["run" "-x" "'just test'"] run-cli-spec)
-  (-main "-h")
-  (-main "deps" "-P" ":*/test")
-  (-main "run" "-x" "build")
-  (-main "repl" "-A" ":foo:bar" "-P" "kmono/test" "-l")
-  nil)

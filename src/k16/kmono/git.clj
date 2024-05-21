@@ -120,13 +120,6 @@
 (defn package-changes
   [{:keys [repo-root snapshot? glob include-unchanged?]}
    {:keys [commit-sha dir] :as pkg}]
-  (def repo-root repo-root)
-  (def snapshot? snapshot?)
-  (def glob glob)
-  (def include-unchanged? include-unchanged?)
-  (def pkg pkg)
-  (def commit-sha commit-sha)
-  (def dir dir)
   (or (and (git-initialzied? repo-root)
            (when-let [latest-tag (some->>
                                   repo-root
