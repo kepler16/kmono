@@ -47,10 +47,12 @@
 
 (defn shell-commands! [cmds]
   (into {}
-        (map (fn [cmd]
-               [cmd (bp/shell {:dir repo-root
-                               :out :string} cmd)]))
-        cmds))
+        (mapv (fn [cmd]
+                (let [result (bp/shell {:dir repo-root
+                                        :out :string} cmd)]
+                  (Thread/sleep 20)
+                  [cmd result]))
+              cmds)))
 
 (defn initialize-git! []
   (shell-commands! ["git init -q --initial-branch=main"
