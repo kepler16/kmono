@@ -28,21 +28,26 @@
   [config]
   (assert-schema! schema/?Config config))
 
-(defn- create-package-config [git-repo? package-dir]
+(defn- create-package-config [repo-root glob package-dir]
   (when-let [adapter (get-adapter package-dir)]
-    (let [kb-pkg-config (->> (adapter/get-kmono-config adapter)
+    (let [git-repo? (git/git-initialzied? repo-root)
+          kb-pkg-config (->> (adapter/get-kmono-config adapter)
                              (assert-schema! schema/?KmonoPackageConfig))
           artifact (or (:artifact kb-pkg-config)
                        (symbol (fs/file-name package-dir)))
           pkg-name (str (:group kb-pkg-config) "/" artifact)
+          root-package? (fs/same-file? repo-root package-dir)
+          exclusions (when root-package?
+                       (str ":!:" glob))
           pkg-commit-sha (or (when git-repo?
-                               (git/subdir-commit-sha package-dir))
+                               (git/subdir-commit-sha exclusions package-dir))
                              "untracked")
           pkg-config (merge kb-pkg-config
                             {:artifact (or (:artifact kb-pkg-config)
                                            (symbol (fs/file-name package-dir)))
                              :name pkg-name
                              :commit-sha pkg-commit-sha
+                             :root-package? root-package?
                              :adapter adapter
                              :dir (str package-dir)})]
 
@@ -51,10 +56,10 @@
 
 (defn- create-config
   [repo-root glob]
-  (let [package-dirs (fs/glob repo-root glob)
-        git-repo? (git/git-initialzied? repo-root)]
+  (let [package-dirs (conj (fs/glob repo-root glob)
+                           (fs/absolutize (fs/path repo-root)))]
     {:packages (->> package-dirs
-                    (map (partial create-package-config git-repo?))
+                    (map (partial create-package-config repo-root glob))
                     (remove nil?)
                     vec)}))
 
@@ -155,3 +160,4 @@
           :package-map (->pkg-map packages)
           :graph graph
           :build-order (parallel-topo-sort graph)})))))
+

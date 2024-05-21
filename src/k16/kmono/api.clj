@@ -23,20 +23,21 @@
   [config changes]
   (let [[success? stage-results] (exec/build config changes)]
     (print-stage-results stage-results)
-    success?))
+    [success? stage-results]))
 
 (defn- run-custom-cmd
   [config changes]
   (ansi/assert-err! (:exec config) "custom command not specified")
-  (let [[_ stage-results] (exec/custom-command config changes)]
+  (let [[_ stage-results] (exec/custom-command config changes)
+        success? (->> stage-results
+                      (apply merge)
+                      (vals)
+                      (map :success?)
+                      (filter not)
+                      (seq)
+                      (nil?))]
     (print-stage-results stage-results)
-    (->> stage-results
-         (apply merge)
-         (vals)
-         (map :success?)
-         (filter not)
-         (seq)
-         (nil?))))
+    [success? stage-results]))
 
 (defn- run-release
   [config changes]
@@ -61,6 +62,7 @@
                                      (when (and create-tags? changed? (not snapshot?))
                                        (str pkg-name "@" version)))))
                             (remove nil?))]
+    (def tags-to-create tags-to-create)
     (doseq [[pkg-name result] failed-releases]
       (ansi/print-error pkg-name "failed to release")
       (ansi/print-shifted (:output result)))
@@ -76,7 +78,7 @@
           (ansi/print-shifted (ex-message ex))
           (ansi/print-shifted (:body (ex-data ex)))))
       (ansi/print-info "no tags has been created"))
-    (empty? failed-releases)))
+    [(empty? failed-releases) stage-results]))
 
 (def ?RunOpts
   [:map
@@ -105,27 +107,29 @@
     (keyword exec-cmd)
     exec-cmd))
 
+(defn -run [{:keys [exec dry-run?] :as opts} arguments]
+  (if dry-run?
+    (ansi/print-info "Starting kmono in dry mode...")
+    (ansi/print-info "Starting kmono..."))
+  (let [opts' (if (and (not exec) (seq arguments))
+                (assoc opts :exec (arg->exec arguments))
+                opts)
+        {:keys [repo-root glob exec]
+         :as run-params} (m/decode ?RunOpts opts' mt/default-value-transformer)
+        config (-> run-params
+                   (merge (config/load-config repo-root glob))
+                   (config/validate-config!))
+        changes (git/scan-for-changes config)
+        _ (ansi/assert-err! (seq (:build-order config)) "no packages to execute found")]
+    (case exec
+      :build (run-build config changes)
+      :release (run-release config changes)
+      (run-custom-cmd config changes))))
+
 (defn run
-  ([opts]
-   (run opts nil))
-  ([{:keys [exec dry-run?] :as opts} arguments]
-   (if dry-run?
-     (ansi/print-info "Starting kmono in dry mode...")
-     (ansi/print-info "Starting kmono..."))
-   (let [opts' (if (and (not exec) (seq arguments))
-                 (assoc opts :exec (arg->exec arguments))
-                 opts)
-         {:keys [repo-root glob exec]
-          :as run-params} (m/decode ?RunOpts opts' mt/default-value-transformer)
-         config (-> run-params
-                    (merge (config/load-config repo-root glob))
-                    (config/validate-config!))
-         changes (git/scan-for-changes config)
-         _ (ansi/assert-err! (seq (:build-order config)) "no packages to execute found")
-         success? (case exec
-                    :build (run-build config changes)
-                    :release (run-release config changes)
-                    (run-custom-cmd config changes))]
+  ([opts] (run opts nil))
+  ([opts arguments]
+   (let [[success?] (-run opts arguments)]
      (if success?
        (System/exit 0)
        (System/exit 1)))))

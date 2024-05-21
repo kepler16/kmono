@@ -1,3 +1,0 @@
-#kaocha/v1
- {:tests [{:id :unit}]
-  :plugins [:print-invocations :profiling]}

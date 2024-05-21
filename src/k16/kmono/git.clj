@@ -26,7 +26,7 @@
   (-> (bp/shell {:dir (str dir)
                  :out :string
                  :err :string}
-                (string/join cmd))
+                (string/join " " cmd))
       (out->strings)))
 
 (defn get-sorted-tags
@@ -35,14 +35,18 @@
   (run-cmd! repo-root "git tag --sort=-creatordate"))
 
 (defn subdir-commit-sha
-  [sub-dir]
-  (first (run-cmd! (str sub-dir) "git log -n 1 --pretty=format:\"%h\" -- .")))
+  [exclusions sub-dir]
+  (first (run-cmd!
+          (str sub-dir)
+          "git log -n 1 --pretty=format:\"%h\" -- ."
+          exclusions)))
 
 (defn subdir-changes
-  [sub-dir tag]
+  [sub-dir tag exclusions]
   (when-let [out (run-cmd! sub-dir
                            "git log --pretty=format:\"%s\" "
-                           tag "..HEAD -- .")]
+                           (str tag "..HEAD -- .")
+                           exclusions)]
     (if (coll? out)
       (vec out)
       [out])))
@@ -106,24 +110,34 @@
     (throw (ex-info "Version does not match pattern `major.minor.patch[.build]`"
                     {:body (str "version: " version)}))))
 
-(defn non-git-pkg-changes [snapshot? commit-sha]
+(defn non-git-pkg-changes [snapshot? pkg]
   {:version (if snapshot?
-              (str "0.0.0.0-" commit-sha "-SNAPSHOT")
+              (str "0.0.0.0-" (:commit-sha pkg) "-SNAPSHOT")
               "0.0.0.0")
    :changed? true
-   :package-name name})
+   :package-name (:name pkg)})
 
 (defn package-changes
-  [{:keys [repo-root snapshot? include-unchanged?]}
-   {:keys [name commit-sha dir]}]
+  [{:keys [repo-root snapshot? glob include-unchanged?]}
+   {:keys [commit-sha dir] :as pkg}]
+  (def repo-root repo-root)
+  (def snapshot? snapshot?)
+  (def glob glob)
+  (def include-unchanged? include-unchanged?)
+  (def pkg pkg)
+  (def commit-sha commit-sha)
+  (def dir dir)
   (or (and (git-initialzied? repo-root)
            (when-let [latest-tag (some->>
                                   repo-root
                                   (get-sorted-tags)
-                                  (filter #(string/starts-with? % (str name "@")))
+                                  (filter #(string/starts-with?
+                                            % (str (:name pkg) "@")))
                                   (first))]
              (let [[_ current-version] (string/split latest-tag #"@")
-                   bump-type (-> (subdir-changes dir latest-tag)
+                   exclusions (when (fs/same-file? repo-root dir)
+                                (str ":!:" glob))
+                   bump-type (-> (subdir-changes dir latest-tag exclusions)
                                  (bump-type))]
                (when (version? current-version)
                  (let [changed? (or (not= :none bump-type)
@@ -136,8 +150,8 @@
                                  current-version)]
                    {:version version
                     :changed? changed?
-                    :package-name name})))))
-      (non-git-pkg-changes snapshot? commit-sha)))
+                    :package-name (:name pkg)})))))
+      (non-git-pkg-changes snapshot? pkg)))
 
 (defn- bump-dependand
   [dependant config dependant-name]
@@ -185,6 +199,7 @@
   fallback_version. Returns a promise containing changes"
   {:malli/schema [:=> [:cat config.schema/?Config] ?Changes]}
   [{:keys [packages] :as config}]
+  (package-changes config (second packages))
   (->> packages
        (into {} (map (fn [pkg] [(:name pkg) (package-changes config pkg)])))
        (ensure-dependend-builds config)))
