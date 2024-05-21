@@ -34,4 +34,4 @@ test:
     clojure -M:test -m "kaocha.runner"
 
 repl *ARGS:
-    clojure -M:kmono{{ ARGS }} repl -P ':*/test' -l -v
+    clojure -M:kmono:test{{ ARGS }} repl
