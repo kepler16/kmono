@@ -53,4 +53,16 @@
    [:graph ?Graph]
    [:build-order [:maybe ?BuildOrder]]])
 
+(defn assert-schema!
+  ([?schema value]
+   (assert-schema! ?schema "Schema error" value))
+  ([?schema title value]
+   (binding [ansi/*logs-enabled* true]
+     (if-not (m/validate ?schema value)
+       (do (ansi/print-error title)
+           (ansi/print-shifted
+            (with-out-str
+              (pp/pprint (me/humanize (m/explain ?schema value)))))
+           (throw (ex-info title {:type :errors/assertion})))
+       value))))
 

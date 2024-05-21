@@ -10,6 +10,16 @@
    [malli.core :as m]
    [malli.transform :as mt]))
 
+(defmacro with-assertion-error
+  [& body]
+  `(try
+     ~@body
+     (catch clojure.lang.ExceptionInfo ex#
+       (let [data# (ex-data ex#)]
+         (when-not (= :errors/assertion (:type data#))
+           (ansi/print-error (ex-message ex#)))
+         (System/exit 1)))))
+
 (defn- print-stage-results
   [stage-results]
   (doseq [stage-result stage-results]
@@ -115,9 +125,9 @@
                 opts)
         {:keys [repo-root glob exec]
          :as run-params} (m/decode ?RunOpts opts' mt/default-value-transformer)
-        config (-> run-params
-                   (merge (config/load-config repo-root glob))
-                   (config/validate-config!))
+        config (->> run-params
+                    (merge (config/load-config repo-root glob))
+                    (config/validate-config!))
         changes (git/scan-for-changes config)
         _ (ansi/assert-err! (seq (:build-order config)) "no packages to execute found")]
     (case exec
@@ -128,10 +138,11 @@
 (defn run
   ([opts] (run opts nil))
   ([opts arguments]
-   (let [[success?] (-run opts arguments)]
-     (if success?
-       (System/exit 0)
-       (System/exit 1)))))
+   (with-assertion-error
+     (let [[success?] (-run opts arguments)]
+       (if success?
+         (System/exit 0)
+         (System/exit 1))))))
 
 (defn- relativize-to-repo-root
   [repo-root path]
@@ -144,23 +155,26 @@
   ([opts]
    (repl opts nil))
   ([{:keys [repo-root cp-file configure-lsp?] :as opts} _]
-   (let [cp-file' (when configure-lsp?
-                    (or (relativize-to-repo-root repo-root cp-file)
-                        (relativize-to-repo-root repo-root ".lsp/.kmonocp")))
-         opts' (assoc opts :cp-file (str cp-file'))]
-     (repl.deps/run-repl opts'))))
+   (with-assertion-error
+     (let [cp-file' (when configure-lsp?
+                      (or (relativize-to-repo-root repo-root cp-file)
+                          (relativize-to-repo-root repo-root ".lsp/.kmonocp")))
+           opts' (assoc opts :cp-file (str cp-file'))]
+       (repl.deps/run-repl opts')))))
 
 (defn generate-classpath!
   ([opts]
    (generate-classpath! opts nil))
   ([opts _]
    (binding [ansi/*logs-enabled* (:cp-file opts)]
-     (repl.deps/generate-classpath! opts))))
+     (with-assertion-error
+       (repl.deps/generate-classpath! opts)))))
 
 (defn generate-deps!
   ([opts]
    (generate-deps! opts nil))
   ([opts _]
    (binding [ansi/*logs-enabled* (:deps-file opts)]
-     (repl.deps/generate-deps! opts))))
+     (with-assertion-error
+       (repl.deps/generate-deps! opts)))))
 

@@ -51,7 +51,7 @@
   [v msg]
   (when-not v
     (println ERROR_PREFIX msg)
-    (System/exit 1)))
+    (throw (ex-info msg {:type :errors/assertion}))))
 
 (defn print-raw
   [output]
