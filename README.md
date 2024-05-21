@@ -39,6 +39,22 @@ provided build command
 - Requires a baseline tag; otherwise, the version defaults to `0.0.0.0`.
 - Currently only Clojure deps.edn specific.
 
+## Installation
+
+One can use it as a library or download a native binary.
+
+Download one of the binaries from the releases page. Or use Github CLI
+by setting pattern to one of the binary archive names from the release.
+Following command installs latest mac arm64 binary:
+
+```sh
+gh release download --clobber --repo kepler16/kmono \
+  --pattern "kmono-macos-arm64.tar.gz" --dir . && \
+  tar -xzf kmono-macos-arm64.tar.gz && \
+  rm kmono-macos-arm64.tar.gz && \
+  mv kmono ~/.local/bin/kmono
+```
+
 ## Quick Start (deps.edn projects)
 
 **Directory Structure**
