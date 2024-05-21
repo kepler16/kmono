@@ -199,8 +199,6 @@
   fallback_version. Returns a promise containing changes"
   {:malli/schema [:=> [:cat config.schema/?Config] ?Changes]}
   [{:keys [packages] :as config}]
-  (def config config)
-  (def packages packages)
   (package-changes config (second packages))
   (->> packages
        (into {} (map (fn [pkg] [(:name pkg) (package-changes config pkg)])))
