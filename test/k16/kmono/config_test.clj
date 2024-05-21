@@ -45,3 +45,35 @@
              (-> config
                  :package-map
                  (update-vals :root-package?)))))))
+
+(deftest workspace-test
+  (testing "Packages should derive opts from workspace if not set"
+    (let [p1-dir "packages/p1"
+          p2-dir "packages/p2"]
+      (spit (fs/file repo-root "deps.edn")
+            (str {:kmono/workspace {:group "kmono-wp-test"
+                                    :package-aliases [:*/test]
+                                    :build-cmd "echo 'build root'"
+                                    :release-cmd "echo 'release root'"}
+                  :deps {}
+                  :paths ["src"]}))
+      (spit (fs/file repo-root p1-dir "deps.edn")
+            (str {:kmono/config {:build-cmd "echo 'build p1'"
+                                 :release-cmd "echo 'release p1'"}
+                  :deps {}
+                  :paths ["src"]}))
+
+      (spit (fs/file repo-root p2-dir "deps.edn")
+            (str {:kmono/config {:group "my-own-group"
+                                 :build-cmd "echo 'build p2'"
+                                 :release-cmd "echo 'release p2'"}
+                  :deps {}
+                  :paths ["src"]}))
+      (let [config (config/load-config repo-root)]
+        (is (= 2 (count (:packages config))))
+        (is (= #{"my-own-group/p2" "kmono-wp-test/p1"}
+               (->> config
+                    :packages
+                    (map :name)
+                    (set))))))))
+

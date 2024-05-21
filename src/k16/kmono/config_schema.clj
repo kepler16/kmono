@@ -1,6 +1,34 @@
 (ns k16.kmono.config-schema
   (:require
+   [clojure.pprint :as pp]
+   [k16.kmono.ansi :as ansi]
+   [malli.core :as m]
+   [malli.error :as me]
    [malli.util :as mu]))
+
+(def ?CommandConfig
+  [:map
+   [:glob {:optional true
+           :default "packages/*"}
+    :string]
+   [:snapshot? {:optional true
+                :default true}
+    :boolean]
+   [:include-unchanged? {:optional true
+                         :default true}
+    :boolean]
+   [:main-aliases {:optional true}
+    [:vector :keyword]]
+   [:aliases {:optional true}
+    [:vector :keyword]]
+   [:package-aliases {:optional true}
+    [:vector :keyword]]])
+
+(def ?KmonoWorkspaceConfig
+  (mu/merge ?CommandConfig
+            [:map
+             [:group {:optional true}
+              [:or :string :symbol]]]))
 
 (def ?KmonoPackageConfig
   [:map
@@ -40,18 +68,19 @@
   [:vector [:vector :string]])
 
 (def ?Config
-  [:map {:closed true}
-   [:exec [:or :string [:enum :build :release]]]
-   [:glob :string]
-   [:dry-run? :boolean]
-   [:snapshot? :boolean]
-   [:include-unchanged? :boolean]
-   [:create-tags? :boolean]
-   [:repo-root :string]
-   [:packages ?Packages]
-   [:package-map ?PackageMap]
-   [:graph ?Graph]
-   [:build-order [:maybe ?BuildOrder]]])
+  (mu/merge
+   (mu/required-keys ?CommandConfig [:glob :snapshot? :include-unchanged?])
+   [:map {:closed true}
+    [:exec [:or :string [:enum :build :release]]]
+    [:workspace-config {:optional true}
+     ?KmonoWorkspaceConfig]
+    [:dry-run? :boolean]
+    [:create-tags? :boolean]
+    [:repo-root :string]
+    [:packages ?Packages]
+    [:package-map ?PackageMap]
+    [:graph ?Graph]
+    [:build-order [:maybe ?BuildOrder]]]))
 
 (defn assert-schema!
   ([?schema value]
