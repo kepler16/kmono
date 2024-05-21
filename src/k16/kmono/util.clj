@@ -21,21 +21,18 @@
   (loop [changes' changes
          cursor (keys changes)]
     (if-let [{:keys [published? package-name]} (get changes' (first cursor))]
-      (do
-        (println package-name)
-
-        (if-not @published?
-          (let [dependants (->> graph
-                                (map (fn [[pkg-name deps]]
-                                       (when (contains? deps package-name)
-                                         pkg-name)))
-                                (remove nil?))]
-            (recur (reduce (fn [chgs dpn-name]
-                             (update-dependant config chgs dpn-name))
-                           changes'
-                           dependants)
-                   (rest cursor)))
-          (recur changes' (rest cursor))))
+      (if-not @published?
+        (let [dependants (->> graph
+                              (map (fn [[pkg-name deps]]
+                                     (when (contains? deps package-name)
+                                       pkg-name)))
+                              (remove nil?))]
+          (recur (reduce (fn [chgs dpn-name]
+                           (update-dependant config chgs dpn-name))
+                         changes'
+                         dependants)
+                 (rest cursor)))
+        (recur changes' (rest cursor)))
       changes')))
 
 (defn read-deps-edn!

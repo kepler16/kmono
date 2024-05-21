@@ -9,6 +9,7 @@
    [k16.kmono.adapters.clojure-deps :as clj.deps]
    [k16.kmono.ansi :as ansi]
    [k16.kmono.config :as config]
+   [k16.kmono.config-schema :as config.schema]
    [k16.kmono.util :as util]
    [malli.core :as m]))
 
@@ -216,29 +217,31 @@
 
 (defn configure-lsp!
   [{:keys [repo-root cp-file]}]
-  (let [lsp-config-file (fs/file repo-root ".lsp/config.edn")
-        lsp-config (when (fs/exists? lsp-config-file)
-                     (try
-                       (-> lsp-config-file
-                           (slurp)
-                           (edn/read-string))
-                       (catch Throwable _ {})))
-        project-specs (create-project-specs cp-file)
-        with-project-specs
-        (assoc lsp-config :project-specs project-specs)]
-    (ansi/print-info "Setting project-specs for lsp config")
-    (spit lsp-config-file
-          (with-out-str
-            (binding [*print-namespace-maps* false]
-              (pprint/pprint with-project-specs))))))
+  (when (seq cp-file)
+    (let [lsp-config-file (fs/file repo-root ".lsp/config.edn")
+          lsp-config (when (fs/exists? lsp-config-file)
+                       (try
+                         (-> lsp-config-file
+                             (slurp)
+                             (edn/read-string))
+                         (catch Throwable _ {})))
+          project-specs (create-project-specs cp-file)
+          with-project-specs
+          (assoc lsp-config :project-specs project-specs)]
+      (ansi/print-info "Setting project-specs for lsp config")
+      (spit lsp-config-file
+            (with-out-str
+              (binding [*print-namespace-maps* false]
+                (pprint/pprint with-project-specs)))))))
 
 (defn run-repl
-  [{:keys [main-aliases aliases repo-root glob cp-file configure-lsp? verbose?]
-    :as params}]
+  [{:keys [repo-root glob] :as params}]
   (ansi/print-info "Starting kmono REPL...")
-  (assert (m/validate ?ReplParams params) (m/explain ?ReplParams params))
   (binding [*print-namespace-maps* false]
-    (let [config (merge (config/load-config repo-root glob) params)
+    (let [{:keys [main-aliases aliases cp-file configure-lsp? verbose?]
+           :as config}
+          (merge (config/load-config repo-root glob) params)
+          _ (config.schema/assert-schema! ?ReplParams "REPL params error" config)
           {:keys [cp-params package-overrides sdeps-overrides]}
           (make-cp-params config)
           main-opts (str "-M"
@@ -256,10 +259,10 @@
                              sdeps-overrides)
           sdeps (str "-Sdeps '" (pr-str with-nrepl-alias) "'")
           clojure-cmd (string/join " " ["clojure" sdeps main-opts])]
-      (when cp-file
+      (when (seq cp-file)
         (cp! cp-params sdeps-overrides))
       (when configure-lsp?
-        (configure-lsp! params))
+        (configure-lsp! config))
       (ansi/print-info "Running clojure...")
       (when verbose?
         (print-clojure-cmd sdeps-overrides main-opts))
