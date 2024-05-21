@@ -1,7 +1,6 @@
 (ns k16.kmono.adapters.clojure-deps
   (:require
    [babashka.fs :as fs]
-   [clojure.edn :as edn]
    [clojure.tools.deps.extensions :as deps.ext]
    [clojure.tools.deps.extensions.maven]
    [clojure.tools.deps.util.maven :as deps.util.maven]

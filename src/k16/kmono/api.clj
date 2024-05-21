@@ -62,7 +62,6 @@
                                      (when (and create-tags? changed? (not snapshot?))
                                        (str pkg-name "@" version)))))
                             (remove nil?))]
-    (def tags-to-create tags-to-create)
     (doseq [[pkg-name result] failed-releases]
       (ansi/print-error pkg-name "failed to release")
       (ansi/print-shifted (:output result)))
@@ -165,32 +164,3 @@
    (binding [ansi/*logs-enabled* (:deps-file opts)]
      (repl.deps/generate-deps! opts))))
 
-(comment
-  (def args {:snapshot? true
-             :create-tags? false
-             :exec :release
-             :dry-run? false})
-  (config/load-config "../../k42/agent")
-  (def config (as-> (config/load-config "." "packages/*") x
-                (merge args x)
-                (m/decode ?RunOpts x mt/default-value-transformer)
-                (config/validate-config! x)))
-  (def changes (git/scan-for-changes config))
-
-  (def create-tags? true)
-  (def snapshot? false)
-  (let [pkg-name "transit-engineering/http"]
-    (let [{:keys [changed? version]} (get changes pkg-name)]
-      (when (and create-tags? changed? (not snapshot?))
-        (str pkg-name "@" version))))
-
-  (run-build config changes)
-  (run-release config changes)
-
-  (run {:snapshot? false
-        :repo-root "../../k42/agent"
-        :create-tags? false
-        :exec :release
-        :dry-run? false})
-
-  nil)
