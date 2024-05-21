@@ -20,7 +20,9 @@
           {:root root
            :package-dir package-dir
            :path path})
-  (fs/relativize root (fs/path package-dir path)))
+  (if (fs/same-file? root package-dir)
+    (fs/path package-dir path)
+    (fs/relativize root (fs/path package-dir path))))
 
 (defn- strip-extra-parent
   "JRE 8 workaround"
@@ -100,8 +102,11 @@
   (let [package-dirs (->> config
                           :packages
                           (map (fn [pkg]
-                                 [(fs/file-name (fs/path (:dir pkg)))
-                                  (:dir pkg)]))
+                                 [(fs/file-name (fs/normalize
+                                                 (fs/path (:dir pkg))))
+                                  (-> (:dir pkg)
+                                      (fs/normalize)
+                                      (str))]))
                           (into {}))
         package-deps (all-packages-deps-alias (:packages config))
         package-alias-pairs' (expand-package-alias-pairs
