@@ -1,4 +1,4 @@
-# 👘 kmono - monorepo build/release tool
+# 👘 kmono - monorepo management tool
 
 ## Overview
 
