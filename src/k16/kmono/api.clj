@@ -18,6 +18,8 @@
        (let [data# (ex-data ex#)]
          (when-not (= :errors/assertion (:type data#))
            (ansi/print-error (ex-message ex#)))
+         (when-let [body# (:body data#)]
+           (ansi/print-shifted (str body#)))
          (System/exit 1)))))
 
 (defn- print-stage-results
