@@ -19,24 +19,24 @@
       (fs/create-dirs (fs/path repo-root d)))
 
     (spit (fs/file repo-root "deps.edn")
-          (str {:kmono/config {:group "kmono-test"
-                               :artifact "root-module"
-                               :build-cmd "echo 'build root'"
-                               :release-cmd "echo 'release root'"}
+          (str {:kmono/package {:group "kmono-test"
+                                :artifact "root-module"
+                                :build-cmd "echo 'build root'"
+                                :release-cmd "echo 'release root'"}
                 :deps {}
                 :paths ["src"]}))
 
     (spit (fs/file repo-root p1-dir "deps.edn")
-          (str {:kmono/config {:group "kmono-test"
-                               :build-cmd "echo 'build p1'"
-                               :release-cmd "echo 'release p1'"}
+          (str {:kmono/package {:group "kmono-test"
+                                :build-cmd "echo 'build p1'"
+                                :release-cmd "echo 'release p1'"}
                 :deps {}
                 :paths ["src"]}))
 
     (spit (fs/file repo-root p2-dir "deps.edn")
-          (str {:kmono/config {:group "kmono-test"
-                               :build-cmd "echo 'build p2'"
-                               :release-cmd "echo 'release p2'"}
+          (str {:kmono/package {:group "kmono-test"
+                                :build-cmd "echo 'build p2'"
+                                :release-cmd "echo 'release p2'"}
                 :deps {}
                 :paths ["src"]}))))
 

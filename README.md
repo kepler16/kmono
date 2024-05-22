@@ -225,24 +225,24 @@ One can pass this CLI args to `-T:kmono` command
 
 ### Package configuration
 
-Package-specific configurations are done within each `deps.edn` file under the `:kmono/config` key:
+Package-specific configurations are done within each `deps.edn` file under the `:kmono/package` key:
 
 ```clj
-:kmono/config {;; maven artifact's group
-               :group com.example
-               ;; maven's artifactId
-               ;; this is optional and inferred from a package's dir name
-               :artifact my-lib
-               ;; below are two builtin commands, each package must provide this commands
-               ;; run :exec :build
-               :build-cmd "just build"
-               ;; run :exec :release
-               :release-cmd "just release"}
+:kmono/package {;; maven artifact's group
+                :group com.example
+                ;; maven's artifactId
+                ;; this is optional and inferred from a package's dir name
+                :artifact my-lib
+                ;; below are two builtin commands, each package must provide this commands
+                ;; run :exec :build
+                :build-cmd "just build"
+                ;; run :exec :release
+                :release-cmd "just release"}
 ```
 
 ## Quick start (kmono.edn) - experimental 
 
-If a package directory has `kmono.edn` file it will be preferred. Configuration schema is the same, but without `:kmono/config` top level key:
+If a package directory has `kmono.edn` file it will be preferred. Configuration schema is the same, but without `:kmono/package` top level key:
 
 ```clj
 {;; maven artifact's group
