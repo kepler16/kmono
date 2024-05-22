@@ -147,7 +147,7 @@ Modes:
   -h, --help                                Show this help
   -x, --exec CMD                :build      Command to exec [build, release, <custom cmd>]
   -r, --repo-root PATH          .           Repository root (default: '.')
-  -g, --glob GLOB               packages/*  A glob describing where to search for packages, (default: 'packages/*')
+  -p, --packages GLOB           packages/*  A glob string describing where to search for packages, (default: 'packages/*')
   -s, --snapshot FLAG           false       A snapshot flag (default: false)
   -t, --create-tags FLAG        false       Should create tags flag (default: false)
   -i, --include-unchanged FLAG  true        Should include unchanged packages flag (default: true)
@@ -157,7 +157,7 @@ Modes:
   -A, --aliases :alias1:alias2:namespace/alias3                     List of aliases from root deps.edn
   -P, --package-aliases :package/alias1:package/alias2              List of aliases from packages
   -r, --repo-root PATH                                  .           Repository root (default: '.')
-  -g, --glob GLOB                                       packages/*  A glob describing where to search for packages, (default: 'packages/*')
+  -p, --packages GLOB           packages/*  A glob string describing where to search for packages, (default: 'packages/*')
   -f, --cp-file FILENAME                                nil         Classpath file name (default: do nothing)
 
 === cp - save/print a classpath ===
@@ -165,7 +165,7 @@ Modes:
   -A, --aliases :alias1:alias2:namespace/alias3                     List of aliases from root deps.edn
   -P, --package-aliases :package/alias1:package/alias2              List of aliases from packages
   -r, --repo-root PATH                                  .           Repository root (default: '.')
-  -g, --glob GLOB                                       packages/*  A glob describing where to search for packages, (default: 'packages/*')
+  -p, --packages GLOB           packages/*  A glob string describing where to search for packages, (default: 'packages/*')
   -f, --cp-file FILENAME                                nil         Classpath file name (default: do nothing)
 ```
 
@@ -217,7 +217,7 @@ One can pass this CLI args to `-T:kmono` command
 - `:include-unchanged?` -jk `boolean`, should kmono include unchanged packages into build process (default `false`)
 - `:snapshot?` - `boolean`, whether release is a snapshot, useful when releasing from PR branch (default `true`)
 - `:create-tags?` - `boolean`, should kmono create new baseline tags after release. Usually baseline tags are created on master releases, not snapshots (default `false`)
-- `:glob` - `string`, where to search for packages, defaults to `"packages/*"`
+- `:packages` - `string`, where to search for packages, defaults to `"packages/*"`
 - `:build-cmd` - `string`, overrides `build-cmd` option from package kmono config
 - `:release-cmd` - `string`, overrides `release-cmd` option from package kmono config
 - `:repo-root` - `string`, root of the monorepo, defaults to `"."`

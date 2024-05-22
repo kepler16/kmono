@@ -4,6 +4,7 @@
    [clojure.string :as string]
    [k16.kmono.ansi :as ansi]
    [k16.kmono.config :as config]
+   [k16.kmono.config-schema :as schema]
    [k16.kmono.exec :as exec]
    [k16.kmono.git :as git]
    [k16.kmono.repl.deps :as repl.deps]
@@ -141,7 +142,7 @@
   ([opts] (run opts nil))
   ([opts arguments]
    (with-assertion-error
-     (let [[success?] (-run opts arguments)]
+     (let [[success?] (-run (schema/->internal-config opts) arguments)]
        (if success?
          (System/exit 0)
          (System/exit 1))))))
@@ -161,7 +162,9 @@
      (let [cp-file' (when configure-lsp?
                       (or (relativize-to-repo-root repo-root cp-file)
                           (relativize-to-repo-root repo-root ".lsp/.kmonocp")))
-           opts' (assoc opts :cp-file (str cp-file'))]
+           opts' (-> opts
+                     (schema/->internal-config)
+                     (assoc :cp-file (str cp-file')))]
        (repl.deps/run-repl opts')))))
 
 (defn generate-classpath!
@@ -170,7 +173,7 @@
   ([opts _]
    (binding [ansi/*logs-enabled* (:cp-file opts)]
      (with-assertion-error
-       (repl.deps/generate-classpath! opts)))))
+       (repl.deps/generate-classpath! (schema/->internal-config opts))))))
 
 (defn generate-deps!
   ([opts]
@@ -178,5 +181,5 @@
   ([opts _]
    (binding [ansi/*logs-enabled* (:deps-file opts)]
      (with-assertion-error
-       (repl.deps/generate-deps! opts)))))
+       (repl.deps/generate-deps! (schema/->internal-config opts))))))
 

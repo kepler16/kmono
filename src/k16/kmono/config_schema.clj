@@ -1,6 +1,7 @@
 (ns k16.kmono.config-schema
   (:require
    [clojure.pprint :as pp]
+   [clojure.set :as set]
    [k16.kmono.ansi :as ansi]
    [malli.core :as m]
    [malli.error :as me]
@@ -29,6 +30,9 @@
             [:map
              [:group {:optional true}
               [:or :string :symbol]]]))
+
+(def ?KmonoWorkspaceUserConfig
+  (mu/rename-keys ?KmonoWorkspaceConfig {:glob :packages}))
 
 (def ?KmonoPackageConfig
   [:map
@@ -94,4 +98,9 @@
               (pp/pprint (me/humanize (m/explain ?schema value)))))
            (throw (ex-info title {:type :errors/assertion})))
        value))))
+
+(defn ->internal-config
+  "We don't want packages key internally, because we already have it, so rename it to glob"
+  [config]
+  (set/rename-keys config {:packages :glob}))
 
