@@ -25,8 +25,7 @@
     :default "."]
    ["-p" "--packages GLOB"
     "A glob string describing where to search for packages, (default: 'packages/*')"
-    :id :glob
-    :default "packages/*"]
+    :id :glob]
    ["-s" "--snapshot FLAG"
     "A snapshot flag (default: false)"
     :id :snapshot?
@@ -80,8 +79,7 @@
     :default "."]
    ["-p" "--packages GLOB"
     "A glob string describing where to search for packages, (default: 'packages/*')"
-    :id :glob
-    :default "packages/*"]
+    :id :glob]
    ["-l" "--configure-lsp"
     (str "Set repl specific `:project-specs` in `.lsp/config.edn`, "
          "requires cp-file to be set (default: false)")
