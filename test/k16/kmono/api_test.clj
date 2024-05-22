@@ -46,9 +46,9 @@
     (testing "Make feat changes to p1 and release again"
       (spit (fs/file repo-root "packages/p1/src/foo.clj")
             "(ns foo)\n(println :hello)")
-      (Thread/sleep 100)
       (test-utils/shell-commands! ["git add ."
                                    "git commit -m 'feat: p1 foo added'"])
+      (Thread/sleep 100)
       (is (= [true
               [{"kmono-test/p2" {:success? true, :output "no changes"},
                 "kmono-test/root-module" {:success? true, :output "no changes"},
@@ -64,9 +64,9 @@
       (spit (fs/file repo-root "packages/p2/src/bar.clj")
             "(ns bar)\n(println :hello_bar)")
       (spit (fs/file repo-root "src/lol.clj") "(ns lol)")
-      (Thread/sleep 100)
       (test-utils/shell-commands! ["git add ."
                                    "git commit -m 'fix: root and p2 bugs'"])
+      (Thread/sleep 100)
       (is (= [true
               [{"kmono-test/p2" {:success? true,
                                  :output "release p2\n"},
@@ -103,7 +103,7 @@
   (let [release-opts {:repo-root repo-root}]
     (spit (fs/file repo-root "deps.edn")
           (str {:kmono/workspace {:group "kmono-wp-test"
-                                  :glob "packages/*"
+                                  :packages "packages/*"
                                   :aliases [:dev]
                                   :package-aliases [:*/test]
                                   :build-cmd "echo 'build root'"
@@ -111,9 +111,7 @@
                 :deps {}
                 :paths ["src"]}))
     (testing "Derive params from workspace"
-      (with-redefs [repl.deps/cp! (fn [{:keys [package-aliases
-                                               aliases]}
-                                       sdeps-overrides]
+      (with-redefs [repl.deps/cp! (fn [{:keys [package-aliases aliases]} _]
                                     (is (= [:kmono/package-deps
                                             :kmono.pkg/p2.test
                                             :kmono.pkg/p1.test]

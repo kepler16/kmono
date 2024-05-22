@@ -29,12 +29,10 @@
         kmono-merged-props (merge-with merge kmono-props kmono-props-local)
         workspace-config (:kmono/workspace kmono-merged-props)]
     (when (seq workspace-config)
-      (ansi/assert-err!
-       (not (seq (:kmono/package kmono-merged-props)))
-       "Both `:kmono/package` and `:kmono/workspace can't be set")
       (schema/assert-schema!
-       schema/?KmonoWorkspaceConfig "Workspace config error" workspace-config))
-    (m/encode schema/?KmonoWorkspaceConfig (or workspace-config {})
+       schema/?KmonoWorkspaceUserConfig "Workspace config error" workspace-config))
+    (m/encode schema/?KmonoWorkspaceConfig
+              (schema/->internal-config (or workspace-config {}))
               (mt/default-value-transformer
                {::mt/add-optional-keys true}))))
 

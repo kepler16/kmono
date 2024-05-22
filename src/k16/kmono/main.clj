@@ -23,8 +23,9 @@
    ["-r" "--repo-root PATH"
     "Repository root (default: '.')"
     :default "."]
-   ["-g" "--glob GLOB"
-    "A glob describing where to search for packages, (default: 'packages/*')"
+   ["-p" "--packages GLOB"
+    "A glob string describing where to search for packages, (default: 'packages/*')"
+    :id :glob
     :default "packages/*"]
    ["-s" "--snapshot FLAG"
     "A snapshot flag (default: false)"
@@ -77,13 +78,15 @@
    ["-r" "--repo-root PATH"
     "Repository root (default: '.')"
     :default "."]
-   ["-g" "--glob GLOB"
-    "A glob describing where to search for packages, (default: 'packages/*')"
-    :default nil]
+   ["-p" "--packages GLOB"
+    "A glob string describing where to search for packages, (default: 'packages/*')"
+    :id :glob
+    :default "packages/*"]
    ["-l" "--configure-lsp"
     (str "Set repl specific `:project-specs` in `.lsp/config.edn`, "
-         "requires cp-file to be set (default: true)")
-    :id :configure-lsp?]
+         "requires cp-file to be set (default: false)")
+    :id :configure-lsp?
+    :default false]
    (cp-option nil "Save classpath file for LSP use (default: do nothing)")])
 
 (def cp-cli-spec
