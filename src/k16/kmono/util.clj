@@ -40,7 +40,12 @@
   (try
     (-> (fs/file file-path)
         (slurp)
-        (edn/read-string))
+        (edn/read-string)
+        ;; support for legacy name :kmono/config
+        (update-keys (fn [k]
+                       (if (= k :kmono/config)
+                         :kmono/package
+                         k))))
     (catch Throwable e
       (throw (ex-info "Could not read deps.edn file"
                       {:file-path file-path

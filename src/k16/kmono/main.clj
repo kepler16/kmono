@@ -79,7 +79,7 @@
     :default "."]
    ["-g" "--glob GLOB"
     "A glob describing where to search for packages, (default: 'packages/*')"
-    :default "packages/*"]
+    :default nil]
    ["-l" "--configure-lsp"
     (str "Set repl specific `:project-specs` in `.lsp/config.edn`, "
          "requires cp-file to be set (default: true)")

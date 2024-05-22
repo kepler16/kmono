@@ -20,7 +20,7 @@
   (let [wp-deps-file (fs/file repo-root deps-file)]
     (some-> (when (fs/exists? wp-deps-file)
               (util/read-deps-edn! wp-deps-file))
-            (select-keys [:kmono/workspace :kmono/config]))))
+            (select-keys [:kmono/workspace :kmono/package]))))
 
 (defn get-workspace-config
   [repo-root]
@@ -30,8 +30,8 @@
         workspace-config (:kmono/workspace kmono-merged-props)]
     (when (seq workspace-config)
       (ansi/assert-err!
-       (not (seq (:kmono/config kmono-merged-props)))
-       "Both `:kmono/config` and `:kmono/workspace can't be set")
+       (not (seq (:kmono/package kmono-merged-props)))
+       "Both `:kmono/package` and `:kmono/workspace can't be set")
       (schema/assert-schema!
        schema/?KmonoWorkspaceConfig "Workspace config error" workspace-config))
     (m/encode schema/?KmonoWorkspaceConfig (or workspace-config {})
@@ -176,9 +176,9 @@
                   [:=> [:cat :string] schema/?Config]
                   [:=> [:cat :string :string] schema/?Config]]}
   ([]
-   (load-config "." "packages/*"))
+   (load-config "." nil))
   ([repo-root]
-   (load-config repo-root "packages/*"))
+   (load-config repo-root nil))
   ([repo-root glob]
    (ansi/assert-err! repo-root "config dir is not specified")
    (ansi/print-info "loading config...")

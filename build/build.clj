@@ -11,7 +11,7 @@
   (-> (io/file "deps.edn")
       slurp
       edn/read-string
-      :kmono/config))
+      :kmono/package))
 
 (def lib (symbol (or (System/getenv "KMONO_PKG_NAME")
                      (str (:group kmono-config) "/" (:artifact kmono-config)))))

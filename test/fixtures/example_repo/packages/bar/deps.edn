@@ -1,7 +1,7 @@
-{:kmono/config {:group kepler16
-                :artifact bar-lib
-                :build-cmd "just build-and-install"
-                :release-cmd "just release"}
+{:kmono/package {:group kepler16
+                 :artifact bar-lib
+                 :build-cmd "just build-and-install"
+                 :release-cmd "just release"}
  :paths ["src"]
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps {some/dependency {:mvn/version "1.0.0"}}}
