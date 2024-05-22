@@ -73,7 +73,9 @@
 
 (def ?Config
   (mu/merge
-   (mu/required-keys ?CommandConfig [:glob :snapshot? :include-unchanged?])
+   (mu/required-keys
+    ?KmonoWorkspaceConfig
+    [:glob :snapshot? :include-unchanged?])
    [:map {:closed true}
     [:exec [:or :string [:enum :build :release]]]
     [:workspace-config {:optional true}
