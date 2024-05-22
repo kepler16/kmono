@@ -176,9 +176,9 @@
                   [:=> [:cat :string] schema/?Config]
                   [:=> [:cat :string :string] schema/?Config]]}
   ([]
-   (load-config "." "packages/*"))
+   (load-config "." nil))
   ([repo-root]
-   (load-config repo-root "packages/*"))
+   (load-config repo-root nil))
   ([repo-root glob]
    (ansi/assert-err! repo-root "config dir is not specified")
    (ansi/print-info "loading config...")
