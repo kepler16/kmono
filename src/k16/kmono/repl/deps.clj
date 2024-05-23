@@ -180,7 +180,7 @@
      :sdeps-overrides (update package-overrides
                               :aliases
                               merge
-                              deps-local-overrides)}))
+                              (:aliases deps-local-overrides))}))
 
 (defn generate-classpath!
   [{:keys [repo-root glob] :as params}]
