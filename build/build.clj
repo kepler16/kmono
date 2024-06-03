@@ -48,6 +48,7 @@
    (b/copy-dir {:src-dirs ["src"]
                 :target-dir class-dir})
    (b/compile-clj {:basis basis
+                   :compile-opts {:direct-linking true}
                    :ns-compile '[k16.kmono.main]
                    :class-dir class-dir})
    (b/uber {:class-dir class-dir
