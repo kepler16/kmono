@@ -115,5 +115,7 @@ jobs:
           mv checksums.txt bin/checksums.txt
 
       - name: GH Release
-        run: gh release create ${{ needs.build.outputs.release_tag }} bin/*
+        run: |
+          gh release create ${{ needs.build.outputs.release_tag }} bin/* \
+            --title "Release ${{ needs.build.outputs.release_tag }}"
 
