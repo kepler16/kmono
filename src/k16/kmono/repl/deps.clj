@@ -266,5 +266,8 @@
       (ansi/print-info "Running clojure...")
       (when verbose?
         (print-clojure-cmd sdeps-overrides main-opts))
-      (bp/shell clojure-cmd))))
+      (let [proc (bp/shell {:continue true} clojure-cmd)]
+        (doto (Runtime/getRuntime)
+          (.addShutdownHook (Thread. (fn [] (bp/destroy proc)))))
+        (bp/check proc)))))
 
