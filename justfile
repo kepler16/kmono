@@ -13,6 +13,7 @@ native-image:
       --no-fallback \
       --features=clj_easy.graal_build_time.InitClojureClasses \
       --report-unsupported-elements-at-runtime \
+      --install-exit-handlers \
       -o target/kmono \
       -H:+UnlockExperimentalVMOptions \
       -H:+ReportExceptionStackTraces \
