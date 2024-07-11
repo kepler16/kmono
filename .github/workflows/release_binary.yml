@@ -117,5 +117,5 @@ jobs:
       - name: GH Release
         run: |
           gh release create ${{ needs.build.outputs.release_tag }} bin/* \
-            --title "Release ${{ needs.build.outputs.release_tag }}"
+            --title "${{ needs.build.outputs.release_tag }}"
 
