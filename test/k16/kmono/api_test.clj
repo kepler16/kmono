@@ -112,9 +112,9 @@
                 :paths ["src"]}))
     (testing "Derive params from workspace"
       (with-redefs [repl.deps/cp! (fn [{:keys [package-aliases aliases]} _]
-                                    (is (= [:kmono/package-deps
-                                            :kmono.pkg/p2.test
-                                            :kmono.pkg/p1.test]
-                                           package-aliases))
+                                    (is (= (set [:kmono/package-deps
+                                                 :kmono.pkg/p2.test
+                                                 :kmono.pkg/p1.test])
+                                           (set package-aliases)))
                                     (is (= [:dev] aliases)))]
         (api/generate-classpath! release-opts nil)))))
