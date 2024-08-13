@@ -271,7 +271,9 @@
           (.addShutdownHook
            (Thread.
             (fn []
-              (bp/destroy proc)
-              (bp/check proc)))))
+              (try
+                (bp/destroy proc)
+                (bp/check proc)
+                (catch Throwable _ nil))))))
         (bp/check proc)))))
 
