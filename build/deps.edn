@@ -1,3 +1,0 @@
-{:paths ["./"]
- :deps {io.github.clojure/tools.build {:mvn/version "0.9.6"}
-        slipset/deps-deploy {:mvn/version "0.2.2"}}}

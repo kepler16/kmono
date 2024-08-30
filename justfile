@@ -1,38 +1,18 @@
 default:
     @just --choose
 
-clean:
-    clojure -T:build clean
+build *args:
+    clojure -T:build build {{args}}
 
-build-uber-native *ARGS: clean
-    clojure -T:kmono run :exec '"clojure -T:build uber-for-native"' {{ ARGS }}
+build-cli *args:
+    mkdir -p target/bin/
+    $GRAALVM_HOME/bin/native-image -jar target/packages/kmono-cli/cli.jar target/bin/kmono
 
-native-image:
-    $GRAALVM_HOME/bin/native-image \
-      -jar target/kmono-uber.jar \
-      --no-fallback \
-      --features=clj_easy.graal_build_time.InitClojureClasses \
-      --report-unsupported-elements-at-runtime \
-      --install-exit-handlers \
-      -o target/kmono \
-      -H:+UnlockExperimentalVMOptions \
-      -H:+ReportExceptionStackTraces \
-      --initialize-at-build-time=org.eclipse.aether.transport.http.HttpTransporterFactory
-
-build-native *ARGS:
-    just build-uber-native {{ ARGS }} && \
-    just native-image && \
-    rm -rf ./bin && mkdir bin && \
-    cp target/kmono ./bin/kmono
-
-build *ARGS:
-    clojure -T:kmono run :exec :build {{ ARGS }}
-
-release *ARGS:
-    clojure -T:kmono run :exec :release {{ ARGS }}
+release *args:
+    clojure -T:build release {{args}}
 
 test:
-    clojure -M:test -m "kaocha.runner"
+    kmono run --ordered false -M ':*/test'
 
-repl *ARGS:
-    clojure -M:kmono:test{{ ARGS }} repl
+cli *args:
+  cd packages/kmono-cli && clojure -M -m k16.kmono.cli.main {{args}}

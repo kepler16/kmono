@@ -1,32 +1,13 @@
-# resources/ccloud.properties
-.cache
-/.clj-kondo
-!/.clj-kondo/config.edn
-.cpcache/
-.kbuild/
-.metabuild/
-.nrepl-port
-/telepresence.log
-/classes/
-target/
-# /resources/zeus-service-account.json
-/.log/
-node_modules
-config-override.edn
-*.log.[0-9][0-9][0-9]
-*.log
-/resources/auth/
-/.idea/
-.tool-versions
-*.iml
-/.calva/
-/.DS_Store/
-/logs/
-/data/
-/deps.local.edn
-/local
-.lsp
-.portal
+.idea
+.vscode
+.DS_Store
 
-!.github
-bin
+.cpcache
+.lsp
+.clj-kondo
+.nrepl-port
+.test-repos
+deps.local.edn
+
+local
+target

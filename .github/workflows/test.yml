@@ -1,0 +1,32 @@
+name: Test
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: 'maven'
+          cache-dependency-path: '**/deps.edn'
+
+      - uses: extractions/setup-just@v2
+      - uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: latest
+
+      - name: Setup Git
+        run: |
+          git config --global user.email "ci@kepler16.com"
+          git config --global user.name "Kmono CI"
+
+      - name: Test
+        run: |
+          just cli run --ordered false -M ':*/test'

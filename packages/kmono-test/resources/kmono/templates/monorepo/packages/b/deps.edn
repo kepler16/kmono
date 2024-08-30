@@ -1,0 +1,5 @@
+{:kmono/package {}
+
+ :deps {a/b {:mvn/version "RELEASE"}
+        local/excluded {:local/root "../excluded"}
+        com.kepler16/a {:local/root "../a"}}}

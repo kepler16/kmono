@@ -1,0 +1,10 @@
+{:kmono/package {}
+
+ :deps {babashka/process {:mvn/version "0.5.22"}
+        babashka/fs {:mvn/version "0.5.22"}}
+
+ :aliases {:test {:extra-paths ["test"]
+                  :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
+                               nubank/matcher-combinators {:mvn/version "3.9.1"}
+                               local/kmono-test {:local/root "../kmono-test"}}
+                  :main-opts ["-m" "kaocha.runner" "-c" "../../tests.edn"]}}}

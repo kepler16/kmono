@@ -1,0 +1,3 @@
+{:kmono/package {}
+
+ :deps {jansi-clj/jansi-clj {:mvn/version "1.0.3"}}}

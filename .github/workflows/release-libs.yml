@@ -1,0 +1,41 @@
+name: Build and Release Libs
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-release-libs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout git repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Fetch Tags
+      run: git fetch --tags origin
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 21
+        cache: 'maven'
+        cache-dependency-path: '**/deps.edn'
+
+    - uses: extractions/setup-just@v2
+    - uses: DeLaGuardo/setup-clojure@12.5
+      with:
+        cli: latest
+
+    - name: Build
+      run: just build
+
+    - name: Release
+      env:
+        CLOJARS_USERNAME: infrastructure-kepler16-com
+        CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+      if: ${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
+      run: just release

@@ -1,0 +1,3 @@
+{:kmono/package {}
+ 
+ :deps {com.kepler16/kmono-core {:local/root "../kmono-core"}}}

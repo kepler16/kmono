@@ -1,0 +1,20 @@
+{:kmono/package {:artifact kmono}
+
+ ; :kmono/private true
+ :kmono/build {:main k16.kmono.cli.main
+               :file "cli.jar"
+               :aliases [:native]}
+
+ :paths ["src" "resources"]
+
+ :deps {org.clojure/clojure {:mvn/version "1.12.0-rc2"}
+        cli-matic/cli-matic {:mvn/version "0.5.4"}
+        babashka/process {:mvn/version "0.5.22"}
+        jansi-clj/jansi-clj {:mvn/version "1.0.3"}
+
+        com.kepler16/kmono-core {:local/root "../kmono-core"}
+        com.kepler16/kmono-cp {:local/root "../kmono-cp"}
+        com.kepler16/kmono-exec {:local/root "../kmono-exec"}
+        com.kepler16/kmono-log {:local/root "../kmono-log"}}
+
+ :aliases {:native {:extra-deps {com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}}}}
