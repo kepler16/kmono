@@ -83,6 +83,7 @@
       (kmono.build/exec
        packages
        {:title "Release"
+        :concurrency 1
         :build-fn
         (fn [pkg]
           (deps-deploy/deploy
