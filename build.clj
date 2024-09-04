@@ -17,7 +17,7 @@
                      (map (fn [tag]
                             (second (re-matches #"v(.*)" tag))))
                      (remove nil?)
-                     last)
+                     first)
 
         version (or version "0.0.0")]
 
