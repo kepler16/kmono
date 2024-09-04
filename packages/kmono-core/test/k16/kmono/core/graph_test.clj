@@ -41,6 +41,13 @@
     (is (= [['com.kepler16/a 'com.kepler16/c] ['com.kepler16/b]]
            (core.graph/parallel-topo-sort packages)))))
 
+(deftest topological-sort-missing-dep-test
+  (let [config (core.config/resolve-workspace-config *repo*)
+        packages (core.packages/resolve-packages *repo* config)]
+
+    (is (= [['com.kepler16/b]]
+           (core.graph/parallel-topo-sort (dissoc packages 'com.kepler16/a))))))
+
 (deftest query-dependents-test
   (fs/create-dirs (fs/file *repo* "packages/c"))
   (fs/write-bytes (fs/file *repo* "packages/c/deps.edn")
@@ -63,8 +70,11 @@
   (let [config (core.config/resolve-workspace-config *repo*)
         packages (core.packages/resolve-packages *repo* config)]
 
-    (is (= ['com.kepler16/a]
-           (keys (core.graph/filter-by #(= 'com.kepler16/a (:fqn %)) packages))))
+    (is (match? {'com.kepler16/a {:dependents #{}}}
+                (core.graph/filter-by #(= 'com.kepler16/a (:fqn %)) packages)))
+
+(is (match? {'com.kepler16/b {:depends-on #{}}}
+                (core.graph/filter-by #(= 'com.kepler16/b (:fqn %)) packages)))
 
     (is (= ['com.kepler16/b 'com.kepler16/a]
            (keys (core.graph/filter-by

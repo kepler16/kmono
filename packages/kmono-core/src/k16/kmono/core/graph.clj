@@ -91,7 +91,23 @@
 
      (into {}
            (map
-            (fn [pkg]
-              [pkg (get packages pkg)]))
+            (fn [pkg-name]
+              (let [pkg (-> (get packages pkg-name)
+                            (update :depends-on
+                                    (fn [deps]
+                                      (->> deps
+                                           (filter (fn [dep]
+                                                     (contains? filtered dep)))
+
+                                           set)))
+                            (update :dependents
+                                    (fn [deps]
+                                      (->> deps
+                                           (filter (fn [dep]
+                                                     (contains? filtered dep)))
+
+                                           set))))]
+
+                [pkg-name pkg])))
 
            filtered))))
