@@ -34,21 +34,27 @@
 (defn parallel-topo-sort
   {:malli/schema [:=> [:cat core.schema/?PackageMap] [:maybe ?ExecOrder]]}
   [packages]
-  (when (seq packages)
-    (when-let [ks (->> packages
-                       (keep
-                        (fn [[fqn package]]
-                          (when (empty? (:depends-on package))
-                            fqn)))
-                       seq
-                       sort)]
-      (into [(vec ks)]
-            (parallel-topo-sort
-             (into {}
-                   (map (fn [[fqn package]]
-                          [fqn (assoc package
-                                      :depends-on (apply disj (:depends-on package) ks))]))
-                   (apply dissoc packages ks)))))))
+  (let [stage
+        (into #{}
+              (comp
+               (filter (fn [[_ pkg]]
+                         (empty? (:depends-on pkg))))
+               (map first))
+              packages)
+
+        remaining
+        (reduce
+         (fn [packages [pkg-name pkg]]
+           (if-not (contains? stage pkg-name)
+             (let [deps (apply disj (:depends-on pkg) stage)
+                   pkg (assoc pkg :depends-on deps)]
+               (assoc packages pkg-name pkg))
+             packages))
+         {}
+         packages)]
+
+    (when (seq stage)
+      (into [(-> stage sort vec)] (parallel-topo-sort remaining)))))
 
 (defn query-dependents
   {:malli/schema [:=> [:cat core.schema/?PackageMap :symbol] [:set :symbol]]}

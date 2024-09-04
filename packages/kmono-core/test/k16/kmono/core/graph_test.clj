@@ -46,7 +46,9 @@
         packages (core.packages/resolve-packages *repo* config)]
 
     (is (= [['com.kepler16/b]]
-           (core.graph/parallel-topo-sort (dissoc packages 'com.kepler16/a))))))
+           (core.graph/parallel-topo-sort
+            (core.graph/filter-by #(= 'com.kepler16/b (:fqn %))
+                                  packages))))))
 
 (deftest query-dependents-test
   (fs/create-dirs (fs/file *repo* "packages/c"))
@@ -73,7 +75,7 @@
     (is (match? {'com.kepler16/a {:dependents #{}}}
                 (core.graph/filter-by #(= 'com.kepler16/a (:fqn %)) packages)))
 
-(is (match? {'com.kepler16/b {:depends-on #{}}}
+    (is (match? {'com.kepler16/b {:depends-on #{}}}
                 (core.graph/filter-by #(= 'com.kepler16/b (:fqn %)) packages)))
 
     (is (= ['com.kepler16/b 'com.kepler16/a]
