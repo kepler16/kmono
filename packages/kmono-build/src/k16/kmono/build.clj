@@ -70,23 +70,39 @@
      :paths paths
      :dependencies dependencies}))
 
-(defn exec [title packages build-fn]
+(defn exec [packages {:keys [title build-fn concurrency ordered]}]
   (requiring-resolve 'clojure.tools.build.tasks.copy/copy)
   (requiring-resolve 'clojure.tools.build.tasks.write-pom/write-pom)
   (requiring-resolve 'clojure.tools.build.tasks.jar/jar)
   (requiring-resolve 'clojure.tools.build.tasks.create-basis/create-basis)
 
-  (let [semaphore (Semaphore. 10)]
-    (->> packages
-         (mapv (fn [[pkg-name pkg]]
+  (let [exec-order (if (or (not (boolean? ordered))
+                           ordered)
+                     (core.graph/parallel-topo-sort packages)
+                     [(keys packages)])
+
+        cores (.availableProcessors (Runtime/getRuntime))
+        semaphore (Semaphore. (or concurrency cores))]
+
+    (loop [stages exec-order]
+      (when (seq stages)
+        (let [stage (first stages)
+
+              op-procs
+              (mapv
+               (fn [pkg-name]
                  (future
                    (.acquire semaphore)
-                   (log/info (str title " "
-                                  (log.render/render-package-name pkg-name)
-                                  "@|magenta  " (:version pkg) "|@"))
 
                    (try
-                     (build-fn pkg)
+                     (let [pkg (get packages pkg-name)]
+                       (log/info (str title " "
+                                      (log.render/render-package-name pkg-name)
+                                      "@|magenta  " (:version pkg) "|@"))
+                       (build-fn pkg))
                      (finally
-                       (.release semaphore))))))
-         (mapv deref))))
+                       (.release semaphore)))))
+               stage)]
+
+          (mapv deref op-procs)
+          (recur (rest stages)))))))

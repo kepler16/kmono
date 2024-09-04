@@ -5,6 +5,7 @@
    [k16.kmono.build :as kmono.build]
    [k16.kmono.core.config :as core.config]
    [k16.kmono.core.fs :as core.fs]
+   [k16.kmono.core.graph :as core.graph]
    [k16.kmono.core.packages :as core.packages]
    [k16.kmono.git.tags :as git.tags]))
 
@@ -31,50 +32,61 @@
 
   (let [packages (load-packages)]
     (kmono.build/exec
-     "Building" packages
-     (fn [pkg]
-       (let [pkg-name (:fqn pkg)
-             {:keys [basis paths]}
-             (kmono.build/create-build-context packages pkg)
+     packages
+     {:totle "Build"
+      :build-fn
+      (fn [pkg]
+        (let [pkg-name (:fqn pkg)
+              {:keys [basis paths]}
+              (kmono.build/create-build-context packages pkg)
 
-             class-dir (str "target/" (kmono.build/relativize pkg "classes"))
-             jar-file (str "target/" (kmono.build/relativize pkg "lib.jar"))]
+              class-dir (str "target/" (kmono.build/relativize pkg "classes"))
+              jar-file (str "target/" (kmono.build/relativize pkg "lib.jar"))]
 
-         (b/copy-dir {:src-dirs paths
-                      :target-dir class-dir})
+          (b/copy-dir {:src-dirs paths
+                       :target-dir class-dir})
 
-         (b/write-pom {:class-dir class-dir
-                       :lib pkg-name
-                       :version (:version pkg)
-                       :basis basis})
+          (b/write-pom {:class-dir class-dir
+                        :lib pkg-name
+                        :version (:version pkg)
+                        :basis basis
+                        :src-dirs paths
+                        :pom-data [[:description (get-in pkg [:deps-edn :kmono/description])]
+                                   [:url "https://github.com/kepler16/kmono"]
+                                   [:licenses
+                                    [:license
+                                     [:name "MIT"]
+                                     [:url "https://opensource.org/license/mit"]]]]})
 
-         (b/jar {:class-dir class-dir
-                 :jar-file jar-file})
+          (b/jar {:class-dir class-dir
+                  :jar-file jar-file})
 
-         (when-let [build (get-in pkg [:deps-edn :kmono/build])]
-           (let [basis (b/create-basis
-                        {:dir (:relative-path pkg)
-                         :aliases (:aliases build)})]
-             (b/compile-clj
-              {:basis basis
-               :compile-opts {:direct-linking true}
-               :ns-compile [(:main build)]
-               :class-dir class-dir})
+          (when-let [build (get-in pkg [:deps-edn :kmono/build])]
+            (let [basis (b/create-basis
+                         {:dir (:relative-path pkg)
+                          :aliases (:aliases build)})]
+              (b/compile-clj
+               {:basis basis
+                :compile-opts {:direct-linking true}
+                :ns-compile [(:main build)]
+                :class-dir class-dir})
 
-             (b/uber
-              {:class-dir class-dir
-               :uber-file (str "target/" (kmono.build/relativize pkg (:file build)))
-               :basis basis
-               :main (:main build)}))))))))
+              (b/uber
+               {:class-dir class-dir
+                :uber-file (str "target/" (kmono.build/relativize pkg (:file build)))
+                :basis basis
+                :main (:main build)})))))})))
 
 (defn release [_]
-  (let [packages (load-packages)]
+  (let [packages (core.graph/filter-by kmono.build/not-published? (load-packages))]
     (when release
       (kmono.build/exec
-       "Releasing" packages
-       (fn [pkg]
-         (deps-deploy/deploy
-          {:installer :remote
-           :artifact (b/resolve-path (str "target/" (kmono.build/relativize pkg "lib.jar")))
-           :pom-file (b/pom-path {:lib (:fqn pkg)
-                                  :class-dir (str "target/" (kmono.build/relativize pkg "classes"))})}))))))
+       packages
+       {:title "Release"
+        :build-fn
+        (fn [pkg]
+          (deps-deploy/deploy
+           {:installer :remote
+            :artifact (b/resolve-path (str "target/" (kmono.build/relativize pkg "lib.jar")))
+            :pom-file (b/pom-path {:lib (:fqn pkg)
+                                   :class-dir (str "target/" (kmono.build/relativize pkg "classes"))})}))}))))

@@ -1,5 +1,7 @@
 {:kmono/package {}
 
+ :kmono/description "Construct classpaths from a clojure monorepo"
+
  :deps {babashka/process {:mvn/version "0.5.22"}
         com.kepler16/kmono-core {:local/root "../kmono-core"}}
 

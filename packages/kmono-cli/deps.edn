@@ -1,6 +1,7 @@
 {:kmono/package {:artifact kmono}
 
- ; :kmono/private true
+ :kmono/description "The kmono CLI interface"
+
  :kmono/build {:main k16.kmono.cli.main
                :file "cli.jar"
                :aliases [:native]}

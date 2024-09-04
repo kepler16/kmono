@@ -1,5 +1,7 @@
 {:kmono/package {}
 
+ :kmono/description "The core kmono package and graph API's"
+
  :deps {babashka/fs {:mvn/version "0.5.22"}
         meta-merge/meta-merge {:mvn/version "1.0.0"}
         metosin/malli {:mvn/version "0.16.4"}}

@@ -1,3 +1,5 @@
 {:kmono/package {}
+
+ :kmono/description "Execute commands in kmono packages"
  
  :deps {com.kepler16/kmono-core {:local/root "../kmono-core"}}}
