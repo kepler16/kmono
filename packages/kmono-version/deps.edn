@@ -2,11 +2,11 @@
 
  :kmono/description "Tools for versioning kmono packages"
 
- :deps {com.kepler16/kmono-core {:local/root "../kmono-core"}}
+ :deps {com.kepler16/kmono-core {:local/root "../kmono-core"}
+        com.kepler16/kmono-git {:local/root "../kmono-git"}}
 
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
                                nubank/matcher-combinators {:mvn/version "3.9.1"}
-                               local/kmono-test {:local/root "../kmono-test"}
-                               local/kmono-git {:local/root "../kmono-git"}}
+                               local/kmono-test {:local/root "../kmono-test"}}
                   :main-opts ["-m" "kaocha.runner" "-c" "../../tests.edn"]}}}

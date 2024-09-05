@@ -35,6 +35,12 @@
    :type :flag
    :default true})
 
+(def skip-unchanged-opt
+  {:as "Skip packages that have not been changed since the last known version"
+   :option "skip-unchanged"
+   :type :flag
+   :default false})
+
 (def verbose-opt
   {:as "Verbose output"
    :option "verbose"

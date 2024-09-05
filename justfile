@@ -11,8 +11,8 @@ build-cli *args:
 release *args:
     clojure -T:build release {{args}}
 
-test:
-    kmono run --ordered false -M ':*/test'
+test *args:
+    kmono run --ordered false --skip-unchanged true -M ':*/test'
 
 cli *args:
   cd packages/kmono-cli && clojure -M -m k16.kmono.cli.main {{args}}

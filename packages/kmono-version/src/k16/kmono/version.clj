@@ -56,6 +56,9 @@
         (transient {}))
        persistent!))
 
+(defn package-changed? [pkg]
+  (seq (:commits pkg)))
+
 (defn- version-changed? [packages-a packages-b pkg-name]
   (not= (get-in packages-a [pkg-name :version])
         (get-in packages-b [pkg-name :version])))
