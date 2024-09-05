@@ -5,7 +5,7 @@
 (def ^:private commit-pattern
   #"^(?<type>\w+)(?:\([^\)]+\))?(?<breaking>!?):\s*(?<message>.*)$")
 
-(defn ^:private match-commit [commit]
+(defn match-commit [commit]
   (let [[_ type breaking] (re-matches commit-pattern (:message commit))
         contains-breaking (str/includes? (:body commit) "BREAKING CHANGE:")]
     {:type type
@@ -16,7 +16,7 @@
   {:fix :patch
    :feat :minor})
 
-(def ^:private version-type->weight
+(def version-type->weight
   {:patch 1
    :minor 2
    :major 3})
