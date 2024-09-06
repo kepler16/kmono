@@ -63,6 +63,27 @@
   (not= (get-in packages-a [pkg-name :version])
         (get-in packages-b [pkg-name :version])))
 
+(defn- inc-dependent-packages [original-packages suffix packages]
+  (reduce
+   (fn [bumped [pkg-name]]
+     (if (version-changed? original-packages bumped pkg-name)
+       (let [dependents (core.graph/query-dependents original-packages pkg-name)]
+         (reduce
+          (fn [bumped dependent]
+            (if-not (version-changed? original-packages bumped dependent)
+              (update-in bumped
+                         [dependent :version]
+                         (fn [version]
+                           (semver/inc-version version :patch suffix)))
+              bumped))
+
+          bumped
+          dependents))
+       bumped))
+
+   packages
+   packages))
+
 (defn inc-package-versions
   {:malli/schema
    [:function
@@ -70,37 +91,18 @@
     [:=> [:cat ifn? [:maybe :string] core.schema/?PackageMap] core.schema/?PackageMap]]}
   ([version-fn packages] (inc-package-versions version-fn nil packages))
   ([version-fn suffix packages]
-   (let [bumped
-         (->> packages
-              (reduce
-               (fn [packages [pkg-name pkg]]
-                 (let [inc-type (version-fn pkg)
-                       current-version (or (:version pkg) "0.0.0")
-                       version (semver/inc-version
-                                current-version
-                                inc-type
-                                suffix)
-                       pkg (assoc pkg :version version)]
-                   (assoc! packages pkg-name pkg)))
-               (transient {}))
-              persistent!)]
+   (->> packages
+        (reduce
+         (fn [packages [pkg-name pkg]]
+           (let [inc-type (version-fn pkg)
+                 current-version (or (:version pkg) "0.0.0")
+                 version (semver/inc-version
+                          current-version
+                          inc-type
+                          suffix)
+                 pkg (assoc pkg :version version)]
+             (assoc! packages pkg-name pkg)))
+         (transient {}))
+        persistent!
 
-     (reduce
-      (fn [bumped [pkg-name]]
-        (if (version-changed? packages bumped pkg-name)
-          (let [dependents (core.graph/query-dependents packages pkg-name)]
-            (reduce
-             (fn [bumped dependent]
-               (if-not (version-changed? packages bumped dependent)
-                 (update-in bumped
-                            [dependent :version]
-                            (fn [version]
-                              (semver/inc-version version :patch suffix)))
-                 bumped))
-
-             bumped
-             dependents))
-          bumped))
-
-      bumped
-      bumped))))
+        (inc-dependent-packages packages suffix))))
