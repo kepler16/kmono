@@ -2,11 +2,8 @@
   (:require
    [babashka.process :as proc]
    [clojure.string :as str]
-   [k16.kmono.cli.common.config :as common.config]
+   [k16.kmono.cli.common.context :as common.context]
    [k16.kmono.cli.common.opts :as opts]
-   [k16.kmono.core.config :as core.config]
-   [k16.kmono.core.fs :as core.fs]
-   [k16.kmono.core.packages :as core.packages]
    [k16.kmono.cp :as kmono.cp]
    [k16.kmono.log :as log]))
 
@@ -24,25 +21,22 @@
        "@|black,bold ]|@"))
 
 (defn- repl-command [props]
-  (let [project-root (core.fs/find-project-root (:dir props))
-        workspace-config (-> (core.config/resolve-workspace-config project-root)
-                             (common.config/merge-workspace-config props))
-        packages (core.packages/resolve-packages project-root workspace-config)
+  (let [{:keys [root config packages]} (common.context/load-context props)
 
         {:keys [sdeps aliases]}
         (kmono.cp/generate-aliases
-         project-root workspace-config packages)
+         root config packages)
 
-        aliases (concat aliases (:main-aliases workspace-config))
+        aliases (concat aliases (:main-aliases config))
 
         command
         ["clojure"
          "-Sdeps" (str "'" (str/trim (prn-str sdeps)) "'")
          (str "-M" (kmono.cp/serialize-aliases aliases))]
 
-        _ (log/info (str "Main aliases: " (render-aliases (:main-aliases workspace-config))))
-        _ (log/info (str "Aliases: " (render-aliases (:aliases workspace-config))))
-        _ (log/info (str "Package Aliases: " (render-aliases (:package-aliases workspace-config))))
+        _ (log/info (str "Main aliases: " (render-aliases (:main-aliases config))))
+        _ (log/info (str "Aliases: " (render-aliases (:aliases config))))
+        _ (log/info (str "Package Aliases: " (render-aliases (:package-aliases config))))
 
         command (str/join " " command)
 
@@ -52,7 +46,7 @@
             (log/log-raw ""))
 
         proc (proc/process
-              {:dir project-root
+              {:dir root
                :inherit true}
               command)]
 

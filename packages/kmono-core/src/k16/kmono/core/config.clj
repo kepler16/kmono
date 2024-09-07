@@ -11,14 +11,15 @@
 (set! *warn-on-reflection* true)
 
 (defn validate!
-  ([?schema data]
-   (validate! ?schema data "Schema validation failed"))
   ([?schema data message]
+   (validate! ?schema data message {}))
+  ([?schema data message ex-data]
    (when-not (malli/validate ?schema data)
-     (throw (ex-info message {:type :kmono/validation-error
-                              :errors (->> data
-                                           (malli/explain ?schema)
-                                           malli.error/humanize)})))
+     (throw (ex-info message (merge {:type :kmono/validation-error
+                                     :errors (->> data
+                                                  (malli/explain ?schema)
+                                                  malli.error/humanize)}
+                                    ex-data))))
 
    data))
 
@@ -33,7 +34,7 @@
         workspace-config (metamerge/meta-merge root-workspace-config local-workspace-config)]
 
     (when workspace-config
-      (validate! core.schema/?WorkspaceConfig workspace-config "Workspace config invalid")
+      (validate! core.schema/?WorkspaceConfig workspace-config "Workspace config is invalid")
 
       (malli/encode core.schema/?WorkspaceConfig
                     workspace-config
@@ -52,6 +53,9 @@
                               package-config)]
 
     (when (:kmono/package deps-edn)
-      (validate! core.schema/?PackageConfig package-config "Package config invalid")
+      (validate! core.schema/?PackageConfig
+                 package-config
+                 "Package config is invalid"
+                 {:package-path (str package-path)})
 
       package-config)))

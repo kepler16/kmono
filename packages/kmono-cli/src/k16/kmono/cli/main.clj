@@ -6,7 +6,8 @@
    [k16.kmono.cli.commands.cp :as commands.cp]
    [k16.kmono.cli.commands.exec :as commands.run]
    [k16.kmono.cli.commands.repl :as commands.repl]
-   [k16.kmono.cli.commands.run :as commands.tool])
+   [k16.kmono.cli.commands.run :as commands.tool]
+   [k16.kmono.log :as log])
   (:gen-class))
 
 (set! *warn-on-reflection* true)
@@ -14,6 +15,24 @@
 (defmacro version []
   (let [res (proc/sh (str/split "git describe --abbrev=0 --tags" #" "))]
     (str/replace (str/trim (:out res)) #"v" "")))
+
+(defn make-error-handler [command]
+  (fn [props]
+    (try
+      (command props)
+      (catch Exception ex
+        (let [data (ex-data ex)]
+          (if (= "kmono" (namespace (:type data)))
+            (do (log/error (ex-message ex))
+                (println data))
+            (println ex)))
+        (System/exit 1)))))
+
+(defn with-error-handling [commands]
+  (mapv
+   (fn [command]
+     (update command :runs make-error-handler))
+   commands))
 
 (def cli-configuration
   {:command "kmono"
@@ -23,10 +42,11 @@
            :option "dir"
            :short "d"
            :type :string}]
-   :subcommands [commands.cp/command
-                 commands.repl/command
-                 commands.run/command
-                 commands.tool/command]})
+   :subcommands (with-error-handling
+                  [commands.cp/command
+                   commands.repl/command
+                   commands.run/command
+                   commands.tool/command])})
 
 (defn- -main [& args]
   (cli/run-cmd args cli-configuration))

@@ -12,11 +12,18 @@
             (str/includes? line ":kmono/workspace"))
           lines)))
 
+(defn- normalize-dir [dir]
+  (if (fs/absolute? dir)
+    dir
+    (-> (fs/file (fs/cwd) dir)
+        fs/normalize
+        str)))
+
 (defn find-project-root
   ([] (find-project-root nil nil))
   ([dir] (find-project-root dir nil))
   ([dir current-root]
-   (let [dir (or dir (fs/cwd))
+   (let [dir (normalize-dir (or dir (fs/cwd)))
          deps-file (fs/file dir "deps.edn")]
      (cond
        (not (fs/starts-with? dir (fs/home)))
@@ -32,6 +39,15 @@
 
        :else
        (find-project-root (fs/parent dir) current-root)))))
+
+(defn find-project-root!
+  ([] (find-project-root! nil))
+  ([dir]
+   (let [root (find-project-root dir)]
+     (when-not root
+       (throw (ex-info "Not a Clojure project" {:type :kmono/root-not-found
+                                                :dir (normalize-dir (or dir (fs/cwd)))})))
+     root)))
 
 (defn read-edn-file! [file-path]
   (try
