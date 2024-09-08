@@ -8,7 +8,7 @@
    [k16.kmono.test.helpers.commit :refer [commit]]
    [k16.kmono.test.helpers.repo :refer [*repo* with-test-repo] :as helpers.repo]
    [k16.kmono.version :as kmono.version]
-   [k16.kmono.version.alg.semantic :as semantic]
+   [k16.kmono.version.alg.conventional-commits :as conventional-commits]
    [matcher-combinators.test]))
 
 (use-fixtures :each with-test-repo)
@@ -70,7 +70,7 @@
         packages (->> (core.packages/resolve-packages *repo* config)
                       (kmono.version/resolve-package-versions *repo*)
                       (kmono.version/resolve-package-changes *repo*)
-                      (kmono.version/inc-package-versions semantic/version-fn))]
+                      (kmono.version/inc-package-versions conventional-commits/version-fn))]
     (is (match? {'com.kepler16/a {:version "1.0.0"}
                  'com.kepler16/b {:version "1.1.1"}}
                 packages))))
@@ -86,7 +86,7 @@
         packages (->> (core.packages/resolve-packages *repo* config)
                       (kmono.version/resolve-package-versions *repo*)
                       (kmono.version/resolve-package-changes *repo*)
-                      (kmono.version/inc-package-versions semantic/version-fn))]
+                      (kmono.version/inc-package-versions conventional-commits/version-fn))]
     (is (match? {'com.kepler16/a {:version "1.0.1"}
                  'com.kepler16/b {:version "1.1.1"}}
                 packages))))

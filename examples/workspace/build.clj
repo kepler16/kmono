@@ -9,7 +9,7 @@
    [k16.kmono.core.packages :as core.packages]
    [k16.kmono.git.tags :as git.tags]
    [k16.kmono.version :as kmono.version]
-   [k16.kmono.version.alg.semantic :as semantic]))
+   [k16.kmono.version.alg.conventional-commits :as conventional-commits]))
 
 (defn load-packages [{:keys [skip-unchanged]}]
   (let [project-root (core.fs/find-project-root)
@@ -26,7 +26,7 @@
 
     ;; Use semantic commits to increment package versions based on commits which
     ;; modified them since their last version.
-    (kmono.version/inc-package-versions semantic/version-fn packages)))
+    (kmono.version/inc-package-versions conventional-commits/version-fn packages)))
 
 (defn build [opts]
   (b/delete {:path "target"})

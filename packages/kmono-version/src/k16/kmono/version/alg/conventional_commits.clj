@@ -1,4 +1,4 @@
-(ns k16.kmono.version.alg.semantic
+(ns k16.kmono.version.alg.conventional-commits
   (:require
    [clojure.string :as str]))
 
@@ -24,7 +24,7 @@
 (defn version-fn
   "A `version-fn` for `k16.kmono.version/inc-package-versions` which produces a
   version-type of `[:patch, :minor, :major]` according to the convensions of
-  semantic commits.
+  conventional-commits.
 
   - A commit message with `fix:` in the title would produce a version-type of
   `:patch`. - A commit message with `feat:` in the title would produce a
