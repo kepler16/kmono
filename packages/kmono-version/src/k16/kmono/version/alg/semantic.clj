@@ -21,7 +21,7 @@
    :minor 2
    :major 3})
 
-(defn version-type [package]
+(defn version-fn [package]
   (reduce
    (fn [current-version-type commit]
      (let [match (match-commit commit)

@@ -2,10 +2,6 @@
 
  :kmono/description "The kmono CLI interface"
 
- :kmono/build {:main k16.kmono.cli.main
-               :file "cli.jar"
-               :aliases [:native]}
-
  :paths ["src" "resources"]
 
  :deps {org.clojure/clojure {:mvn/version "1.12.0-rc2"}

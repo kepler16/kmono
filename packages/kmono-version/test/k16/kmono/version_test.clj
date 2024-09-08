@@ -71,7 +71,7 @@
         packages (->> (core.packages/resolve-packages *repo* config)
                       (kmono.version/resolve-package-versions *repo*)
                       (kmono.version/resolve-package-changes *repo*)
-                      (kmono.version/inc-package-versions semantic/version-type))]
+                      (kmono.version/inc-package-versions semantic/version-fn))]
     (is (match? {'com.kepler16/a {:version "1.0.0"}
                  'com.kepler16/b {:version "1.1.1"}}
                 packages))))
@@ -87,7 +87,7 @@
         packages (->> (core.packages/resolve-packages *repo* config)
                       (kmono.version/resolve-package-versions *repo*)
                       (kmono.version/resolve-package-changes *repo*)
-                      (kmono.version/inc-package-versions semantic/version-type))]
+                      (kmono.version/inc-package-versions semantic/version-fn))]
     (is (match? {'com.kepler16/a {:version "1.0.1"}
                  'com.kepler16/b {:version "1.1.1"}}
                 packages))))

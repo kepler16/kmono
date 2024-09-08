@@ -5,32 +5,32 @@
 
 (deftest empty-commits-test
   (let [pkg {:commits []}]
-    (is (= nil (semantic/version-type pkg)))))
+    (is (= nil (semantic/version-fn pkg)))))
 
 (deftest patch-test
   (let [pkg {:commits [{:message "fix: message"
                         :body ""}]}]
-    (is (= :patch (semantic/version-type pkg)))))
+    (is (= :patch (semantic/version-fn pkg)))))
 
 (deftest minor-test
   (let [pkg {:commits [{:message "feat: message"
                         :body ""}]}]
-    (is (= :minor (semantic/version-type pkg)))))
+    (is (= :minor (semantic/version-fn pkg)))))
 
 (deftest major-bang-test
   (let [pkg {:commits [{:message "feat!: message"
                         :body ""}]}]
-    (is (= :major (semantic/version-type pkg)))))
+    (is (= :major (semantic/version-fn pkg)))))
 
 (deftest major-bang-with-scope-test
   (let [pkg {:commits [{:message "feat(api)!: message"
                         :body ""}]}]
-    (is (= :major (semantic/version-type pkg)))))
+    (is (= :major (semantic/version-fn pkg)))))
 
 (deftest major-body-test
   (let [pkg {:commits [{:message "feat: message"
                         :body "The body\n\nBREAKING CHANGE: Changed API"}]}]
-    (is (= :major (semantic/version-type pkg)))))
+    (is (= :major (semantic/version-fn pkg)))))
 
 (deftest largest-type-test
   (let [pkg {:commits [{:message "fix: message"
@@ -38,9 +38,9 @@
                        {:message "feat: message"
                         :body ""}]}]
 
-    (is (= :minor (semantic/version-type pkg)))))
+    (is (= :minor (semantic/version-fn pkg)))))
 
 (deftest non-semantic-commits-test
   (let [pkg {:commits [{:message "message"
                         :body ""}]}]
-    (is (= nil (semantic/version-type pkg)))))
+    (is (= nil (semantic/version-fn pkg)))))
