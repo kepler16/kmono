@@ -49,7 +49,7 @@
   writing your own version of this function.
 
   Other kmono-* API's only care about there being a `:version` set on a package
-  - how that field is set is up to you."
+  therefore how that field is set is up to you."
   {:malli/schema [:=> [:cat :string core.schema/?PackageMap] core.schema/?PackageMap]}
   [project-root packages]
   (let [tags (git.tags/get-sorted-tags project-root)]
@@ -63,13 +63,13 @@
          persistent!)))
 
 (defn resolve-package-changes
-  "For each pacakge try find all commits that modified files in the package
+  "For each package try find all commits that modified files in the package
   subdirectory since the last known version of the package.
 
   This works by finding commits since a tag constructed from the package name
   and version. See `k16.kmono.version/resolve-package-versions` for a
   description on how this tag is expected to be formatted.
-  
+
   Any commits found will be appended to the packages `:commits` key."
   {:malli/schema [:=> [:cat :string core.schema/?PackageMap] core.schema/?PackageMap]}
   [project-root packages]

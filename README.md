@@ -13,6 +13,8 @@
   <p>
     The missing workspace tool for clojure tools.deps projects
   </p>
+
+  [![Clojars Project](https://img.shields.io/clojars/v/com.kepler16/kmono-core.svg)](https://clojars.org/com.kepler16/kmono-core)
 </div>
 
 Kmono is a suite of tools and API's for working in Clojure (mono)repos. It aims to meet Clojure where it's at by
@@ -28,6 +30,14 @@ standalone projects too.
 - **Build Tools**: Exposes a suite of libs intended to be used from tools.build programs to build monorepos
 - **Command Runner**: Allows executing Clojure or external commands in workspace packages
 - **Local Deps Overrides**: Allow overriding properties and `deps.edn` config during local development
+
+## Documentation
+
++ **[kmono-core](https://cljdoc.org/d/com.kepler16/kmono-core)** - The core suite of API's for working with kmono
+packages.
++ **[kmono-build](https://cljdoc.org/d/com.kepler16/kmono-build)** - A companion lib to `tools.build` which contains
+API's for building jar artifacts or simplifying the use of `tools.build` in a kmono workspace.
++ **[kmono-version](https://cljdoc.org/d/com.kepler16/kmono-version)** - A set of API's for versioning kmono packages.
 
 ## Installation
 

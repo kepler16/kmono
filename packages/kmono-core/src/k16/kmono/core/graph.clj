@@ -45,7 +45,11 @@
   ```clojure
   (parallel-topo-sort {a {} b {} c {}})
   ;; => [[a c] [b]]
-  ```"
+  ```
+  
+  This is generally used to calculate the execution order of packages when
+  trying to run commands in subpackages or build/release packages in the
+  correct order."
   {:malli/schema [:=> [:cat core.schema/?PackageMap] [:maybe ?ExecOrder]]}
   [packages]
   (let [stage
@@ -93,7 +97,11 @@
   the retained packages will also be kept.
 
   This function will update the `:depends-on` and `:dependent` keys of each
-  retained package to include only other packages that still remain."
+  retained package to include only other packages that still remain.
+
+  It's generally recommended to use this function instead of writing your own
+  package filtering. If you need to write your own then you should also make
+  sure to keep the `:depends-on` and `:dependents` updated."
   ([filter-fn packages] (filter-by filter-fn {} packages))
   ([filter-fn {:keys [include-dependents]} packages]
    (let [filtered
