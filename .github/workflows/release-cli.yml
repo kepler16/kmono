@@ -50,8 +50,7 @@ jobs:
 
     - name: Build
       run: |
-        just build
-        just build-cli
+        just build-native-cli
 
     - name: Pack binary
       run: |
