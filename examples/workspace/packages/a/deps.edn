@@ -1,0 +1,5 @@
+{:kmono/package {}
+
+ :aliases {:test {:extra-paths ["test"]
+                  :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
+                  :main-opts ["-m" "kaocha.runner" "-c" "../../tests.edn"]}}}

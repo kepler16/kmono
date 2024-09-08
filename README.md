@@ -39,6 +39,12 @@ packages.
 API's for building jar artifacts or simplifying the use of `tools.build` in a kmono workspace.
 + **[kmono-version](https://cljdoc.org/d/com.kepler16/kmono-version)** - A set of API's for versioning kmono packages.
 
+## Example project
+
+Take a look at **[the example project](./examples/workspace/)** to get a better idea of the type of project
+structures kmono is built to support and for references on how to correctly use the kmono API's and integrate it into
+your own project.
+
 ## Installation
 
 #### Homebrew

@@ -1,0 +1,10 @@
+{:kmono/workspace {:group com.kepler16}
+
+ :aliases {:build {:extra-deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}
+                                slipset/deps-deploy {:mvn/version "0.2.1"}
+
+                                com.kepler16/kmono-version {:local/root "../../packages/kmono-version"}
+                                com.kepler16/kmono-build {:local/root "../../packages/kmono-build"}
+                                com.kepler16/kmono-core {:local/root "../../packages/kmono-core"}
+                                com.kepler16/kmono-git {:local/root "../../packages/kmono-git"}}
+                   :ns-default build}}}
