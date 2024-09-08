@@ -59,6 +59,11 @@ clojure -T:build build :skip-unchanged true
 This behaviour hasn't been hard-coded into the build process so that one might run `just build` locally during
 development to build all packages.
 
+---
+
+Take a look at the [example GitHub workflow file](./.github/workflows/release.yaml) for how you might set up your CI
+pipeline for release.
+
 ## Testing
 
 To run the tests for each package you can run the command

@@ -1,0 +1,46 @@
+name: Build and Release
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout git repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+      # This is needed for kmono to calculate package changes
+    - name: Fetch Tags
+      run: git fetch --tags origin
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 21
+        cache: 'maven'
+        cache-dependency-path: '**/deps.edn'
+
+    - uses: extractions/setup-just@v2
+    - uses: DeLaGuardo/setup-clojure@12.5
+      with:
+        cli: latest
+
+    - name: Build
+      run: just build :skip-unchanged true
+
+    - name: Release
+      env:
+        CLOJARS_USERNAME: your-username
+        CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+      if: ${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
+      run: just release :skip-unchanged true
+
+    - name: Push Tags
+      if: ${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
+      run: git push --tags
