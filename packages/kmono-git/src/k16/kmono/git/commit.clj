@@ -20,7 +20,8 @@
                   (when ref (str ref "..HEAD"))
                   subdir)))
 
-(defn get-commit-message [repo sha]
+(defn get-commit-details [repo sha]
   (let [res (git/run-cmd! repo "git show -s --format=%B" sha)]
-    {:message (first res)
+    {:sha sha
+     :message (first res)
      :body (str/join \newline (rest res))}))

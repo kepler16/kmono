@@ -64,7 +64,7 @@
 
 (deftest query-commit-message
   (let [commit-sha (commit *repo* "this is the message\nthis is\nthe\nbody")
-        commit (git.commit/get-commit-message *repo* commit-sha)]
+        commit (git.commit/get-commit-details *repo* commit-sha)]
 
     (is (match? {:message "this is the message"
                  :body "this is\nthe\nbody"}

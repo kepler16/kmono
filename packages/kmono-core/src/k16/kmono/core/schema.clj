@@ -28,11 +28,20 @@
   [:map
    [[:= :local/root] {:optional true} :string]])
 
+(def ?Commit
+  [:map
+   [:sha :string]
+   [:message :string]
+   [:body :string]])
+
 (def ?Package
   [:map
    [:group :symbol]
    [:name :symbol]
    [:fqn :symbol]
+
+   [:version {:optional true} [:maybe :string]]
+   [:commits {:optional true} [:sequential ?Commit]]
 
    [:deps-edn
     [:map

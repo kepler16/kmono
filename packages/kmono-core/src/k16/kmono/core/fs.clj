@@ -20,6 +20,17 @@
         str)))
 
 (defn find-project-root
+  "Given a directory (or the cwd if non is supplied) try to find root of the
+  clojure project.
+
+  This is either:
+
+  1) The first directory containing a `deps.edn` file with a `:kmono/workspace`
+  key present
+
+  or;
+
+  2) The furthest directory containing a `deps.edn` file."
   ([] (find-project-root nil nil))
   ([dir] (find-project-root dir nil))
   ([dir current-root]
@@ -41,6 +52,8 @@
        (find-project-root (fs/parent dir) current-root)))))
 
 (defn find-project-root!
+  "This is the same as `k16.kmono.core.fs/find-project-root` but will throw an
+  exception if no project root can be found."
   ([] (find-project-root! nil))
   ([dir]
    (let [root (find-project-root dir)]
@@ -59,7 +72,7 @@
                       {:file-path file-path}
                       ex)))))
 
-(defn find-packages [root packages-glob]
+(defn find-package-directories [root packages-glob]
   (conj (fs/glob root packages-glob)
         (-> (fs/path root)
             (fs/normalize)

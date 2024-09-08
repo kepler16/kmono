@@ -70,8 +70,19 @@
    packages
    packages))
 
-(defn resolve-packages [project-root workspace-config]
-  (let [dirs (core.fs/find-packages project-root (:packages workspace-config))
+(defn resolve-packages
+  "Resolve the packages graph for a clojure project.
+
+  This will find all packages as described by the given `workspace-config` and
+  will use them to build a graph of all workspace packages and their
+  dependencies.
+
+  See `k16.kmono.core.schema/?PackageMap` for a schema of the returned package
+  map."
+  {:malli/schema [:=> [:cat :string core.schema/?WorkspaceConfig] core.schema/?PackageMap]}
+  [project-root workspace-config]
+  (let [dirs (core.fs/find-package-directories
+              project-root (:packages workspace-config))
 
         packages
         (into {}

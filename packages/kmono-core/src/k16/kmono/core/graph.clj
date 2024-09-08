@@ -7,7 +7,9 @@
 (def ?ExecOrder
   [:vector [:vector :symbol]])
 
-(defn find-cycles [packages]
+(defn find-cycles
+  "Try find cyclic dependencies between packages in a given `packages` map"
+  [packages]
   (loop [nodes (keys packages)
          node (first nodes)
          path #{}]
@@ -23,7 +25,10 @@
                  (first (rest nodes))
                  (disj path node)))))))
 
-(defn ensure-no-cycles! [packages]
+(defn ensure-no-cycles!
+  "Same as `k16.kmono.core.graph/find-cycles` but will throw an exception if any
+  cycles are found."
+  [packages]
   (let [cycles (find-cycles packages)]
     (when (seq cycles)
       (throw (ex-info "Cicrlar dependencies found"
@@ -32,6 +37,15 @@
   packages)
 
 (defn parallel-topo-sort
+  "Sort a give `packages` map by the order in which the packages therein depend
+  on each other.
+
+  As an example, if I have 3 packages `a`, `b`, `c` and `b` depends on `a` then:
+  
+  ```clojure
+  (parallel-topo-sort {a {} b {} c {}})
+  ;; => [[a c] [b]]
+  ```"
   {:malli/schema [:=> [:cat core.schema/?PackageMap] [:maybe ?ExecOrder]]}
   [packages]
   (let [stage
@@ -57,6 +71,8 @@
       (into [(-> stage sort vec)] (parallel-topo-sort remaining)))))
 
 (defn query-dependents
+  "Find all transitive dependent packages of `pkg-name` within the give
+  `packages` map."
   {:malli/schema [:=> [:cat core.schema/?PackageMap :symbol] [:set :symbol]]}
   [packages pkg-name]
 
@@ -70,6 +86,14 @@
     (set (concat (:dependents pkg) dependents))))
 
 (defn filter-by
+  "Filter a given map of `packages` by those that the given `filter-fn`
+  predicate returns `true`.
+
+  If the `:include-dependents` property is `true` then all dependent packages of
+  the retained packages will also be kept.
+
+  This function will update the `:depends-on` and `:dependent` keys of each
+  retained package to include only other packages that still remain."
   ([filter-fn packages] (filter-by filter-fn {} packages))
   ([filter-fn {:keys [include-dependents]} packages]
    (let [filtered

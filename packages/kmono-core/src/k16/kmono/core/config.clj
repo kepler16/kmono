@@ -10,7 +10,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn validate!
+(defn- validate!
   ([?schema data message]
    (validate! ?schema data message {}))
   ([?schema data message ex-data]

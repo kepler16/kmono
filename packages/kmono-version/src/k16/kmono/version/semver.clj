@@ -2,7 +2,7 @@
   (:require
    [clojure.string :as str]))
 
-(def version-pattern
+(def ^:private version-pattern
   (re-pattern #"(?:(?:[^\d]*))(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?(?:[^\d].*)?"))
 
 (defn parse-version-string [version]

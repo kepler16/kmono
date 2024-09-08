@@ -27,6 +27,7 @@ standalone projects too.
 - **Aliases**: Allows dynamically interacting with workspace package aliases in a 'Clojure native' way
 - **Build Tools**: Exposes a suite of libs intended to be used from tools.build programs to build monorepos
 - **Command Runner**: Allows executing Clojure or external commands in workspace packages
+- **Local Deps Overrides**: Allow overriding properties and `deps.edn` config during local development
 
 ## Installation
 

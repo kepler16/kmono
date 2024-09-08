@@ -9,7 +9,6 @@
    [k16.kmono.test.helpers.repo :refer [*repo* with-test-repo] :as helpers.repo]
    [k16.kmono.version :as kmono.version]
    [k16.kmono.version.alg.semantic :as semantic]
-   [matcher-combinators.matchers :as matchers]
    [matcher-combinators.test]))
 
 (use-fixtures :each with-test-repo)
@@ -46,7 +45,7 @@
                                   :commits [{:message "fix: changed package a"
                                              :body ""}]}
                  'com.kepler16/b {:version "1.1.0"
-                                  :commits matchers/absent}}
+                                  :commits []}}
                 packages))))
 
 (deftest load-package-changes-no-version-test
