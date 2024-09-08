@@ -30,7 +30,7 @@ standalone projects too.
 + **[Documentation](#Documentation)**
   + **[Kmono CLI](#kmono-cli)**
   + **[Example Project](#example-project)**
-+ **[Clojure-lsp / Editor Integration](#clojure-lsp-%2F-editor-integration)**
++ **[Clojure-lsp / Editor Integration](#clojure-lsp--editor-integration)**
 
 ## Features
 
