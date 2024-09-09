@@ -9,6 +9,18 @@
 
 (use-fixtures :once with-test-repo)
 
+(deftest collect-aliases-test
+  (let [config (core.config/resolve-workspace-config *repo*)
+        packages (core.packages/resolve-packages *repo* config)
+
+        ;; The duplication here is intentional - it's to test the unique
+        ;; filtering behavior.
+        config (merge config {:aliases [:local :local :another]})
+
+        aliases (kmono.cp/collect-aliases config packages)]
+
+    (is (= [:kmono/packages :local :another] aliases))))
+
 (deftest generate-cp-command-test
   (let [config (core.config/resolve-workspace-config *repo*)
         packages (core.packages/resolve-packages *repo* config)

@@ -82,13 +82,14 @@ USAGE:
  kmono [global-options] command [command options] [arguments...]
 
 VERSION:
- 4.2.0
+ 4.4.0
 
 COMMANDS:
    cp                   Produce a classpath string from a clojure project
    repl                 Start a clojure repl
    exec                 Run a command in each package
    run                  Run an alias in project packages
+   clojure              Run an augmented clojure command
 
 GLOBAL OPTIONS:
    -d, --dir S  Run commands as if in this directory

@@ -4,9 +4,10 @@
    [cli-matic.core :as cli]
    [clojure.string :as str]
    [k16.kmono.cli.commands.cp :as commands.cp]
-   [k16.kmono.cli.commands.exec :as commands.run]
+   [k16.kmono.cli.commands.exec :as commands.exec]
    [k16.kmono.cli.commands.repl :as commands.repl]
-   [k16.kmono.cli.commands.run :as commands.tool]
+   [k16.kmono.cli.commands.run :as commands.run]
+   [k16.kmono.cli.commands.clojure :as commands.clojure]
    [k16.kmono.log :as log])
   (:gen-class))
 
@@ -45,8 +46,9 @@
    :subcommands (with-error-handling
                   [commands.cp/command
                    commands.repl/command
+                   commands.exec/command
                    commands.run/command
-                   commands.tool/command])})
+                   commands.clojure/command])})
 
 (defn- -main [& args]
   (cli/run-cmd args cli-configuration))

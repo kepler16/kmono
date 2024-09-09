@@ -11,7 +11,7 @@
    [:group {:optional true}
     :symbol]
 
-   [:main-aliases {:optional true}
+   [:repl-aliases {:optional true}
     [:vector :keyword]]
    [:aliases {:optional true}
     [:vector :keyword]]

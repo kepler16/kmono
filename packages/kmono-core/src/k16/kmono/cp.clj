@@ -17,6 +17,16 @@
    ""
    aliases))
 
+(defn- filter-unique [aliases]
+  (->> aliases
+       (reduce
+        (fn [[seen aliases] alias]
+          (if (seen alias)
+            [seen aliases]
+            [(conj seen alias) (conj aliases alias)]))
+        [#{} []])
+       second))
+
 (defn collect-aliases
   "Collect a set of 'active' aliases from the workspace.
 
@@ -31,19 +41,20 @@
   classpaths.
 
   This function is designed to be used for collect the relevant set of aliases
-  to provide to the clojure flags `-A`, `-X`, `-M`."
+  to provide to the clojure flags `-A`, `-M`, `-T`, `-X`."
   [workspace-config packages]
-  (let [root-aliases (:aliases workspace-config)
-        package-alias-globs (:package-aliases workspace-config)
+  (let [package-alias-globs (:package-aliases workspace-config)
         package-aliases (->> packages
                              (core.deps/filter-package-aliases package-alias-globs)
-                             (mapcat second))
+                             (mapcat (fn [[pkg-name aliases]]
+                                       (map #(keyword (name pkg-name)
+                                                      (name %))
+                                            aliases))))]
 
-        aliases (concat [:kmono/packages]
-                        root-aliases
-                        package-aliases)]
-
-    (set aliases)))
+    (filter-unique
+     (concat [:kmono/packages]
+             package-aliases
+             (:aliases workspace-config)))))
 
 (defn generate-classpath-command
   "Generate an augmented `clojure -Spath` command string."

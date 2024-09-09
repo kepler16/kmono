@@ -23,10 +23,10 @@
 (deftest workspace-config-validation-test
   (fs/write-bytes (fs/file *repo* "deps.local.edn")
                   (.getBytes (prn-str {:kmono/workspace {:group 'a.b.c
-                                                         :main-aliases "invalid"}})))
+                                                         :aliases "invalid"}})))
   (is (thrown-match? clojure.lang.ExceptionInfo
                      {:type :kmono/validation-error
-                      :errors {:main-aliases ["invalid type"]}}
+                      :errors {:aliases ["invalid type"]}}
                      (core.config/resolve-workspace-config *repo*))))
 
 (deftest package-config-test

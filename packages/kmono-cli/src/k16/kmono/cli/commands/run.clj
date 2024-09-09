@@ -12,21 +12,21 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- run-command [props]
+(defn- run-command [{:keys [M T X skip-unchanged] :as props}]
   (let [{:keys [root packages]} (common.context/load-context props)
         packages (cond-> packages
-                   (:skip-unchanged props) (->>
-                                            (kmono.version/resolve-package-versions root)
-                                            (kmono.version/resolve-package-changes root)
-                                            (core.graph/filter-by kmono.version/package-changed?)))
+                   skip-unchanged (->>
+                                   (kmono.version/resolve-package-versions root)
+                                   (kmono.version/resolve-package-changes root)
+                                   (core.graph/filter-by kmono.version/package-changed?)))
 
-        globs (or (:M props)
-                  (:T props)
-                  (:X props))
+        globs (or M T X)
+        flag (cond
+               M "-M"
+               T "-T"
+               X "-X")
 
-        package-aliases (core.deps/filter-package-aliases
-                         globs packages)
-
+        package-aliases (core.deps/filter-package-aliases globs packages)
         packages (core.graph/filter-by
                   (fn [pkg]
                     (get package-aliases (:fqn pkg)))
@@ -44,12 +44,16 @@
                                              (name alias)))
                                       (str/join ":"))
 
-                           flag (cond
-                                  (:M props) "-M"
-                                  (:T props) "-T"
-                                  (:X props) "-X")]
+                           cmd (concat ["clojure" (str flag ":" names)]
+                                       (:_arguments props))]
 
-                       (concat ["clojure" (str flag ":" names)] (:_arguments props))))
+                       (when (:verbose props)
+                         (binding [log/*log-out* System/err]
+                           (log/debug "Running command:")
+                           (log/debug (str/join " " cmd))))
+
+                       cmd))
+
           :concurrency (:concurrency props)
           :on-event common.log/handle-event})
 
@@ -62,8 +66,10 @@
       (log/error "Command failed in one or more packages")
       (System/exit 1))))
 
-(def aliases-opt
-  {:as "List of aliases from packages"
+(defn- aliases-opt [name]
+  {:as (str "The clojure command mode -" name)
+   :option name
+   :short name
    :multiple true
    :type :keyword})
 
@@ -80,8 +86,8 @@
            :short "c"
            :type :int}
 
-          (assoc aliases-opt :option "M" :short "M")
-          (assoc aliases-opt :option "T" :short "T")
-          (assoc aliases-opt :option "X" :short "X")]
+          (aliases-opt "M")
+          (aliases-opt "T")
+          (aliases-opt "X")]
 
    :runs run-command})

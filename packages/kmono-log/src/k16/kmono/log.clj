@@ -2,12 +2,17 @@
   (:require
    [jansi-clj.core :as color]))
 
+(set! *warn-on-reflection* true)
+
 (def ^:private lock
   (Object.))
 
+(def ^:dynamic *log-out*
+  System/out)
+
 (defn log-raw [data]
   (locking lock
-    (.println System/out data)))
+    (.println ^java.io.PrintStream *log-out* data)))
 
 (defn log [& msg]
   (log-raw (apply color/render msg)))
