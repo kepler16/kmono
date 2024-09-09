@@ -83,9 +83,9 @@
   or name component can be substituted with a `*`. For example the below are all
   valid globs
 
-  - `:a/b` 
-  - `:*/b` 
-  - `:a/*` 
+  - `:a/b`
+  - `:*/b`
+  - `:a/*`
   - `:*/*`"
   [kw glob]
   (let [ns-matches
@@ -106,7 +106,7 @@
 
   Returns a map with pkg-name as the key and the set of aliases from that
   package that matched the globs.
-  
+
   ```clojure
   (filter-package-aliases {:package-a {}} [:*/test])
   ;; => {:package-a #{:test}}

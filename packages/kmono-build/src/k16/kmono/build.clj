@@ -7,6 +7,7 @@
    [clojure.tools.deps.util.maven :as deps.util.maven]
    [clojure.tools.deps.util.session :as deps.util.session]
    [k16.kmono.core.graph :as core.graph]
+   [k16.kmono.core.schema :as core.schema]
    [k16.kmono.log :as log]
    [k16.kmono.log.render :as log.render])
   (:import
@@ -86,6 +87,12 @@
 
      (update basis :libs merge dependencies))))
 
+(def ^:no-doc ?BuildOpts
+  [:map
+   [:concurrency {:optional true} :int]
+   [:run-in-order {:optional true} :boolean]
+   [:silent {:optional true} :boolean]])
+
 (defn for-each-package
   "Execute a given `build-fn` for each package in the given `packages` map.
 
@@ -93,9 +100,9 @@
 
   - **`:concurrency`** :int (default 4) - The maximum number of packages that
   can be executing at a time.
-  - **`:run-in-order?`** :boolean (defualt `true`) - Set this to false to run
-  all packages concurrently ignoring their dependency order.
-  - **`silent?`** :boolean (default `false`) - Set this to true to disable
+  - **`:run-in-order`** :boolean (defualt `true`) - Set this to false to run all
+  packages concurrently ignoring their dependency order.
+  - **`silent`** :boolean (default `false`) - Set this to true to disable
   logging the package name and version.
 
   The `build-fn` will be called with the `*project-root*` var (from
@@ -108,10 +115,14 @@
 
   The `build-fn` will be called concurrently (up to max of `:concurrency` or
   `4`) but packages with dependencies will only be executed after each of their
-  respective dependencies have run unless `:run-in-order?` is `false`."
-  {:style/indent :defn}
+  respective dependencies have run unless `:run-in-order` is `false`."
+  {:style/indent :defn
+   :malli/schema
+   [:function
+    [:-> core.schema/?PackageMap ifn? :any]
+    [:-> core.schema/?PackageMap ?BuildOpts ifn? :any]]}
   ([packages build-fn] (for-each-package packages {} build-fn))
-  ([packages {:keys [concurrency run-in-order? silent?]} build-fn]
+  ([packages {:keys [concurrency run-in-order silent]} build-fn]
    ;; This is a hack as calling tools.build API's concurrently is not
    ;; thread-safe due to them dynamically loading the internal namespaces
    ;; listed below.
@@ -120,8 +131,8 @@
    (requiring-resolve 'clojure.tools.build.tasks.jar/jar)
    (requiring-resolve 'clojure.tools.build.tasks.create-basis/create-basis)
 
-   (let [exec-order (if (or (not (boolean? run-in-order?))
-                            run-in-order?)
+   (let [exec-order (if (or (not (boolean? run-in-order))
+                            run-in-order)
                       (core.graph/parallel-topo-sort packages)
                       [(keys packages)])
 
@@ -139,7 +150,7 @@
 
                     (try
                       (let [pkg (get packages pkg-name)]
-                        (when-not silent?
+                        (when-not silent
                           (log/info (str (log.render/render-package-name pkg-name)
                                          "@|magenta  " (:version pkg) "|@")))
 
