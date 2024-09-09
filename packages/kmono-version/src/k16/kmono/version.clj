@@ -7,8 +7,12 @@
    [k16.kmono.git.tags :as git.tags]
    [k16.kmono.version.semver :as semver]))
 
-(def ^:private ?VersionOp
+(def ^:no-doc ?VersionOp
   [:enum nil :patch :minor :major])
+
+(def ^:no-doc ?VersionFn
+  [:function
+   [:-> core.schema/?Package ?VersionOp]])
 
 (defn match-package-version-tag
   "This matches whether a given string is a correctly formatted git version tag
@@ -50,7 +54,7 @@
 
   Other kmono-* API's only care about there being a `:version` set on a package
   therefore how that field is set is up to you."
-  {:malli/schema [:=> [:cat :string core.schema/?PackageMap] core.schema/?PackageMap]}
+  {:malli/schema [:-> :string core.schema/?PackageMap core.schema/?PackageMap]}
   [project-root packages]
   (let [tags (git.tags/get-sorted-tags project-root)]
     (->> packages
@@ -71,7 +75,7 @@
   description on how this tag is expected to be formatted.
 
   Any commits found will be appended to the packages `:commits` key."
-  {:malli/schema [:=> [:cat :string core.schema/?PackageMap] core.schema/?PackageMap]}
+  {:malli/schema [:-> :string core.schema/?PackageMap core.schema/?PackageMap]}
   [project-root packages]
   (->> packages
        (reduce
@@ -161,8 +165,8 @@
   semantic-commits."
   {:malli/schema
    [:function
-    [:=> [:cat ifn? core.schema/?PackageMap] core.schema/?PackageMap]
-    [:=> [:cat ifn? [:maybe :string] core.schema/?PackageMap] core.schema/?PackageMap]]}
+    [:-> ?VersionFn core.schema/?PackageMap core.schema/?PackageMap]
+    [:-> ?VersionFn [:maybe :string] core.schema/?PackageMap core.schema/?PackageMap]]}
   ([version-fn packages] (inc-package-versions version-fn nil packages))
   ([version-fn suffix packages]
    (->> packages

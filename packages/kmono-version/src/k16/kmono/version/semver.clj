@@ -2,7 +2,7 @@
   (:require
    [clojure.string :as str]))
 
-(def ^:private version-pattern
+(def ^:no-doc version-pattern
   (re-pattern #"(?:(?:[^\d]*))(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?(?:[^\d].*)?"))
 
 (defn parse-version-string [version]
@@ -14,6 +14,23 @@
      :build (when build (parse-long build))}))
 
 (defn inc-version
+  "Increment a given semver `version` according to the given `inc-type`.
+
+  An optional `suffix` can be provided to be appended to the end of the
+  version string.
+  
+  Examples:
+
+  ```clojure
+  (inc-version \"0.0.0\" :patch) ;; => \"0.0.1\"
+  (inc-version \"0.0.0\" :minor) ;; => \"0.1.0\"
+  (inc-version \"0.0.0\" :major) ;; => \"1.0.0\"
+
+  (inc-version \"0.0.1\" :build) ;; => \"0.0.1.1\"
+  (inc-version \"0.0.1.1\" :patch) ;; => \"0.0.2.0\"
+
+  (inc-version \"0.0.0\" :major \"-SNAPSHOT\") ;; => \"1.0.0-SNAPSHOT\"
+  ```"
   ([version inc-type] (inc-version version inc-type nil))
   ([version inc-type suffix]
    (if-let [{:keys [major minor patch build]}
