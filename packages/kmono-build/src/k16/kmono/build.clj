@@ -13,10 +13,10 @@
    java.util.concurrent.Semaphore))
 
 (defn published?
-  "A filter function designed to be used with `k16.kmono.core.graph/filter-by`.
+  "A `predicate-fn` designed to be used with [[k16.kmono.core.graph/filter-by]].
 
-  Checks whether a given package has been published to it's maven repository.
-  The repositories from the packages' `:mvn/deps` map will be used to run this
+  Checks whether a given `package` has been published to it's maven repository.
+  The repositories from the packages `:mvn/deps` map will be used to run this
   check.
 
   Requires that the package has a `:version` set in order to perform a maven
@@ -41,7 +41,7 @@
         (fs/delete-tree local-repo-override)))))
 
 (defn not-published?
-  "The inverse of `k16.kmono.build/published?`."
+  "The inverse of [[k16.kmono.build/published?]]."
   [package]
   (not (published? package)))
 
@@ -55,14 +55,17 @@
        str))
 
 (defn create-basis
-  "Constructs a basis using `clojure.tools.build.api/create-basis` with a
+  "Constructs a basis using [[clojure.tools.build.api/create-basis]] with a
   modified set of `:libs`.
 
   Any `:local/root` kmono dependencies within the basis are replaced with their
   respective `:mvn/version` coordinate derived from the given `packages` map.
 
   These `:libs` are then used to generate a correctly referenced `pom.xml` when
-  using `clojure.tools.build.api/write-pom`."
+  using [[clojure.tools.build.api/write-pom]].
+
+  Additional `opts` can be optionally provided and these will be given directly
+  to `write-pom`."
   ([packages package] (create-basis packages package {}))
   ([packages package opts]
    (let [dependencies
@@ -74,7 +77,6 @@
                                   :mvn/version version
                                   :parents #{[]}
                                   :paths []}]
-
                          (when version
                            [pkg-name dep]))))
                 (remove nil?))
@@ -87,14 +89,26 @@
 (defn for-each-package
   "Execute a given `build-fn` for each package in the given `packages` map.
 
-  The `build-fn` will be called with the *project-root* var bound to the
-  subdirectory of the relevant package. This allows using the various API's from
-  `tools.build` under the assumption that all specified paths will be relative
-  to the package subdirectory.
+  Accepts an optional `opts` map containing:
+
+  - **`:concurrency`** :int (default 4) - The maximum number of packages that
+  can be executing at a time.
+  - **`:run-in-order?`** :boolean (defualt `true`) - Set this to false to run
+  all packages concurrently ignoring their dependency order.
+  - **`silent?`** :boolean (default `false`) - Set this to true to disable
+  logging the package name and version.
+
+  The `build-fn` will be called with the `*project-root*` var (from
+  `clojure.tools.build.api`) bound to the subdirectory of the relevant package.
+  This allows using the various API's from `tools.build` under the assumption
+  that all specified paths will be relative to the package subdirectory.
+
+  TIP: Use the [[clojure.tools.build.api/resolve-path]] API to resolve a path
+  relative to the current package dir.
 
   The `build-fn` will be called concurrently (up to max of `:concurrency` or
   `4`) but packages with dependencies will only be executed after each of their
-  respective dependencies have run."
+  respective dependencies have run unless `:run-in-order?` is `false`."
   {:style/indent :defn}
   ([packages build-fn] (for-each-package packages {} build-fn))
   ([packages {:keys [concurrency run-in-order? silent?]} build-fn]
