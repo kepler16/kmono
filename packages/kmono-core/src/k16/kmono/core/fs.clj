@@ -27,9 +27,6 @@
 
   1) The first directory containing a `deps.edn` file with a `:kmono/workspace`
   key present
-
-  or;
-
   2) The furthest directory containing a `deps.edn` file."
   ([] (find-project-root nil nil))
   ([dir] (find-project-root dir nil))
@@ -52,7 +49,7 @@
        (find-project-root (fs/parent dir) current-root)))))
 
 (defn find-project-root!
-  "This is the same as `k16.kmono.core.fs/find-project-root` but will throw an
+  "This is the same as [[k16.kmono.core.fs/find-project-root]] but will throw an
   exception if no project root can be found."
   ([] (find-project-root! nil))
   ([dir]

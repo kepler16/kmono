@@ -4,7 +4,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def ?ExecOrder
+(def ^:no-doc ?ExecOrder
   [:vector [:vector :symbol]])
 
 (defn find-cycles
@@ -26,8 +26,7 @@
                  (disj path node)))))))
 
 (defn ensure-no-cycles!
-  "Same as `k16.kmono.core.graph/find-cycles` but will throw an exception if any
-  cycles are found."
+  "Same as [[find-cycles]] but will throw an exception if any cycles are found."
   [packages]
   (let [cycles (find-cycles packages)]
     (when (seq cycles)
@@ -37,7 +36,7 @@
   packages)
 
 (defn parallel-topo-sort
-  "Sort a give `packages` map by the order in which the packages therein depend
+  "Sort a given `packages` map by the order in which the packages therein depend
   on each other.
 
   As an example, if I have 3 packages `a`, `b`, `c` and `b` depends on `a` then:
@@ -75,8 +74,9 @@
       (into [(-> stage sort vec)] (parallel-topo-sort remaining)))))
 
 (defn query-dependents
-  "Find all transitive dependent packages of `pkg-name` within the give
-  `packages` map."
+  "Find all dependent packages of `pkg-name` within the give `packages` map.
+
+  This includes all transitive dependencies."
   {:malli/schema [:=> [:cat core.schema/?PackageMap :symbol] [:set :symbol]]}
   [packages pkg-name]
 
@@ -89,26 +89,52 @@
 
     (set (concat (:dependents pkg) dependents))))
 
+(defn- update-graph-edges
+  [packages filtered]
+  (into
+   {}
+   (map (fn [pkg-name]
+          (let [pkg (get packages pkg-name)
+
+                depends-on
+                (->> (:depends-on pkg)
+                     (filter (fn [dep]
+                               (contains? filtered dep)))
+                     set)
+                dependents
+                (->> (:dependents pkg)
+                     (filter (fn [dep]
+                               (contains? filtered dep)))
+
+                     set)
+
+                pkg (assoc pkg
+                           :depends-on depends-on
+                           :dependents dependents)]
+
+            [pkg-name pkg])))
+
+   filtered))
+
 (defn filter-by
-  "Filter a given map of `packages` by those that the given `filter-fn`
-  predicate returns `true`.
+  "Filter a given `packages` map by those that match the given `predicate-fn`.
 
   If the `:include-dependents` property is `true` then all dependent packages of
   the retained packages will also be kept.
 
   This function will update the `:depends-on` and `:dependent` keys of each
-  retained package to include only other packages that still remain.
+  retained package to include only other packages that still remain in the map.
 
   It's generally recommended to use this function instead of writing your own
   package filtering. If you need to write your own then you should also make
   sure to keep the `:depends-on` and `:dependents` updated."
-  ([filter-fn packages] (filter-by filter-fn {} packages))
-  ([filter-fn {:keys [include-dependents]} packages]
+  ([predicate-fn packages] (filter-by predicate-fn {} packages))
+  ([predicate-fn {:keys [include-dependents]} packages]
    (let [filtered
          (->> packages
               (mapv (fn [[pkg-name pkg]]
                       (future
-                        [pkg-name (filter-fn pkg)])))
+                        [pkg-name (predicate-fn pkg)])))
               (mapv deref))
 
          filtered
@@ -127,25 +153,4 @@
                  filtered)
            filtered)]
 
-     (into {}
-           (map
-            (fn [pkg-name]
-              (let [pkg (-> (get packages pkg-name)
-                            (update :depends-on
-                                    (fn [deps]
-                                      (->> deps
-                                           (filter (fn [dep]
-                                                     (contains? filtered dep)))
-
-                                           set)))
-                            (update :dependents
-                                    (fn [deps]
-                                      (->> deps
-                                           (filter (fn [dep]
-                                                     (contains? filtered dep)))
-
-                                           set))))]
-
-                [pkg-name pkg])))
-
-           filtered))))
+     (update-graph-edges packages filtered))))

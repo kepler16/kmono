@@ -77,7 +77,7 @@
   will use them to build a graph of all workspace packages and their
   dependencies.
 
-  See `k16.kmono.core.schema/?PackageMap` for a schema of the returned package
+  See [[k16.kmono.core.schema/?PackageMap]] for a schema of the returned package
   map."
   {:malli/schema [:=> [:cat :string core.schema/?WorkspaceConfig] core.schema/?PackageMap]}
   [project-root workspace-config]

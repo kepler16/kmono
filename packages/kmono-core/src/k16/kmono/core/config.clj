@@ -28,7 +28,13 @@
             (core.fs/read-edn-file! deps-file-path))
           (get key)))
 
-(defn resolve-workspace-config [root]
+(defn resolve-workspace-config
+  "Read in and validate kmono workspace config at a given `root` dir.
+
+  This will attempt to load the key `:kmono/workspace` from both a `deps.edn`
+  file and a `deps.local.edn` file at the given `root`. These will be merged
+  together with the `deps.local.edn` taking precedence."
+  [root]
   (let [root-workspace-config (read-kmono-config (fs/file root "deps.edn") :kmono/workspace)
         local-workspace-config (read-kmono-config (fs/file root "deps.local.edn") :kmono/workspace)
         workspace-config (metamerge/meta-merge {} root-workspace-config local-workspace-config)]
@@ -41,7 +47,13 @@
                     (malli.transform/default-value-transformer
                      {::malli.transform/add-optional-keys true})))))
 
-(defn resolve-package-config [workspace-config package-path]
+(defn resolve-package-config
+  "Read in and validate kmono package config from a package at the given
+  `package-path`.
+
+  This accepts a `workspace-config` from which certain keys like `:group` will
+  be derived and used as defaults for the package config."
+  [workspace-config package-path]
   (let [deps-file-path (fs/file package-path "deps.edn")
 
         deps-edn (when (fs/exists? deps-file-path)
