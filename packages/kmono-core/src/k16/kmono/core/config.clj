@@ -31,7 +31,7 @@
 (defn resolve-workspace-config [root]
   (let [root-workspace-config (read-kmono-config (fs/file root "deps.edn") :kmono/workspace)
         local-workspace-config (read-kmono-config (fs/file root "deps.local.edn") :kmono/workspace)
-        workspace-config (metamerge/meta-merge root-workspace-config local-workspace-config)]
+        workspace-config (metamerge/meta-merge {} root-workspace-config local-workspace-config)]
 
     (when workspace-config
       (validate! core.schema/?WorkspaceConfig workspace-config "Workspace config is invalid")
