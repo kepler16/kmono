@@ -11,8 +11,6 @@
 
         com.kepler16/kmono-core {:local/root "../kmono-core"}
         com.kepler16/kmono-version {:local/root "../kmono-version"}
-        com.kepler16/kmono-cp {:local/root "../kmono-cp"}
-        com.kepler16/kmono-exec {:local/root "../kmono-exec"}
         com.kepler16/kmono-log {:local/root "../kmono-log"}}
 
  :aliases {:native {:extra-deps {com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}}}}

@@ -24,7 +24,7 @@
   (let [{:keys [root config packages]} (common.context/load-context props)
 
         {:keys [sdeps aliases]}
-        (kmono.cp/generate-aliases
+        (kmono.cp/collect-aliases
          root config packages)
 
         aliases (concat aliases (:main-aliases config))

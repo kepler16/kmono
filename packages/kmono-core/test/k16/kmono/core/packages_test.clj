@@ -25,7 +25,7 @@
                                   :name 'b
                                   :fqn 'com.kepler16/b
 
-                                  :deps-edn {:deps {'a/b {:mvn/version "RELEASE"}
+                                  :deps-edn {:deps {'org.clojure/clojure {:mvn/version "1.12.0"}
                                                     'local/excluded {:local/root "../excluded"}
                                                     'com.kepler16/a {:local/root "../a"}}}
                                   :depends-on #{'com.kepler16/a}

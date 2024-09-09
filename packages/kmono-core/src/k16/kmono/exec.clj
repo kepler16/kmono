@@ -7,7 +7,7 @@
   (:import
    java.util.concurrent.Semaphore))
 
-(def ?ProcsResult
+(def ^:no-doc ?ProcsResult
   [:vector
    [:map-of
     :string
@@ -15,10 +15,11 @@
      [:success? :boolean]
      [:output :string]]]])
 
-(def ?JobResult
+(def ^:no-doc ?JobResult
   [:tuple :boolean ?ProcsResult])
 
-(defn- run-external-cmd [{:keys [package command on-event]}]
+(defn- run-external-cmd
+  [{:keys [package command on-event]}]
   (on-event {:type :proc-start
              :package package
              :command command})

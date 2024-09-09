@@ -30,3 +30,12 @@
 
     (is (= "clojure -Sdeps '{:aliases {:a/test {:extra-paths [\"packages/a/test\"], :extra-deps #:local{excluded #:local{:root \"packages/excluded\"}}}, :kmono/packages {:extra-deps #:com.kepler16{a #:local{:root \"packages/a\"}, b #:local{:root \"packages/b\"}}}}}' -A:kmono/packages:local -Spath"
            cmd))))
+
+(deftest resolve-classpath-test
+  (let [config (core.config/resolve-workspace-config *repo*)
+        packages (core.packages/resolve-packages *repo* config)
+
+        cp (kmono.cp/resolve-classpath *repo* config packages)]
+
+    ;; This is pretty much just testing that the command doesn't fail.
+    (is (string? cp))))
