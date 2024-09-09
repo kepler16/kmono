@@ -18,7 +18,8 @@
                    skip-unchanged (->>
                                    (kmono.version/resolve-package-versions root)
                                    (kmono.version/resolve-package-changes root)
-                                   (core.graph/filter-by kmono.version/package-changed?)))
+                                   (core.graph/filter-by kmono.version/package-changed? 
+                                                         {:include-dependents true})))
 
         globs (or M T X)
         flag (cond

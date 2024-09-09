@@ -21,8 +21,10 @@
                       (kmono.version/resolve-package-changes project-root))
 
           ;; Only perform a build and/or release for packages which have changed
-          ;; since their last version
-          skip-unchanged (core.graph/filter-by kmono.version/package-changed?))]
+          ;; since their last version; or packages whose dependencies have
+          ;; changed.
+          skip-unchanged (core.graph/filter-by kmono.version/package-changed?
+                                               {:include-dependents true}))]
 
     ;; Use semantic commits to increment package versions based on commits which
     ;; modified them since their last version.
@@ -32,49 +34,45 @@
   (b/delete {:path "target"})
 
   (let [packages (load-packages opts)]
-    (kmono.build/for-each-package
-     (fn [pkg]
-       (let [;; Create a basis with all local kmono libs replaced with their
-             ;; respective :mvn/version coordinate
-             {:keys [basis paths]} (kmono.build/create-basis packages pkg)
+    (kmono.build/for-each-package packages
+      (fn [pkg]
+        (let [;; Create a basis with all local kmono libs replaced with their
+              ;; respective :mvn/version coordinate
+              {:keys [basis paths]} (kmono.build/create-basis packages pkg)
 
-             pkg-name (:fqn pkg)
-             class-dir "target/classes"
-             jar-file "target/lib.jar"]
+              pkg-name (:fqn pkg)
+              class-dir "target/classes"
+              jar-file "target/lib.jar"]
 
-         (b/copy-dir {:src-dirs paths
-                      :target-dir class-dir})
+          (b/copy-dir {:src-dirs paths
+                       :target-dir class-dir})
 
-         (b/write-pom
-          {:class-dir class-dir
-           :lib pkg-name
-           :version (:version pkg)
-           :basis basis})
+          (b/write-pom
+           {:class-dir class-dir
+            :lib pkg-name
+            :version (:version pkg)
+            :basis basis})
 
-         (b/jar {:class-dir class-dir
-                 :jar-file jar-file})))
-     packages)))
+          (b/jar {:class-dir class-dir
+                  :jar-file jar-file}))))))
 
 (defn release [{:keys [repository] :as opts}]
   (let [project-root (core.fs/find-project-root)
         packages (load-packages opts)
         changed-packages (core.graph/filter-by kmono.build/not-published? packages)]
-    (kmono.build/for-each-package
-     (fn [pkg]
-       ;; Release the package using deps-deploy
-       (deps-deploy/deploy
-        {:installer :remote
-         :artifact (b/resolve-path "target/lib.jar")
-         :pom-file (b/pom-path {:lib (:fqn pkg)
-                                :class-dir (b/resolve-path "target/classes")})
-         :repository repository})
+    (kmono.build/for-each-package changed-packages {:concurrency 1}
+      (fn [pkg]
+        ;; Release the package using deps-deploy
+        (deps-deploy/deploy
+         {:installer :remote
+          :artifact (b/resolve-path "target/lib.jar")
+          :pom-file (b/pom-path {:lib (:fqn pkg)
+                                 :class-dir (b/resolve-path "target/classes")})
+          :repository repository})
 
-       ;; Create tags after successfully releasing the package
-       ;; This will require calling `git push --tags` separately but you could
-       ;; just as easilly call it here too.
-       (git.tags/create-tags
-        project-root {:tags [(kmono.version/create-package-version-tag pkg)]}))
-
-     {:title "Release"
-      :concurrency 1}
-     changed-packages)))
+        ;; Create tags after successfully releasing the package.
+        ;;
+        ;; This will require calling `git push --tags` separately but you could
+        ;; just as easilly call it here too.
+        (git.tags/create-tags
+         project-root {:tags [(kmono.version/create-package-version-tag pkg)]})))))
