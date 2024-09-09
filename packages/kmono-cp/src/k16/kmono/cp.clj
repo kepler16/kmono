@@ -20,19 +20,20 @@
 (defn generate-aliases
   [project-root workspace-config packages]
 
-  (let [{:keys [combined package-aliases]}
-        (core.deps/resolve-aliases project-root packages)
+  (let [sdeps-aliases (core.deps/generate-sdeps-aliases project-root packages)
 
         root-aliases (:aliases workspace-config)
         package-alias-globs (:package-aliases workspace-config)
-        package-aliases (core.deps/filter-package-aliases
-                         package-aliases package-alias-globs)
+        package-aliases (->> packages
+                             (core.deps/filter-package-aliases package-alias-globs)
+                             (mapcat second)
+                             set)
 
         aliases (concat [:kmono/packages]
                         root-aliases
-                        (keys package-aliases))]
+                        package-aliases)]
 
-    {:sdeps {:aliases combined}
+    {:sdeps {:aliases sdeps-aliases}
      :aliases aliases}))
 
 (defn generate-classpath-command

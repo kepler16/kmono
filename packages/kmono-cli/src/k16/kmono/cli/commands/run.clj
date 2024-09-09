@@ -24,14 +24,12 @@
                   (:T props)
                   (:X props))
 
+        package-aliases (core.deps/filter-package-aliases
+                         globs packages)
+
         packages (core.graph/filter-by
                   (fn [pkg]
-                    (-> (core.deps/filter-package-aliases
-                         (core.deps/generate-package-aliases
-                          root pkg)
-                         globs)
-                        seq))
-
+                    (get package-aliases (:fqn pkg)))
                   packages)
 
         results
@@ -39,11 +37,9 @@
          {:packages packages
           :ordered (:ordered props)
           :command (fn [pkg]
-                     (let [aliases (core.deps/filter-package-aliases
-                                    (core.deps/generate-package-aliases
-                                     root pkg)
-                                    globs)
-                           names (->> (keys aliases)
+                     (let [aliases (get package-aliases (:fqn pkg))
+
+                           names (->> aliases
                                       (map (fn [alias]
                                              (name alias)))
                                       (str/join ":"))

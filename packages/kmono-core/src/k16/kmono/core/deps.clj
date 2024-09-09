@@ -60,7 +60,7 @@
     replace-paths (assoc :replace-paths (alter-paths
                                          project-root package replace-paths))))
 
-(defn generate-package-aliases [project-root package]
+(defn- generate-package-aliases [project-root package]
   (reduce
    (fn [aliases [alias-name alias]]
      (assoc aliases
@@ -76,47 +76,87 @@
    {}
    packages))
 
-(defn resolve-aliases [project-root packages]
-  (let [local-deps (fs/file project-root "deps.local.edn")
+(defn match-keyword
+  "Compare a namespaced keyword against a keyword `glob`.
 
-        aliases (if (fs/exists? local-deps)
-                  (:aliases (core.fs/read-edn-file! local-deps))
-                  {})
+  The keyword `glob` should be provided as a keyword where either the namespace
+  or name component can be substituted with a `*`. For example the below are all
+  valid globs
 
-        extra-deps {:extra-deps (generate-extra-deps packages)}
-        package-aliases (generate-all-package-aliases project-root packages)]
+  - `:a/b` 
+  - `:*/b` 
+  - `:a/*` 
+  - `:*/*`"
+  [kw glob]
+  (let [ns-matches
+        (or (= "*" (namespace glob))
+            (= (namespace glob)
+               (namespace kw)))
 
-    {:aliases aliases
-     :packages extra-deps
-     :package-aliases package-aliases
+        name-matches
+        (or (= "*" (name glob))
+            (= (name glob)
+               (name kw)))]
 
-     :combined (into (sorted-map)
-                     (merge aliases
-                            {:kmono/packages extra-deps}
-                            package-aliases))}))
+    (and ns-matches name-matches)))
 
-(defn- glob-to-pattern [glob]
-  (if (= "*" glob)
-    ".*"
-    glob))
+(defn filter-package-aliases
+  "Filter a given set of `packages` by those that contain aliases that match the
+  given `globs`.
 
-(defn- alias-matches-glob [alias globs]
-  (some
-   (fn [glob]
-     (let [pkg-glob (namespace glob)
-           alias-glob (name glob)
+  Returns a map with pkg-name as the key and the set of aliases from that
+  package that matched the globs."
+  [globs packages]
+  (reduce
+   (fn [packages [pkg-name pkg]]
+     (let [aliases (get-in pkg [:deps-edn :aliases] {})
 
-           pkg-match (glob-to-pattern pkg-glob)
-           alias-match (glob-to-pattern alias-glob)
-           pattern (re-pattern (str pkg-match "/" alias-match))]
+           aliases
+           (into #{}
+                 (comp
+                  (map first)
+                  (filter
+                   (fn [pkg-alias]
+                     (let [scoped-alias (scope-package-alias pkg pkg-alias)]
+                       (some
+                        #(match-keyword scoped-alias %)
+                        globs)))))
+                 aliases)]
 
-       (re-matches pattern (str (namespace alias) "/" (name alias)))))
+       (if (seq aliases)
+         (assoc packages pkg-name aliases)
+         packages)))
+   {}
+   packages))
 
-   globs))
+(defn generate-sdeps-aliases
+  "Generate an `-Sdeps` compatible map containing aliases generated from various
+  workspace sources.
 
-(defn filter-package-aliases [aliases globs]
-  (into {}
-        (filter
-         (fn [[alias-name]]
-           (alias-matches-glob alias-name globs)))
-        aliases))
+  This is the primary way of augmenting clojure with new classpath information.
+
+  Aliases are generated from:
+
+  1) The set of packages in the workspace are added as a `:kmono/packages` alias
+  containing `:extra-deps`.
+  2) All the aliases from all packages in the workspace are raised up and
+  combined, scoping their alias names to the package name.
+  3) The aliases from `deps.local.edn` in the project root are also merged in."
+  [project-root packages]
+  (let [local-deps
+        (fs/file project-root "deps.local.edn")
+
+        local-aliases
+        (when (fs/exists? local-deps)
+          (:aliases (core.fs/read-edn-file! local-deps)))
+
+        extra-deps
+        {:extra-deps (generate-extra-deps packages)}
+
+        package-aliases
+        (generate-all-package-aliases project-root packages)]
+
+    (into (sorted-map)
+          (merge local-aliases
+                 {:kmono/packages extra-deps}
+                 package-aliases))))

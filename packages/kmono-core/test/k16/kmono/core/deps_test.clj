@@ -1,12 +1,12 @@
 (ns k16.kmono.core.deps-test
   (:require
+   [babashka.fs :as fs]
    [clojure.test :refer [deftest is use-fixtures]]
    [k16.kmono.core.config :as core.config]
    [k16.kmono.core.deps :as core.deps]
    [k16.kmono.core.packages :as core.packages]
    [k16.kmono.test.helpers.repo :refer [*repo* with-test-repo] :as helpers.repo]
-   [matcher-combinators.test]
-   [babashka.fs :as fs]))
+   [matcher-combinators.test]))
 
 (use-fixtures :each with-test-repo)
 
@@ -18,34 +18,33 @@
 
         packages (core.packages/resolve-packages *repo* config)
 
-        aliases (core.deps/resolve-aliases *repo* packages)]
+        sdeps (core.deps/generate-sdeps-aliases *repo* packages)]
 
-    (is (match? {:aliases {:local {:extra-paths ["local"]}}
+    (is (match? {:local {:extra-paths ["local"]}
 
-                 :packages {:extra-deps {'com.kepler16/a {:local/root "packages/a"}
-                                         'com.kepler16/b {:local/root "packages/b"}}}
+                 :kmono/packages {:extra-deps {'com.kepler16/a {:local/root "packages/a"}
+                                               'com.kepler16/b {:local/root "packages/b"}}}
 
-                 :package-aliases {:a/test
-                                   {:extra-paths ["packages/a/test"]
-                                    :extra-deps {'local/excluded {:local/root "packages/excluded"}}}}}
-                aliases))))
+                 :a/test
+                 {:extra-paths ["packages/a/test"]
+                  :extra-deps {'local/excluded {:local/root "packages/excluded"}}}}
+                sdeps))))
 
 (deftest filter-package-aliases-test
   (let [config (core.config/resolve-workspace-config *repo*)
-        packages (core.packages/resolve-packages *repo* config)
-        aliases (core.deps/resolve-aliases *repo* packages)]
+        packages (core.packages/resolve-packages *repo* config)]
 
-    (is (= [:a/test]
-           (keys (core.deps/filter-package-aliases (:package-aliases aliases) [:*/*]))))
+    (is (= {'com.kepler16/a #{:test}}
+           (core.deps/filter-package-aliases [:*/*] packages)))
 
-    (is (= [:a/test]
-           (keys (core.deps/filter-package-aliases (:package-aliases aliases) [:a/*]))))
+    (is (= {'com.kepler16/a #{:test}}
+           (core.deps/filter-package-aliases [:a/*] packages)))
 
-    (is (= [:a/test]
-           (keys (core.deps/filter-package-aliases (:package-aliases aliases) [:*/test]))))
+    (is (= {'com.kepler16/a #{:test}}
+           (core.deps/filter-package-aliases [:*/test] packages)))
 
-    (is (= [:a/test]
-           (keys (core.deps/filter-package-aliases (:package-aliases aliases) [:a/test]))))
+    (is (= {'com.kepler16/a #{:test}}
+           (core.deps/filter-package-aliases [:a/test] packages)))
 
-    (is (not
-         (keys (core.deps/filter-package-aliases (:package-aliases aliases) [:*/unknown]))))))
+    (is (= {}
+           (core.deps/filter-package-aliases [:*/unknown] packages)))))
