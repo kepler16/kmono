@@ -95,8 +95,9 @@
   The `build-fn` will be called concurrently (up to max of `:concurrency` or
   `4`) but packages with dependencies will only be executed after each of their
   respective dependencies have run."
-  ([build-fn packages] (for-each-package build-fn {:title "Build"} packages))
-  ([build-fn {:keys [title concurrency ordered]} packages]
+  {:style/indent :defn}
+  ([packages build-fn] (for-each-package packages {} build-fn))
+  ([packages {:keys [concurrency run-in-order? silent?]} build-fn]
    ;; This is a hack as calling tools.build API's concurrently is not
    ;; thread-safe due to them dynamically loading the internal namespaces
    ;; listed below.
@@ -105,8 +106,8 @@
    (requiring-resolve 'clojure.tools.build.tasks.jar/jar)
    (requiring-resolve 'clojure.tools.build.tasks.create-basis/create-basis)
 
-   (let [exec-order (if (or (not (boolean? ordered))
-                            ordered)
+   (let [exec-order (if (or (not (boolean? run-in-order?))
+                            run-in-order?)
                       (core.graph/parallel-topo-sort packages)
                       [(keys packages)])
 
@@ -124,9 +125,10 @@
 
                     (try
                       (let [pkg (get packages pkg-name)]
-                        (log/info (str title " "
-                                       (log.render/render-package-name pkg-name)
-                                       "@|magenta  " (:version pkg) "|@"))
+                        (when-not silent?
+                          (log/info (str (log.render/render-package-name pkg-name)
+                                         "@|magenta  " (:version pkg) "|@")))
+
                         (b/with-project-root (:relative-path pkg)
                           (build-fn pkg)))
                       (finally

@@ -34,49 +34,44 @@
   (b/delete {:path "target"})
 
   (let [packages (load-packages)]
-    (kmono.build/for-each-package
-     (fn [pkg]
-       (let [pkg-name (:fqn pkg)
-             relative-path (:relative-path pkg)
-             basis (kmono.build/create-basis packages pkg)
+    (kmono.build/for-each-package packages
+      (fn [pkg]
+        (let [pkg-name (:fqn pkg)
+              relative-path (:relative-path pkg)
+              basis (kmono.build/create-basis packages pkg)
 
-             class-dir (kmono.build/join (fs/cwd) "target/" relative-path "classes")
-             jar-file (kmono.build/join (fs/cwd) "target/" relative-path "lib.jar")]
+              class-dir (kmono.build/join (fs/cwd) "target/" relative-path "classes")
+              jar-file (kmono.build/join (fs/cwd) "target/" relative-path "lib.jar")]
 
-         (b/copy-dir {:src-dirs (:paths basis)
-                      :target-dir class-dir})
+          (b/copy-dir {:src-dirs (:paths basis)
+                       :target-dir class-dir})
 
-         (b/write-pom {:class-dir class-dir
-                       :lib pkg-name
-                       :version (:version pkg)
-                       :basis basis
-                       :src-dirs (:paths basis)
-                       :pom-data [[:description (get-in pkg [:deps-edn :kmono/description])]
-                                  [:url "https://github.com/kepler16/kmono"]
-                                  [:licenses
-                                   [:license
-                                    [:name "MIT"]
-                                    [:url "https://opensource.org/license/mit"]]]]})
+          (b/write-pom {:class-dir class-dir
+                        :lib pkg-name
+                        :version (:version pkg)
+                        :basis basis
+                        :src-dirs (:paths basis)
+                        :pom-data [[:description (get-in pkg [:deps-edn :kmono/description])]
+                                   [:url "https://github.com/kepler16/kmono"]
+                                   [:licenses
+                                    [:license
+                                     [:name "MIT"]
+                                     [:url "https://opensource.org/license/mit"]]]]})
 
-         (b/jar {:class-dir class-dir
-                 :jar-file jar-file})))
-
-     packages)))
+          (b/jar {:class-dir class-dir
+                  :jar-file jar-file}))))))
 
 (defn release [_]
   (let [packages (core.graph/filter-by kmono.build/not-published? (load-packages))]
-    (kmono.build/for-each-package
-     (fn [pkg]
-       (let [{:keys [fqn relative-path]} pkg
-             lib (kmono.build/join (fs/cwd) "target/" relative-path "lib.jar")
-             class-dir (kmono.build/join (fs/cwd) "target/" relative-path "classes")]
-         (deps-deploy/deploy {:installer :remote
-                              :artifact (fs/file lib)
-                              :pom-file (b/pom-path {:lib fqn
-                                                     :class-dir class-dir})})))
-     {:title "Release"
-      :concurrency 1}
-     packages)))
+    (kmono.build/for-each-package packages {:title "Release" :concurrency 1}
+      (fn [pkg]
+        (let [{:keys [fqn relative-path]} pkg
+              lib (kmono.build/join (fs/cwd) "target/" relative-path "lib.jar")
+              class-dir (kmono.build/join (fs/cwd) "target/" relative-path "classes")]
+          (deps-deploy/deploy {:installer :remote
+                               :artifact (fs/file lib)
+                               :pom-file (b/pom-path {:lib fqn
+                                                      :class-dir class-dir})}))))))
 
 (defn build-cli [_]
   (b/delete {:path "target"})
