@@ -10,21 +10,21 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- run-command [props]
-  (let [{:keys [root packages]} (common.context/load-context props)
+(defn- run-command [opts _]
+  (let [{:keys [root packages]} (common.context/load-context opts)
         packages (cond-> packages
-                   (:skip-unchanged props) (->>
-                                            (kmono.version/resolve-package-versions root)
-                                            (kmono.version/resolve-package-changes root)
-                                            (core.graph/filter-by kmono.version/package-changed?
-                                                                  {:include-dependents true})))
+                   (:skip-unchanged opts) (->>
+                                           (kmono.version/resolve-package-versions root)
+                                           (kmono.version/resolve-package-changes root)
+                                           (core.graph/filter-by kmono.version/package-changed?
+                                                                 {:include-dependents true})))
 
         results
         (kmono.exec/run-external-cmds
          {:packages packages
-          :ordered (:ordered props)
-          :command (:_arguments props)
-          :concurrency (:concurrency props)
+          :ordered (:ordered opts)
+          :command (:_arguments opts)
+          :concurrency (:concurrency opts)
           :on-event common.log/handle-event})
 
         failed? (some
@@ -38,14 +38,10 @@
 
 (def command
   {:command "exec"
-   :description "Run a command in each package"
-   :opts [opts/packages-opt
-          opts/verbose-opt
-          opts/order-opt
-          opts/skip-unchanged-opt
-
-          {:as "Maximum number of commands to run in parallel. Defaults to number of cores"
-           :option "concurrency"
-           :short "c"
-           :type :int}]
-   :runs run-command})
+   :desc "Run a given command in workspace packages"
+   :options {:run-in-order opts/run-in-order-opt
+             :skip-unchanged opts/skip-unchanged-opt
+             :concurrency {:desc "Maximum number of commands to run in parallel. Defaults to number of cores"
+                           :alias :c
+                           :coerce :int}}
+   :run-fn run-command})

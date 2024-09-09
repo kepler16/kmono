@@ -10,8 +10,10 @@
 
 (set! *warn-on-reflection* true)
 
-(defn run-clojure [{:keys [A M T X _arguments] :as props}]
-  (let [{:keys [root config packages]} (common.context/load-context props)
+(defn run-clojure [{:keys [A M T X] :as props} args]
+  (let [aliases (or A M T X)
+        props (assoc props :aliases aliases)
+        {:keys [root config packages]} (common.context/load-context props)
 
         mode (cond
                A "A"
@@ -29,7 +31,7 @@
         sdeps (str "'" (str/trim (prn-str sdeps)) "'")
 
         command ["clojure" "-Sdeps" sdeps arg]
-        command (concat command _arguments)
+        command (concat command args)
 
         command (str/join " " command)
 
@@ -52,24 +54,19 @@
 
     @proc))
 
-(defn- aliases-opt [name]
-  {:as (str "The clojure command mode -" name)
-   :option name
-   :short name
-   :type :with-flag})
-
 (def command
   {:command "clojure"
-   :description "Run an augmented clojure command"
-   :opts [opts/packages-opt
-          opts/verbose-opt
+   :desc "Run an augmented clojure command"
 
-          (dissoc opts/aliases-opt :short)
-          opts/package-aliases-opt
+   :options {:package-aliases opts/package-aliases-opt
 
-          (aliases-opt "A")
-          (aliases-opt "M")
-          (aliases-opt "T")
-          (aliases-opt "X")]
+             :A {:desc "Aliases"
+                 :parse-fn opts/parse-bool-or-aliases}
+             :M {:desc "Main aliases"
+                 :parse-fn opts/parse-bool-or-aliases}
+             :T {:desc "Tool aliases"
+                 :parse-fn opts/parse-bool-or-aliases}
+             :X {:desc "Exec aliases"
+                 :parse-fn opts/parse-bool-or-aliases}}
 
-   :runs run-clojure})
+   :run-fn run-clojure})

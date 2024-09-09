@@ -1,48 +1,46 @@
-(ns k16.kmono.cli.common.opts)
+(ns k16.kmono.cli.common.opts
+  (:require
+   [clojure.string :as str]))
 
 (set! *warn-on-reflection* true)
 
-(def packages-opt
-  {:as "A glob string describing where to search for packages (default: 'packages/*')"
-   :option "packages"
-   :short "p"
-   :type :string})
+(defn parse-aliases [value]
+  (into []
+        (comp
+         (map (fn [value]
+                (-> value
+                    (str/replace ":" "")
+                    (str/split #"/"))))
+         (map (fn [[ns|name maybe-name]]
+                (if maybe-name
+                  (keyword ns|name maybe-name)
+                  (keyword ns|name)))))
+        (str/split value #",")))
+
+(defn parse-bool-or-aliases [value]
+  (cond
+    (= value true) []
+    (keyword? value) (parse-aliases (name value))
+    :else (parse-aliases value)))
 
 (def aliases-opt
-  {:as "List of aliases from the root deps.edn"
-   :option "aliases"
-   :short "A"
-   :multiple true
-   :type :keyword})
-
-(def main-aliases-opt
-  {:as "List of main aliases from the root deps.edn"
-   :option "main-aliases"
-   :short "M"
-   :multiple true
-   :type :keyword})
+  {:desc "Use aliases from the root deps.edn or deps.local.edn"
+   :short :A
+   :coerce :string
+   :parse-fn parse-aliases})
 
 (def package-aliases-opt
-  {:as "List of aliases from packages"
-   :option "package-aliases"
-   :short "P"
-   :multiple true
-   :type :keyword})
+  {:desc "Use aliases from sub packages in the workspace"
+   :alias :P
+   :coerce :string
+   :parse-fn parse-aliases})
 
-(def order-opt
-  {:as "Run tests in dependency order"
-   :option "ordered"
-   :type :flag
+(def run-in-order-opt
+  {:desc "Run tests in dependency order"
+   :coerce :boolean
    :default true})
 
 (def skip-unchanged-opt
-  {:as "Skip packages that have not been changed since the last known version"
-   :option "skip-unchanged"
-   :type :flag
+  {:desc "Skip packages that have not been changed since the last known version"
+   :coerce :boolean
    :default false})
-
-(def verbose-opt
-  {:as "Verbose output"
-   :option "verbose"
-   :short "v"
-   :type :with-flag})

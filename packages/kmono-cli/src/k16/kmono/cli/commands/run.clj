@@ -12,13 +12,13 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- run-command [{:keys [M T X skip-unchanged] :as props}]
+(defn- run-command [{:keys [M T X skip-unchanged] :as props} args]
   (let [{:keys [root packages]} (common.context/load-context props)
         packages (cond-> packages
                    skip-unchanged (->>
                                    (kmono.version/resolve-package-versions root)
                                    (kmono.version/resolve-package-changes root)
-                                   (core.graph/filter-by kmono.version/package-changed? 
+                                   (core.graph/filter-by kmono.version/package-changed?
                                                          {:include-dependents true})))
 
         globs (or M T X)
@@ -46,7 +46,7 @@
                                       (str/join ":"))
 
                            cmd (concat ["clojure" (str flag ":" names)]
-                                       (:_arguments props))]
+                                       args)]
 
                        (when (:verbose props)
                          (binding [log/*log-out* System/err]
@@ -67,28 +67,21 @@
       (log/error "Command failed in one or more packages")
       (System/exit 1))))
 
-(defn- aliases-opt [name]
-  {:as (str "The clojure command mode -" name)
-   :option name
-   :short name
-   :multiple true
-   :type :keyword})
-
 (def command
   {:command "run"
-   :description "Run an alias in project packages"
-   :opts [opts/packages-opt
-          opts/verbose-opt
-          opts/order-opt
-          opts/skip-unchanged-opt
+   :desc "Run aliases in workspace packages"
+   :options {:run-in-order opts/run-in-order-opt
+             :skip-unchanged opts/skip-unchanged-opt
 
-          {:as "Maximum number of commands to run in parallel. Defaults to number of cores"
-           :option "concurrency"
-           :short "c"
-           :type :int}
+             :concurrency {:desc "Maximum number of commands to run in parallel. Defaults to number of cores"
+                           :alias :c
+                           :coerce :int}
 
-          (aliases-opt "M")
-          (aliases-opt "T")
-          (aliases-opt "X")]
+             :M {:desc "Run clojure -M <alias globs>"
+                 :parse-fn opts/parse-bool-or-aliases}
+             :T {:desc "Run clojure -T <alias globs>"
+                 :parse-fn opts/parse-bool-or-aliases}
+             :X {:desc "Run clojure -X <alias globs>"
+                 :parse-fn opts/parse-bool-or-aliases}}
 
-   :runs run-command})
+   :run-fn run-command})

@@ -5,16 +5,13 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- cp-command [props]
-  (commands.clojure/run-clojure
-   (merge props {:A true
-                 :_arguments ["-Spath"]})))
+(defn- cp-command [opts _]
+  (commands.clojure/run-clojure (merge opts {:A []}) 
+                                ["-Spath"]))
 
 (def command
   {:command "cp"
-   :description "Produce a classpath string from a clojure project"
-   :opts [opts/packages-opt
-          opts/aliases-opt
-          opts/package-aliases-opt
-          opts/verbose-opt]
-   :runs cp-command})
+   :desc "Produce a classpath string from a clojure project"
+   :options {:aliases opts/aliases-opt
+             :package-aliases opts/package-aliases-opt}
+   :run-fn cp-command})
