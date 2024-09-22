@@ -1,0 +1,5 @@
+{:cljdoc/include-namespaces-from-dependencies
+ [com.kepler16/kmono
+  com.kepler16/kmono-core
+  com.kepler16/kmono-build
+  com.kepler16/kmono-version]}
