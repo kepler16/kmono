@@ -46,11 +46,20 @@
 
     [(not failed?) results]))
 
+(def ^:no-doc ?RunOpts
+  [:map
+   [:packages core.schema/?PackageMap]
+   [:command [:or [:sequential :string] ifn?]]
+   [:concurrency {:optional true} :int]
+   [:run-in-order {:optional true} :boolean]
+   [:on-event ifn?]])
+
 (defn run-external-cmds
-  {:malli/schema [:=> [:cat core.schema/?PackageMap] ?JobResult]}
-  [{:keys [packages command concurrency ordered on-event]}]
-  (let [exec-order (if (or (not (boolean? ordered))
-                           ordered)
+  {:malli/schema [:-> ?RunOpts [:sequential [:map [:success :boolean]]]]}
+  [{:keys [packages command on-event
+           concurrency run-in-order]}]
+  (let [exec-order (if (or (not (boolean? run-in-order))
+                           run-in-order)
                      (core.graph/parallel-topo-sort packages)
                      [(keys packages)])
 

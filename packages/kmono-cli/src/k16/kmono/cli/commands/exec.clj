@@ -4,27 +4,37 @@
    [k16.kmono.cli.common.log :as common.log]
    [k16.kmono.cli.common.opts :as opts]
    [k16.kmono.core.graph :as core.graph]
+   [k16.kmono.core.packages :as core.packages]
    [k16.kmono.exec :as kmono.exec]
    [k16.kmono.log :as log]
    [k16.kmono.version :as kmono.version]))
 
 (set! *warn-on-reflection* true)
 
-(defn- run-command [opts _]
+(defn- run-command
+  [{:keys [filter skip-unchanged
+           run-in-order concurrency]
+    :as opts}
+   args]
   (let [{:keys [root packages]} (common.context/load-context opts)
-        packages (cond-> packages
-                   (:skip-unchanged opts) (->>
-                                           (kmono.version/resolve-package-versions root)
-                                           (kmono.version/resolve-package-changes root)
-                                           (core.graph/filter-by kmono.version/package-changed?
-                                                                 {:include-dependents true})))
+
+        packages
+        (cond-> packages
+          filter (->>
+                  (core.graph/filter-by (core.packages/name-matches? filter)))
+
+          skip-unchanged (->>
+                          (kmono.version/resolve-package-versions root)
+                          (kmono.version/resolve-package-changes root)
+                          (core.graph/filter-by kmono.version/package-changed?
+                                                {:include-dependents true})))
 
         results
         (kmono.exec/run-external-cmds
          {:packages packages
-          :ordered (:ordered opts)
-          :command (:_arguments opts)
-          :concurrency (:concurrency opts)
+          :run-in-order run-in-order
+          :command args
+          :concurrency concurrency
           :on-event common.log/handle-event})
 
         failed? (some
@@ -41,7 +51,6 @@
    :desc "Run a given command in workspace packages"
    :options {:run-in-order opts/run-in-order-opt
              :skip-unchanged opts/skip-unchanged-opt
-             :concurrency {:desc "Maximum number of commands to run in parallel. Defaults to number of cores"
-                           :alias :c
-                           :coerce :int}}
+             :filter opts/package-filter-opt
+             :concurrency opts/concurrency-opt}
    :run-fn run-command})

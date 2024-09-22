@@ -29,4 +29,7 @@ jobs:
 
       - name: Test
         run: |
-          just cli run --ordered false -M ':*/test'
+          just cli run \
+            --run-in-order false \
+            --skip-unchanged true \
+            -M :test
