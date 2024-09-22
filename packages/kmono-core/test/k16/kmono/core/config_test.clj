@@ -30,13 +30,14 @@
                      (core.config/resolve-workspace-config *repo*))))
 
 (deftest package-config-test
-  (is (match? {:group 'a}
-              (core.config/resolve-package-config
-               {:group 'a} (fs/file *repo* "packages/a")))))
+  (is (match? {:deps-edn {}}
+              (core.config/resolve-package-config (fs/file *repo* "packages/a")))))
 
 (deftest package-validation-test
+  (fs/write-bytes (fs/file *repo* "packages/a/deps.edn")
+                  (.getBytes (prn-str {:kmono/package {:group "invalid"}})))
   (is (thrown-match? clojure.lang.ExceptionInfo
                      {:type :kmono/validation-error
-                      :errors {:group ["missing required key"]}}
+                      :errors {:group ["should be a symbol"]}}
                      (core.config/resolve-package-config
-                      {} (fs/file *repo* "packages/a")))))
+                      (fs/file *repo* "packages/a")))))

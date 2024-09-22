@@ -20,7 +20,7 @@
 
 (def ?PackageConfig
   [:map
-   [:group :symbol]
+   [:group {:optional true} :symbol]
    [:name {:optional true}
     [:maybe [:or :string :symbol]]]])
 

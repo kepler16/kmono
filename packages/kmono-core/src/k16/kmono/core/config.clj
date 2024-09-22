@@ -49,19 +49,15 @@
 
 (defn resolve-package-config
   "Read in and validate kmono package config from a package at the given
-  `package-path`.
-
-  This accepts a `workspace-config` from which certain keys like `:group` will
-  be derived and used as defaults for the package config."
-  [workspace-config package-path]
+  `package-path`."
+  [package-path]
   (let [deps-file-path (fs/file package-path "deps.edn")
 
         deps-edn (when (fs/exists? deps-file-path)
                    (core.fs/read-edn-file! deps-file-path))
 
         package-config (:kmono/package deps-edn)
-        package-config (merge (select-keys workspace-config [:group])
-                              {:deps-edn deps-edn}
+        package-config (merge {:deps-edn deps-edn}
                               package-config)]
 
     (when (:kmono/package deps-edn)

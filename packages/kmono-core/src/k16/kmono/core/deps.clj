@@ -1,7 +1,8 @@
 (ns k16.kmono.core.deps
   (:require
    [babashka.fs :as fs]
-   [k16.kmono.core.fs :as core.fs]))
+   [k16.kmono.core.fs :as core.fs]
+   [k16.kmono.core.packages :as core.packages]))
 
 (set! *warn-on-reflection* true)
 
@@ -76,30 +77,6 @@
    {}
    packages))
 
-(defn match-keyword
-  "Compare a namespaced keyword against a keyword `glob`.
-
-  The keyword `glob` should be provided as a keyword where either the namespace
-  or name component can be substituted with a `*`. For example the below are all
-  valid globs
-
-  - `:a/b`
-  - `:*/b`
-  - `:a/*`
-  - `:*/*`"
-  [kw glob]
-  (let [ns-matches
-        (or (= "*" (namespace glob))
-            (= (namespace glob)
-               (namespace kw)))
-
-        name-matches
-        (or (= "*" (name glob))
-            (= (name glob)
-               (name kw)))]
-
-    (and ns-matches name-matches)))
-
 (defn filter-package-aliases
   "Filter the given `packages` map by those that contain aliases described by at
   least one of the given given `globs`.
@@ -124,7 +101,7 @@
                    (fn [pkg-alias]
                      (let [scoped-alias (scope-package-alias pkg pkg-alias)]
                        (some
-                        #(match-keyword scoped-alias %)
+                        #(core.packages/glob-matches? % scoped-alias)
                         globs)))))
                  aliases)]
 
