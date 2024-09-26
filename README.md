@@ -81,25 +81,27 @@ For each individual modules' docs:
 
 ```bash
 ❯ kmono
-NAME:
- kmono - A cli for managing clojure (mono)repos
+kmono - A cli for managing clojure (mono)repos
 
-USAGE:
- kmono [global-options] command [command options] [arguments...]
+Usage:
+  kmono [opts] <args>
 
-VERSION:
- 4.4.0
+Version:
+  4.6.0
 
-COMMANDS:
-   cp                   Produce a classpath string from a clojure project
-   repl                 Start a clojure repl
-   exec                 Run a command in each package
-   run                  Run an alias in project packages
-   clojure              Run an augmented clojure command
+Commands:
+  cp      Produce a classpath string from a clojure project
+  repl    Start a clojure repl
+  exec    Run a given command in workspace packages
+  run     Run aliases in workspace packages
+  clojure Run an augmented clojure command
+  version Print the current version of kmono
 
-GLOBAL OPTIONS:
-   -d, --dir S  Run commands as if in this directory
-   -?, --help
+Global Options
+  -d, --dir      Run commands as if in this directory
+  -p, --packages A glob string describing where to search for packages (default: 'packages/*')
+  -v, --verbose  Enable verbose output
+  -h, --help
 ```
 
 #### Example project
