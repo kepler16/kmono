@@ -15,21 +15,22 @@
 
   (println "Usage:")
   (let [path (conj summary-path command)]
-    (println (str (str/join " " path) " [opts] <args>")))
+    (println (str "  " (str/join " " path) " [opts] <args>")))
 
   (when version
     (println)
     (println "Version:")
-    (println version))
+    (println (str "  " version)))
 
   (when (seq commands)
     (println)
+    (println "Commands:")
     (println
      (cli/format-table
       {:rows (mapv (fn [{:keys [command desc]}]
                      [command desc])
                    commands)
-       :indent 0})))
+       :indent 2})))
 
   (when (seq options)
     (println "\nOptions")
