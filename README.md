@@ -14,7 +14,8 @@
     The missing workspace tool for clojure tools.deps projects
   </p>
 
-  [![Clojars Project](https://img.shields.io/clojars/v/com.kepler16/kmono-core.svg)](https://clojars.org/com.kepler16/kmono-core)
+[![Clojars Project](https://img.shields.io/clojars/v/com.kepler16/kmono-core.svg)](https://clojars.org/com.kepler16/kmono-core)
+
 </div>
 
 Kmono is a suite of tools and API's for working in Clojure (mono)repos. It aims to meet Clojure where it's at by
@@ -25,23 +26,23 @@ standalone projects too.
 
 ## Index
 
-+ **[Features](#features)**
-+ **[Installation](#installation)**
-+ **[Documentation](#Documentation)**
-  + **[Kmono CLI](#kmono-cli)**
-  + **[Example Project](#example-project)**
-+ **[Clojure-lsp / Editor Integration](#clojure-lsp--editor-integration)**
+- **[Features](#features)**
+- **[Installation](#installation)**
+- **[Documentation](#Documentation)**
+  - **[Kmono CLI](#kmono-cli)**
+  - **[Example Project](#example-project)**
+- **[Clojure-lsp / Editor Integration](#clojure-lsp--editor-integration)**
 
 ## Features
 
 - **Workspace features**: Discovers packages and understands relationships between dependencies
 - **Aliases**: Allows working with packages aliases defined in `deps.edn` in a 'Clojure native' way without having to
-pull all alias definitions into root `deps.edn`
+  pull all alias definitions into root `deps.edn`
 - **Build Tools**: Exposes a suite of libs intended to be used from `tools.build` programs to build and release
-monorepos
+  monorepos
 - **Command Runner**: Allows executing Clojure and/or external commands in workspace packages
 - **Local Deps Overrides**: Allow overriding kmono config and `deps.edn` dependencies during local development. Useful
-for providing local paths to in-development libs without committing.
+  for providing local paths to in-development libs without committing.
 - **Editor/Clojure-lsp**: Improves developer/editing experience by augmenting the classpath used by clojure-lsp
 
 ## Installation
@@ -65,11 +66,11 @@ Or alternatively binaries for various platforms can be pulled directly from the
 
 ## Documentation
 
-+ **[kmono-core](https://cljdoc.org/d/com.kepler16/kmono-core)** - The core suite of API's for working with kmono
-packages.
-+ **[kmono-build](https://cljdoc.org/d/com.kepler16/kmono-build)** - A companion lib to `tools.build` which contains
-API's for building jar artifacts or simplifying the use of `tools.build` in a kmono workspace.
-+ **[kmono-version](https://cljdoc.org/d/com.kepler16/kmono-version)** - A set of API's for versioning kmono packages.
+- **[kmono-core](https://cljdoc.org/d/com.kepler16/kmono-core)** - The core suite of API's for working with kmono
+  packages.
+- **[kmono-build](https://cljdoc.org/d/com.kepler16/kmono-build)** - A companion lib to `tools.build` which contains
+  API's for building jar artifacts or simplifying the use of `tools.build` in a kmono workspace.
+- **[kmono-version](https://cljdoc.org/d/com.kepler16/kmono-version)** - A set of API's for versioning kmono packages.
 
 #### Kmono CLI
 
@@ -98,14 +99,14 @@ GLOBAL OPTIONS:
 
 #### Example project
 
-Take a look at **[the example project](./examples/workspace/)** to get a better idea of the type of project
-structures kmono is built to support and for references on how to correctly use the kmono API's and integrate it into
-your own project.
+Take a look at **[the example project](./examples/workspace/)** to get a better idea of the type of project structures
+kmono is built to support and for references on how to correctly use the kmono API's and integrate it into your own
+project.
 
 ## Clojure-lsp / Editor Integration
 
-One of the things that kmono enables is integration into your editor by acting as a drop-in replacement for `clojure
--Spath` which is used by default by clojure-lsp.
+One of the things that kmono enables is integration into your editor by acting as a drop-in replacement for
+`clojure -Spath` which is used by default by clojure-lsp.
 
 If we instead use `kmono cp` to generate the classpath then your clojure-lsp server will be able to provide better
 analysis.
@@ -121,8 +122,8 @@ analysis.
 #### Neovim / nvim-lspconfig
 
 ```lua
-local lspconfig = require('lspconfig')
-lspconfig.clojure_lsp.setup {
+local lspconfig = require("lspconfig")
+lspconfig.clojure_lsp.setup({
   init_options = {
     ["project-specs"] = {
       {
@@ -131,7 +132,7 @@ lspconfig.clojure_lsp.setup {
       },
     },
   },
-}
+})
 ```
 
 ### Package configuration
