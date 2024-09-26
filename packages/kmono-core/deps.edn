@@ -1,6 +1,4 @@
-{:kmono/package {}
-
- :kmono/description "The core kmono package and graph API's"
+{:kmono/description "The core kmono package and graph API's"
 
  :deps {babashka/fs {:mvn/version "0.5.22"}
         babashka/process {:mvn/version "0.5.22"}

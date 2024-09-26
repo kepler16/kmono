@@ -1,6 +1,4 @@
-{:kmono/package {}
-
- :deps {com.kepler16/a {:local/root "../a"}}
+{:deps {com.kepler16/a {:local/root "../a"}}
 
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}

@@ -56,7 +56,7 @@
    (let [root (find-project-root dir)]
      (when-not root
        (throw (ex-info "Not a Clojure project" {:type :kmono/root-not-found
-                                                :dir (normalize-dir (or dir (fs/cwd)))})))
+                                                :dir (str (normalize-dir (or dir (fs/cwd))))})))
      root)))
 
 (defn read-edn-file! [file-path]

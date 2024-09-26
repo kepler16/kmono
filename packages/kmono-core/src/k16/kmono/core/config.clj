@@ -64,6 +64,6 @@
       (validate! core.schema/?PackageConfig
                  package-config
                  "Package config is invalid"
-                 {:package-path (str package-path)})
+                 {:package-path (str package-path)}))
 
-      package-config)))
+    package-config))

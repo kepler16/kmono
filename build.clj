@@ -20,7 +20,8 @@
 (defn- load-packages []
   (let [project-root (core.fs/find-project-root!)
         workspace-config (core.config/resolve-workspace-config project-root)
-        packages (core.packages/resolve-packages project-root workspace-config)
+        packages (->> (core.packages/resolve-packages project-root workspace-config)
+                      (core.graph/filter-by #(not (get-in % [:deps-edn :kmono/private]))))
 
         version (get-latest-version project-root)]
 

@@ -22,7 +22,8 @@
   [:map
    [:group {:optional true} :symbol]
    [:name {:optional true}
-    [:maybe [:or :string :symbol]]]])
+    [:maybe [:or :string :symbol]]]
+   [:excluded {:optional true} :boolean]])
 
 (def ?Coordinate
   [:map

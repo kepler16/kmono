@@ -9,25 +9,28 @@
 (set! *warn-on-reflection* true)
 
 (defn- create-package [project-root workspace-config package-path]
-  (when-let [config (core.config/resolve-package-config package-path)]
-    (let [package (merge {:name (symbol (fs/file-name package-path))}
-                         (select-keys workspace-config [:group])
-                         (select-keys config [:group :name :deps-edn])
-                         {:absolute-path (str package-path)
-                          :relative-path (str (fs/relativize project-root package-path))
-                          :depends-on #{}})
-          fqn (symbol (str (:group package))
-                      (str (:name package)))]
+  (let [config (core.config/resolve-package-config package-path)]
+    (when-not (or (:excluded config)
+                  (fs/same-file? project-root package-path))
+      (let [relative-path (str (fs/relativize project-root package-path))
+            package (merge {:name (symbol (fs/file-name package-path))}
+                           (select-keys workspace-config [:group])
+                           (select-keys config [:group :name :deps-edn])
+                           {:absolute-path (str package-path)
+                            :relative-path relative-path
+                            :depends-on #{}})
+            fqn (symbol (str (:group package))
+                        (str (:name package)))]
 
-      (when-not (:group package)
-        (ex-info (str "Missing package :group for " fqn ". "
-                      "This either needs to be set in "
-                      "the `:kmono/package` config or "
-                      "in the `:kmono/workspace` config")
-                 {:type :kmono/validation-error
-                  :errors {:group ["required key"]}}))
+        (when-not (:group package)
+          (ex-info (str "Missing package :group for " fqn ". "
+                        "This either needs to be set in "
+                        "the `:kmono/package` config or "
+                        "in the `:kmono/workspace` config")
+                   {:type :kmono/validation-error
+                    :errors {:group ["required key"]}}))
 
-      (assoc package :fqn fqn))))
+        (assoc package :fqn fqn)))))
 
 (defn- filter-dependencies [packages package]
   (into #{}

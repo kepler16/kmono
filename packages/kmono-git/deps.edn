@@ -1,6 +1,4 @@
-{:kmono/package {}
-
- :kmono/description "Simple git interface"
+{:kmono/description "Simple git interface"
 
  :deps {babashka/process {:mvn/version "0.5.22"}
         babashka/fs {:mvn/version "0.5.22"}}

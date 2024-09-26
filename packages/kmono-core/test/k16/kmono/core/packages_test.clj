@@ -10,7 +10,8 @@
 (use-fixtures :each with-test-repo)
 
 (deftest load-packages-test
-  (let [config (core.config/resolve-workspace-config *repo*)]
+  (let [config (core.config/resolve-workspace-config *repo*)
+        packages (core.packages/resolve-packages *repo* config)]
     (is (match? {'com.kepler16/a {:group 'com.kepler16
                                   :name 'a
                                   :fqn 'com.kepler16/a
@@ -33,4 +34,6 @@
 
                                   :absolute-path (str (fs/file *repo* "packages/b"))
                                   :relative-path "packages/b"}}
-                (core.packages/resolve-packages *repo* config)))))
+                packages))
+
+    (is (= 2 (count packages)))))

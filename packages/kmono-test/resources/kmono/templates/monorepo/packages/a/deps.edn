@@ -1,4 +1,2 @@
-{:kmono/package {}
-
- :aliases {:test {:extra-paths ["test"]
+{:aliases {:test {:extra-paths ["test"]
                   :extra-deps {local/excluded {:local/root "../excluded"}}}}}

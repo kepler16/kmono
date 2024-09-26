@@ -1,6 +1,4 @@
-{:kmono/package {:artifact kmono}
-
- :kmono/description "The kmono CLI interface"
+{:kmono/description "The kmono CLI interface"
 
  :paths ["src" "resources"]
 

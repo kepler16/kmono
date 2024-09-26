@@ -1,6 +1,4 @@
-{:kmono/package {}
-
- :kmono/description "Tools for versioning kmono packages"
+{:kmono/description "Tools for versioning kmono packages"
 
  :deps {com.kepler16/kmono-core {:local/root "../kmono-core"}
         com.kepler16/kmono-git {:local/root "../kmono-git"}}

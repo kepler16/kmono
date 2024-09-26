@@ -1,5 +1,3 @@
-{:kmono/package {}
-
- :kmono/description "Terminal logging API's used by kmono"
+{:kmono/description "Terminal logging API's used by kmono"
 
  :deps {jansi-clj/jansi-clj {:mvn/version "1.0.3"}}}

@@ -1,6 +1,4 @@
-{:kmono/package {}
-
- :kmono/description "A tool for working in clojure (mono)repos"
+{:kmono/description "A tool for working in clojure (mono)repos"
 
  :deps {com.kepler16/kmono-core {:local/root "../kmono-core"}
         com.kepler16/kmono-build {:local/root "../kmono-build"}

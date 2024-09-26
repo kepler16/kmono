@@ -1,1 +1,1 @@
-{}
+{:kmono/package {:excluded true}}

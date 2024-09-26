@@ -1,4 +1,6 @@
-{:paths ["src" "resources"]
+{:kmono/private true
+ 
+ :paths ["src" "resources"]
 
  :deps {babashka/fs {:mvn/version "0.5.22"}
         babashka/process {:mvn/version "0.5.22"}}}

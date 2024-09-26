@@ -1,6 +1,4 @@
-{:kmono/package {}
-
- :kmono/description "A suite of tools for use within tools.build"
+{:kmono/description "A suite of tools for use within tools.build"
 
  :deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}
         org.clojure/tools.deps {:mvn/version "0.20.1440"}
