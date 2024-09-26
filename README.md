@@ -66,6 +66,11 @@ Or alternatively binaries for various platforms can be pulled directly from the
 
 ## Documentation
 
+- **[kmono](https://cljdoc.org/d/com.kepler16/kmono)** - A BOM package containing all the submodules of kmono. This is
+  the best one to look at for docs.
+
+For each individual modules' docs:
+
 - **[kmono-core](https://cljdoc.org/d/com.kepler16/kmono-core)** - The core suite of API's for working with kmono
   packages.
 - **[kmono-build](https://cljdoc.org/d/com.kepler16/kmono-build)** - A companion lib to `tools.build` which contains
