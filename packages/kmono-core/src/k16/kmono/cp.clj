@@ -40,8 +40,8 @@
   3) Adding the special `:kmono/packages` alias which contains the base package
   classpaths.
 
-  This function is designed to be used for collect the relevant set of aliases
-  to provide to the clojure flags `-A`, `-M`, `-T`, `-X`."
+  This function is designed to be used to collect the relevant set of aliases to
+  provide to the clojure flags `-A`, `-M`, `-T`, `-X`."
   [workspace-config packages]
   (let [package-alias-globs (:package-aliases workspace-config)
         package-aliases (->> packages

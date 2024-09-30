@@ -66,7 +66,7 @@
   using [[clojure.tools.build.api/write-pom]].
 
   Additional `opts` can be optionally provided and these will be given directly
-  to `write-pom`."
+  to `create-basis`."
   ([packages package] (create-basis packages package {}))
   ([packages package opts]
    (let [dependencies
@@ -100,7 +100,7 @@
 
   - **`:concurrency`** :int (default 4) - The maximum number of packages that
   can be executing at a time.
-  - **`:run-in-order`** :boolean (defualt `true`) - Set this to false to run all
+  - **`:run-in-order`** :boolean (default `true`) - Set this to false to run all
   packages concurrently ignoring their dependency order.
   - **`silent`** :boolean (default `false`) - Set this to true to disable
   logging the package name and version.

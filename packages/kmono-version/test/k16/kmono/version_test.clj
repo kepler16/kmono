@@ -75,6 +75,19 @@
                  'com.kepler16/b {:version "1.1.1"}}
                 packages))))
 
+(deftest suffic-incd-packages-test
+  (git.tags/create-tags *repo* {:tags ["com.kepler16/a@1.0.0"
+                                       "com.kepler16/b@1.1.0"]})
+
+  (let [config (core.config/resolve-workspace-config *repo*)
+        packages (->> (core.packages/resolve-packages *repo* config)
+                      (kmono.version/resolve-package-versions *repo*)
+                      (kmono.version/resolve-package-changes *repo*)
+                      (kmono.version/inc-package-versions conventional-commits/version-fn "-SNAPSHOT"))]
+    (is (match? {'com.kepler16/a {:version "1.0.0"}
+                 'com.kepler16/b {:version "1.1.0"}}
+                packages))))
+
 (deftest inc-dependent-package-versions-test
   (git.tags/create-tags *repo* {:tags ["com.kepler16/a@1.0.0"
                                        "com.kepler16/b@1.1.0"]})

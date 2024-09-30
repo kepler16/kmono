@@ -174,10 +174,12 @@
          (fn [packages [pkg-name pkg]]
            (let [inc-type (version-fn pkg)
                  current-version (or (:version pkg) "0.0.0")
-                 version (semver/inc-version
-                          current-version
-                          inc-type
-                          suffix)
+                 version (if inc-type
+                           (semver/inc-version
+                            current-version
+                            inc-type
+                            suffix)
+                           current-version)
                  pkg (assoc pkg :version version)]
              (assoc! packages pkg-name pkg)))
          (transient {}))
