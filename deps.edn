@@ -1,7 +1,7 @@
 {:kmono/workspace {:group com.kepler16}
 
  :aliases {:build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}
-                          slipset/deps-deploy {:mvn/version "0.2.2"}
+                          com.kepler16/kaven {:mvn/version "1.0.0-alpha.1"}
 
                           com.keperl16/kmono-core {:local/root "packages/kmono-core"}
                           com.keperl16/kmono-version {:local/root "packages/kmono-version"}

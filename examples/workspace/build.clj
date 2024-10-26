@@ -1,7 +1,7 @@
 (ns build
   (:require
    [clojure.tools.build.api :as b]
-   [deps-deploy.deps-deploy :as deps-deploy]
+   [k16.kaven.deploy :as kaven.deploy]
    [k16.kmono.build :as kmono.build]
    [k16.kmono.core.config :as core.config]
    [k16.kmono.core.fs :as core.fs]
@@ -56,19 +56,16 @@
           (b/jar {:class-dir class-dir
                   :jar-file jar-file}))))))
 
-(defn release [{:keys [repository] :as opts}]
+(defn release [opts]
   (let [project-root (core.fs/find-project-root)
         packages (load-packages opts)
         changed-packages (core.graph/filter-by kmono.build/not-published? packages)]
-    (kmono.build/for-each-package changed-packages {:concurrency 1}
+    (kmono.build/for-each-package changed-packages
       (fn [pkg]
-        ;; Release the package using deps-deploy
-        (deps-deploy/deploy
-         {:installer :remote
-          :artifact (b/resolve-path "target/lib.jar")
-          :pom-file (b/pom-path {:lib (:fqn pkg)
-                                 :class-dir (b/resolve-path "target/classes")})
-          :repository repository})
+        ;; Release the package using com.kepler16/kaven
+        (kaven.deploy/deploy
+         {:jar-path (b/resolve-path "target/lib.jar")
+          :repository "clojars"})
 
         ;; Create tags after successfully releasing the package.
         ;;

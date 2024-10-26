@@ -2,7 +2,7 @@
   (:require
    [babashka.fs :as fs]
    [clojure.tools.build.api :as b]
-   [deps-deploy.deps-deploy :as deps-deploy]
+   [k16.kaven.deploy :as kaven.deploy]
    [k16.kmono.build :as kmono.build]
    [k16.kmono.core.config :as core.config]
    [k16.kmono.core.fs :as core.fs]
@@ -62,17 +62,18 @@
           (b/jar {:class-dir class-dir
                   :jar-file jar-file}))))))
 
+(def ^:private clojars-credentials
+  {:username (System/getenv "CLOJARS_USERNAME")
+   :password (System/getenv "CLOJARS_PASSWORD")})
+
 (defn release [_]
   (let [packages (core.graph/filter-by kmono.build/not-published? (load-packages))]
-    (kmono.build/for-each-package packages {:title "Release" :concurrency 1}
-      (fn [pkg]
-        (let [{:keys [fqn relative-path]} pkg
-              lib (kmono.build/join (fs/cwd) "target/" relative-path "lib.jar")
-              class-dir (kmono.build/join (fs/cwd) "target/" relative-path "classes")]
-          (deps-deploy/deploy {:installer :remote
-                               :artifact (fs/file lib)
-                               :pom-file (b/pom-path {:lib fqn
-                                                      :class-dir class-dir})}))))))
+    (kmono.build/for-each-package packages
+      (fn [{:keys [relative-path]}]
+        (kaven.deploy/deploy
+         {:jar-path (kmono.build/join (fs/cwd) "target/" relative-path "lib.jar")
+          :repository {:id "clojars"
+                       :credentials clojars-credentials}})))))
 
 (defn build-cli [_]
   (b/delete {:path "target"})
