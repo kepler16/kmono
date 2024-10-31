@@ -1,7 +1,11 @@
 {:kmono/description "A suite of tools for use within tools.build"
 
  :deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}
-        org.clojure/tools.deps {:mvn/version "0.20.1440"}
+
+        ;; There is some weird incompatibility between the maven dependencies
+        ;; used by tools.build, tools.deps, and kaven.
+        ;; org.clojure/tools.deps {:mvn/version "0.20.1440"}
+
         babashka/fs {:mvn/version "0.5.22"}
 
         com.kepler16/kmono-core {:local/root "../kmono-core"}
