@@ -10,8 +10,9 @@
 
 (defn- create-package [project-root workspace-config package-path]
   (let [config (core.config/resolve-package-config package-path)]
-    (when-not (or (:excluded config)
-                  (fs/same-file? project-root package-path))
+    (when (and config
+               (not (:excluded config))
+               (not (fs/same-file? project-root package-path)))
       (let [relative-path (str (fs/relativize project-root package-path))
             package (merge {:name (symbol (fs/file-name package-path))}
                            (select-keys workspace-config [:group])

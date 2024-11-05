@@ -66,4 +66,5 @@
                  "Package config is invalid"
                  {:package-path (str package-path)}))
 
-    package-config))
+    (when deps-edn
+      package-config)))
