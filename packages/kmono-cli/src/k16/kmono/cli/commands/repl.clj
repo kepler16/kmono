@@ -24,6 +24,7 @@
         repl-aliases (:repl-aliases config)]
     (binding [log/*log-out* System/err]
       (log/info (str "Aliases: " (render-aliases (:aliases config))))
+      (log/info (str "Repl Aliases: " (render-aliases repl-aliases)))
       (log/info (str "Package Aliases: " (render-aliases (:package-aliases config)))))
 
     (commands.clojure/run-clojure (assoc opts
