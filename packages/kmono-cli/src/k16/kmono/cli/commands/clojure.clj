@@ -52,7 +52,8 @@
             @proc
             (catch Throwable _ nil))))))
 
-    @proc))
+    (when-not (= 0 (:exit @proc))
+      (System/exit 1))))
 
 (def command
   {:command "clojure"
