@@ -3,9 +3,9 @@
  :aliases {:build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}
                           com.kepler16/kaven {:mvn/version "1.0.0-alpha.1"}
 
-                          com.keperl16/kmono-core {:local/root "packages/kmono-core"}
-                          com.keperl16/kmono-version {:local/root "packages/kmono-version"}
-                          com.keperl16/kmono-build {:local/root "packages/kmono-build"}
-                          com.keperl16/kmono-git {:local/root "packages/kmono-git"}}
+                          com.kepler16/kmono-core {:local/root "packages/kmono-core"}
+                          com.kepler16/kmono-version {:local/root "packages/kmono-version"}
+                          com.kepler16/kmono-build {:local/root "packages/kmono-build"}
+                          com.kepler16/kmono-git {:local/root "packages/kmono-git"}}
                    :ns-default build
                    :extra-paths ["./build.clj"]}}}
