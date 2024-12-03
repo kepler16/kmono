@@ -160,5 +160,17 @@
                         (.release semaphore)))))
                 stage)]
 
-           (mapv deref op-procs)
+           ;; First deref everything, handling exceptions. This ensures that all
+           ;; procs finish before any exceptions are thrown.
+           ;;
+           ;; Once all procs are complete then throw if any were exceptional.
+           (->> op-procs
+                (mapv (fn [proc]
+                        (try
+                          (deref proc)
+                          (catch Exception ex ex))))
+                (run! (fn [val]
+                        (when (instance? Exception val)
+                          (throw val)))))
+
            (recur (rest stages))))))))
