@@ -24,12 +24,14 @@
                         (str (:name package)))]
 
         (when-not (:group package)
-          (ex-info (str "Missing package :group for " fqn ". "
-                        "This either needs to be set in "
-                        "the `:kmono/package` config or "
-                        "in the `:kmono/workspace` config")
-                   {:type :kmono/validation-error
-                    :errors {:group ["required key"]}}))
+          (throw
+           (ex-info (str "Missing :group config for package "
+                         (:name package) ". "
+                         "This either needs to be set in "
+                         "the `:kmono/package` config or "
+                         "in the `:kmono/workspace` config")
+                    {:type :kmono/validation-error
+                     :errors {:group ["required key"]}})))
 
         (assoc package :fqn fqn)))))
 

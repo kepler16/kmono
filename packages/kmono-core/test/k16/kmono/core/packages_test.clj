@@ -37,3 +37,11 @@
                 packages))
 
     (is (= 2 (count packages)))))
+
+(deftest missing-group-test
+  (fs/write-bytes (fs/file *repo* "deps.edn")
+                  (.getBytes (prn-str {:kmono/package {}})))
+  (let [config (core.config/resolve-workspace-config *repo*)]
+    (is (thrown-match? Exception {:type :kmono/validation-error
+                                  :errors {:group ["required key"]}}
+                       (core.packages/resolve-packages *repo* config)))))
