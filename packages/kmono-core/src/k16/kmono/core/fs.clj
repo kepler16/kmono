@@ -70,7 +70,12 @@
                       ex)))))
 
 (defn find-package-directories [root packages-glob]
-  (conj (fs/glob root packages-glob)
-        (-> (fs/path root)
-            (fs/normalize)
-            (fs/absolutize))))
+  (let [root (-> (fs/path root)
+                 fs/normalize
+                 fs/absolutize)]
+    (into [root]
+          (comp
+           (filter (fn [path]
+                     (= "deps.edn" (fs/file-name path))))
+           (map fs/parent))
+          (fs/glob root packages-glob))))

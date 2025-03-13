@@ -9,14 +9,14 @@
 (use-fixtures :each with-test-repo)
 
 (deftest resolves-default-workpace-config-test
-  (is (= {:packages "packages/*"
+  (is (= {:packages "packages/**"
           :group 'com.kepler16}
          (core.config/resolve-workspace-config *repo*))))
 
 (deftest merge-with-local-test
   (fs/write-bytes (fs/file *repo* "deps.local.edn")
                   (.getBytes (prn-str {:kmono/workspace {:group 'a.b.c}})))
-  (is (= {:packages "packages/*"
+  (is (= {:packages "packages/**"
           :group 'a.b.c}
          (core.config/resolve-workspace-config *repo*))))
 
