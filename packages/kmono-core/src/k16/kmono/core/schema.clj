@@ -5,8 +5,11 @@
 (def ?WorkspaceConfig
   [:map
    [:packages {:optional true
-               :default "packages/*"}
-    :string]
+               :default "packages/**"}
+    [:or
+     :string
+     [:sequential :string]
+     [:set :string]]]
 
    [:group {:optional true}
     :symbol]

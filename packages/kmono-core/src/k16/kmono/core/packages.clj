@@ -138,8 +138,11 @@
   map."
   {:malli/schema [:=> [:cat :string core.schema/?WorkspaceConfig] core.schema/?PackageMap]}
   [project-root workspace-config]
-  (let [dirs (core.fs/find-package-directories
-              project-root (:packages workspace-config))
+  (let [globs (:packages workspace-config)
+        globs (if (string? globs) #{globs} globs)
+
+        dirs (mapcat #(core.fs/find-package-directories project-root %)
+                     globs)
 
         packages
         (into {}
