@@ -4,4 +4,4 @@
   [workspace-config {:keys [package-aliases aliases]}]
   (cond-> workspace-config
     package-aliases (assoc :package-aliases package-aliases)
-    aliases (update :aliases concat aliases)))
+    aliases (update :aliases into aliases)))

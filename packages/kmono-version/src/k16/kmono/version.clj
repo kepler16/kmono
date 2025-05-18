@@ -17,9 +17,9 @@
 (defn match-package-version-tag
   "This matches whether a given string is a correctly formatted git version tag
   for a package with the given `pkg-name`.
-  
+
   Returns the version substring of the tag or `nil` if there was no match.
-  
+
   ```clojure
   (match-package-version-tag \"com.kepler16/kmono-core@1.0.0\", 'com.kepler16/kmono-core)
   ;; => \"1.0.0\"
@@ -41,8 +41,8 @@
   "Try resolve the last known version for each of the given `packages`.
 
   This works by fiding the latest git tag for each package which follows the
-  structure of `<package-group>/<package-name>@<package-version>`. As an example
-  a package with the name `com.kepler16/kmono-core` might have a tag
+  structure of `<package-group>/<package-name>@<package-version>`. As an
+  example a package with the name `com.kepler16/kmono-core` might have a tag
   `com.kepler16/kmono-core@1.0.0`
 
   The version component of the tag is matched and used to set the package
@@ -52,8 +52,8 @@
   use-case requires alternative strategies then you might be interested in
   writing your own version of this function.
 
-  Other kmono-* API's only care about there being a `:version` set on a package
-  therefore how that field is set is up to you."
+  Other kmono-\\* API's only care about there being a `:version` set on a
+  package therefore how that field is set is up to you."
   {:malli/schema [:-> :string core.schema/?PackageMap core.schema/?PackageMap]}
   [project-root packages]
   (let [tags (git.tags/get-sorted-tags project-root)]
@@ -142,8 +142,8 @@
 
   Generally this should be called after first associating a `:version` to each
   package using `resolve-package-versions` and a set of commits using
-  `resolve-package-changes`. This information can be used to correctly determine
-  the next version.
+  `resolve-package-changes`. This information can be used to correctly
+  determine the next version.
 
   Note that this fn will also inc dependent package versions if those dependent
   packages weren't themselves incremented. This is to ensure that changes made
@@ -160,7 +160,7 @@
        (resolve-package-changes project-root)
        (inc-package-versions semantic/version-fn))
   ```
-  
+
   This will determine the next version for each package according to
   semantic-commits."
   {:malli/schema

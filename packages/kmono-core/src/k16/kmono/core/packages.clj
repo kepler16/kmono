@@ -90,8 +90,8 @@
   "Compare a namespaced keyword or symbol against a keyword `glob`.
 
   The keyword `glob` should be provided as a keyword where either the namespace
-  or name component can be substituted with a `*`. For example the below are all
-  valid globs
+  or name component can be substituted with a `*`. For example the below are
+  all valid globs
 
   ```clojure
   (glob-matches? :*/* :a/b) ;; true
@@ -134,8 +134,8 @@
   will use them to build a graph of all workspace packages and their
   dependencies.
 
-  See [[k16.kmono.core.schema/?PackageMap]] for a schema of the returned package
-  map."
+  See [[k16.kmono.core.schema/?PackageMap]] for a schema of the returned
+  package map."
   {:malli/schema [:=> [:cat :string core.schema/?WorkspaceConfig] core.schema/?PackageMap]}
   [project-root workspace-config]
   (let [globs (:packages workspace-config)

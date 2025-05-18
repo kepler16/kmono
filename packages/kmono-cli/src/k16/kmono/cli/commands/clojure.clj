@@ -31,7 +31,7 @@
         sdeps (str "'" (str/trim (prn-str sdeps)) "'")
 
         command ["clojure" "-Sdeps" sdeps arg]
-        command (concat command args)
+        command (into command args)
 
         command (str/join " " command)
 

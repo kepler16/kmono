@@ -21,7 +21,7 @@
   (->> aliases
        (reduce
         (fn [[seen aliases] alias]
-          (if (seen alias)
+          (if (contains? seen alias)
             [seen aliases]
             [(conj seen alias) (conj aliases alias)]))
         [#{} []])
@@ -32,29 +32,29 @@
 
   This function works by:
 
-  1) Discovering all available package aliases in the workspace and filtering
-  them based on the `:package-aliases` config from the provided
-  `workspace-config`.
-  2) Merging this set with the aliases defined in the `:aliases` key on the
-  `workspace-config`.
-  3) Adding the special `:kmono/packages` alias which contains the base package
-  classpaths.
+  1. Discovering all available package aliases in the workspace and filtering
+     them based on the `:package-aliases` config from the provided
+     `workspace-config`.
+  2. Merging this set with the aliases defined in the `:aliases` key on the
+     `workspace-config`.
+  3. Adding the special `:kmono/packages` alias which contains the base package
+     classpaths.
 
-  This function is designed to be used to collect the relevant set of aliases to
-  provide to the clojure flags `-A`, `-M`, `-T`, `-X`."
+  This function is designed to be used to collect the relevant set of aliases
+  to provide to the clojure flags `-A`, `-M`, `-T`, `-X`."
   [workspace-config packages]
   (let [package-alias-globs (:package-aliases workspace-config)
         package-aliases (->> packages
                              (core.deps/filter-package-aliases package-alias-globs)
                              (mapcat (fn [[pkg-name aliases]]
-                                       (map #(keyword (name pkg-name)
-                                                      (name %))
-                                            aliases))))]
-
+                                       (mapv #(keyword (name pkg-name)
+                                                       (name %))
+                                             aliases)))
+                             vec)]
     (filter-unique
-     (concat [:kmono/packages]
-             package-aliases
-             (:aliases workspace-config)))))
+     (into [:kmono/packages]
+           (into package-aliases
+                 (:aliases workspace-config))))))
 
 (defn generate-classpath-command
   "Generate an augmented `clojure -Spath` command string."
@@ -74,8 +74,8 @@
 (defn resolve-classpath
   "Resolve a classpath string for a workspace.
 
-  This works by shelling out to `clojure -Spath` with additional flags generated
-  from analysing the workspace.
+  This works by shelling out to `clojure -Spath` with additional flags
+  generated from analysing the workspace.
 
   See [[generate-classpath-command]] for the command construction logic."
   [project-root workspace-config packages]

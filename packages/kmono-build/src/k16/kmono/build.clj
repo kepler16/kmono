@@ -28,15 +28,15 @@
   (let [local-repo-override (str (fs/create-temp-dir))]
     (try
       (deps.util.session/with-session
-        (let [versions (->> (deps.ext/find-versions
-                             (:fqn package)
-                             nil
-                             :mvn {:mvn/local-repo local-repo-override
-                                   :mvn/repos
-                                   (merge deps.util.maven/standard-repos
-                                          (get-in package [:deps-edn :mvn/repos]))})
-                            (map :mvn/version)
-                            (set))]
+        (let [versions (deps.ext/find-versions
+                        (:fqn package)
+                        nil
+                        :mvn {:mvn/local-repo local-repo-override
+                              :mvn/repos
+                              (merge deps.util.maven/standard-repos
+                                     (get-in package [:deps-edn :mvn/repos]))})
+              versions (into #{} (map :mvn/version) versions)]
+
           (contains? versions (:version package))))
       (finally
         (fs/delete-tree local-repo-override)))))
@@ -99,11 +99,11 @@
   Accepts an optional `opts` map containing:
 
   - **`:concurrency`** :int (default 4) - The maximum number of packages that
-  can be executing at a time.
-  - **`:run-in-order`** :boolean (default `true`) - Set this to false to run all
-  packages concurrently ignoring their dependency order.
+    can be executing at a time.
+  - **`:run-in-order`** :boolean (default `true`) - Set this to false to run
+    all packages concurrently ignoring their dependency order.
   - **`silent`** :boolean (default `false`) - Set this to true to disable
-  logging the package name and version.
+    logging the package name and version.
 
   The `build-fn` will be called with the `*project-root*` var (from
   `clojure.tools.build.api`) bound to the subdirectory of the relevant package.
@@ -124,8 +124,8 @@
   ([packages build-fn] (for-each-package packages {} build-fn))
   ([packages {:keys [concurrency run-in-order silent]} build-fn]
    ;; This is a hack as calling tools.build API's concurrently is not
-   ;; thread-safe due to them dynamically loading the internal namespaces
-   ;; listed below.
+   ;; thread-safe due to them dynamically loading the internal namespaces listed
+   ;; below.
    (requiring-resolve 'clojure.tools.build.tasks.copy/copy)
    (requiring-resolve 'clojure.tools.build.tasks.write-pom/write-pom)
    (requiring-resolve 'clojure.tools.build.tasks.jar/jar)

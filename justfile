@@ -14,8 +14,8 @@ build-native-cli *args: build-cli
 release *args:
     clojure -T:build release {{args}}
 
-test *args:
-    kmono run --run-in-order false --skip-unchanged true -M :test
-
 cli *args:
   cd packages/kmono-cli && clojure -M -m k16.kmono.cli.main {{args}}
+
+test *args:
+    just cli run --run-in-order false --skip-unchanged true -M :test

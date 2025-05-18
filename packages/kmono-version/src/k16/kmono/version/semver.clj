@@ -16,9 +16,9 @@
 (defn inc-version
   "Increment a given semver `version` according to the given `inc-type`.
 
-  An optional `suffix` can be provided to be appended to the end of the
-  version string.
-  
+  An optional `suffix` can be provided to be appended to the end of the version
+  string.
+
   Examples:
 
   ```clojure
@@ -42,10 +42,9 @@
                          :build [major minor patch (inc (or build 0))]
                          [major minor patch build])
 
-           new-version (if (or build
-                               (= :build inc-type))
+           new-version (if (or build (= :build inc-type))
                          new-version
-                         (drop-last new-version))
+                         (subvec new-version 0 (dec (count new-version))))
 
            version-string (str/join "." new-version)]
 

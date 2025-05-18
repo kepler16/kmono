@@ -20,14 +20,12 @@
 
         packages
         (cond-> packages
-          filter (->>
-                  (core.graph/filter-by (core.packages/name-matches? filter)))
+          filter (->> (core.graph/filter-by (core.packages/name-matches? filter)))
 
-          skip-unchanged (->>
-                          (kmono.version/resolve-package-versions root)
-                          (kmono.version/resolve-package-changes root)
-                          (core.graph/filter-by kmono.version/package-changed?
-                                                {:include-dependents true})))
+          skip-unchanged (->> (kmono.version/resolve-package-versions root)
+                              (kmono.version/resolve-package-changes root)
+                              (core.graph/filter-by kmono.version/package-changed?
+                                                    {:include-dependents true})))
 
         results
         (kmono.exec/run-external-cmds

@@ -20,5 +20,5 @@
   (-> (proc/shell {:dir (str dir)
                    :out :string
                    :err :string}
-                  (string/join " " (filter identity cmd)))
+                  (string/join " " (filterv identity cmd)))
       (out->strings)))

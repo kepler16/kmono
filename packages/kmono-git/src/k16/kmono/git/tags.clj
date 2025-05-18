@@ -6,10 +6,11 @@
 (set! *warn-on-reflection* true)
 
 (defn get-sorted-tags
-  "Returns all tags that are present in the current or any ancestor of
-  the given `sha`.
-  
-  The returned tags are sorted by commit date (descending, most recent commit first)"
+  "Returns all tags that are present in the current or any ancestor of the given
+  `sha`.
+
+  The returned tags are sorted by commit date (descending, most recent commit
+  first)"
   ([repo-root]
    (get-sorted-tags repo-root (git.commit/get-current-commit repo-root)))
   ([repo-root ref]

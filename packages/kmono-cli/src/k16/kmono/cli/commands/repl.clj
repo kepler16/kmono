@@ -12,9 +12,8 @@
   (str "@|black,bold [|@"
 
        (->> aliases
-            (map
-             (fn [alias]
-               (str "@|yellow " alias "|@")))
+            (mapv (fn [alias]
+                    (str "@|yellow " alias "|@")))
             (str/join "@|black,bold , |@"))
 
        "@|black,bold ]|@"))
@@ -28,7 +27,7 @@
       (log/info (str "Package Aliases: " (render-aliases (:package-aliases config)))))
 
     (commands.clojure/run-clojure (assoc opts
-                                         :M (concat (:aliases opts repl-aliases)))
+                                         :M (into (:aliases opts repl-aliases)))
                                   [])))
 
 (def command

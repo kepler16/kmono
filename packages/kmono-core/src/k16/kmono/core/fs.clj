@@ -25,9 +25,9 @@
 
   This is either:
 
-  1) The first directory containing a `deps.edn` file with a `:kmono/workspace`
-  key present
-  2) The furthest directory containing a `deps.edn` file."
+  1. The first directory containing a `deps.edn` file with a `:kmono/workspace`
+     key present
+  2. The furthest directory containing a `deps.edn` file."
   ([] (find-project-root nil nil))
   ([dir] (find-project-root dir nil))
   ([dir current-root]

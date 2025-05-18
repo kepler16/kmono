@@ -11,8 +11,8 @@
 
 (deftest query-ordered-tags
   (let [initial-commit (git.commit/get-current-commit *repo*)]
-    ;; Git commit timestamps have a 1s resolution. To get stable sorting
-    ;; we need to wait at least 1s.
+    ;; Git commit timestamps have a 1s resolution. To get stable sorting we need
+    ;; to wait at least 1s.
     (Thread/sleep 1000)
 
     (git.tags/create-tags *repo* {:ref initial-commit

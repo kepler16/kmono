@@ -6,7 +6,7 @@
 (set! *warn-on-reflection* true)
 
 (defn- cp-command [opts _]
-  (commands.clojure/run-clojure (merge opts {:A []}) 
+  (commands.clojure/run-clojure (merge opts {:A []})
                                 ["-Spath"]))
 
 (def command

@@ -119,11 +119,11 @@
 
   Aliases are generated from:
 
-  1) The set of packages in the workspace. These are added into an alias called
-  `:kmono/packages` containing `:extra-deps`.
-  2) All the aliases from all packages in the workspace are raised up and
-  combined, scoping their alias names to the package name.
-  3) The aliases from `deps.local.edn` in the project root."
+  1. The set of packages in the workspace. These are added into an alias called
+     `:kmono/packages` containing `:extra-deps`.
+  2. All the aliases from all packages in the workspace are raised up and
+     combined, scoping their alias names to the package name.
+  3. The aliases from `deps.local.edn` in the project root."
   [project-root packages]
   (let [local-deps
         (fs/file project-root "deps.local.edn")

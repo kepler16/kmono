@@ -39,7 +39,7 @@
         (kmono.exec/run-external-cmds
          {:packages packages
           :run-in-order (:run-in-order opts)
-          :command (concat ["clojure" (str flag (kmono.cp/serialize-aliases aliases))] args)
+          :command (into ["clojure" (str flag (kmono.cp/serialize-aliases aliases))] args)
 
           :concurrency (:concurrency opts)
           :on-event common.log/handle-event})

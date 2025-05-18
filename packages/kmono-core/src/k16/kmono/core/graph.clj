@@ -39,13 +39,14 @@
   "Sort a given `packages` map by the order in which the packages therein depend
   on each other.
 
-  As an example, if I have 3 packages `a`, `b`, `c` and `b` depends on `a` then:
-  
+  As an example, if I have 3 packages `a`, `b`, `c` and `b` depends on `a`
+  then:
+
   ```clojure
   (parallel-topo-sort {a {} b {} c {}})
   ;; => [[a c] [b]]
   ```
-  
+
   This is generally used to calculate the execution order of packages when
   trying to run commands in subpackages or build/release packages in the
   correct order."
@@ -87,7 +88,7 @@
            (query-dependents packages dependent-pkg-name))
          (:dependents pkg))]
 
-    (set (concat (:dependents pkg) dependents))))
+    (into (set (:dependents pkg)) dependents)))
 
 (defn- update-graph-edges
   [packages filtered]
@@ -97,16 +98,16 @@
           (let [pkg (get packages pkg-name)
 
                 depends-on
-                (->> (:depends-on pkg)
-                     (filter (fn [dep]
-                               (contains? filtered dep)))
-                     set)
-                dependents
-                (->> (:dependents pkg)
-                     (filter (fn [dep]
-                               (contains? filtered dep)))
+                (into #{}
+                      (filter (fn [dep]
+                                (contains? filtered dep)))
+                      (:depends-on pkg))
 
-                     set)
+                dependents
+                (into #{}
+                      (filter (fn [dep]
+                                (contains? filtered dep)))
+                      (:dependents pkg))
 
                 pkg (assoc pkg
                            :depends-on depends-on
@@ -119,8 +120,8 @@
 (defn filter-by
   "Filter a given `packages` map by those that match the given `predicate-fn`.
 
-  If the `:include-dependents` property is `true` then all dependent packages of
-  the retained packages will also be kept.
+  If the `:include-dependents` property is `true` then all dependent packages
+  of the retained packages will also be kept.
 
   This function will update the `:depends-on` and `:dependent` keys of each
   retained package to include only other packages that still remain in the map.
@@ -149,7 +150,7 @@
            (into #{}
                  (mapcat
                   (fn [pkg-name]
-                    (concat [pkg-name] (query-dependents packages pkg-name))))
+                    (into [pkg-name] (query-dependents packages pkg-name))))
                  filtered)
            filtered)]
 
