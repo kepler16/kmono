@@ -9,4 +9,4 @@
                           com.kepler16/kmono-build {:local/root "packages/kmono-build"}
                           com.kepler16/kmono-git {:local/root "packages/kmono-git"}}
                    :ns-default build
-                   :extra-paths ["./build.clj"]}}}
+                   :extra-paths ["build"]}}}

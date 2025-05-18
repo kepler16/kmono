@@ -11,11 +11,10 @@
    [k16.kmono.git.tags :as git.tags]))
 
 (defn- get-latest-version [dir]
-  (->> (git.tags/get-sorted-tags dir)
-       (map (fn [tag]
-              (second (re-matches #"v(.*)" tag))))
-       (remove nil?)
-       first))
+  (some (fn [tag]
+          (when-let [version (second (re-matches #"v(.*)" tag))]
+            version))
+        (git.tags/get-sorted-tags dir)))
 
 (defn- load-packages []
   (let [project-root (core.fs/find-project-root!)
