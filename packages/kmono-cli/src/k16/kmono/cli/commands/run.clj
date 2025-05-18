@@ -16,13 +16,11 @@
   (let [{:keys [root packages]} (common.context/load-context opts)
         filter' (:filter opts)
         packages (cond-> packages
-                   filter' (->>
-                            (core.graph/filter-by (core.packages/name-matches? filter')))
-                   skip-unchanged (->>
-                                   (kmono.version/resolve-package-versions root)
-                                   (kmono.version/resolve-package-changes root)
-                                   (core.graph/filter-by kmono.version/package-changed?
-                                                         {:include-dependents true})))
+                   filter' (->> (core.graph/filter-by (core.packages/name-matches? filter')))
+                   skip-unchanged (->> (kmono.version/resolve-package-versions root)
+                                       (kmono.version/resolve-package-changes root)
+                                       (core.graph/filter-by kmono.version/package-changed?
+                                                             {:include-dependents true})))
 
         aliases (or M T X)
         flag (cond

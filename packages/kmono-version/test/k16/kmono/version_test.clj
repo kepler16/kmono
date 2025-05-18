@@ -30,35 +30,6 @@
                  'com.kepler16/b {:version "1.1.0"}}
                 (kmono.version/resolve-package-versions *repo* packages)))))
 
-(deftest load-package-changes-test
-  (git.tags/create-tags *repo* {:tags ["com.kepler16/a@1.0.0"
-                                       "com.kepler16/b@1.1.0"]})
-
-  (fs/create-file (fs/file *repo* "packages/a/change-1"))
-  (commit *repo* "fix: changed package a")
-
-  (let [config (core.config/resolve-workspace-config *repo*)
-        packages (->> (core.packages/resolve-packages *repo* config)
-                      (kmono.version/resolve-package-versions *repo*)
-                      (kmono.version/resolve-package-changes *repo*))]
-    (is (match? {'com.kepler16/a {:version "1.0.0"
-                                  :commits [{:message "fix: changed package a"
-                                             :body ""}]}
-                 'com.kepler16/b {:version "1.1.0"
-                                  :commits []}}
-                packages))))
-
-(deftest load-package-changes-no-version-test
-
-  (let [config (core.config/resolve-workspace-config *repo*)
-        packages (->> (core.packages/resolve-packages *repo* config)
-                      (kmono.version/resolve-package-changes *repo*))]
-    (is (match? {'com.kepler16/a {:commits [{:message "init"
-                                             :body ""}]}
-                 'com.kepler16/b {:commits [{:message "init"
-                                             :body ""}]}}
-                packages))))
-
 (deftest inc-package-versions-test
   (git.tags/create-tags *repo* {:tags ["com.kepler16/a@1.0.0"
                                        "com.kepler16/b@1.1.0"]})

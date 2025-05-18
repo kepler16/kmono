@@ -95,6 +95,7 @@ Commands:
   exec    Run a given command in workspace packages
   run     Run aliases in workspace packages
   clojure Run an augmented clojure command
+  query   Query information about the package graph
   version Print the current version of kmono
 
 Global Options

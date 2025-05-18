@@ -52,7 +52,7 @@
   use-case requires alternative strategies then you might be interested in
   writing your own version of this function.
 
-  Other kmono-\\* API's only care about there being a `:version` set on a
+  Other kmono-* API's only care about there being a `:version` set on a
   package therefore how that field is set is up to you."
   {:malli/schema [:-> :string core.schema/?PackageMap core.schema/?PackageMap]}
   [project-root packages]
@@ -66,6 +66,26 @@
           (transient {}))
          persistent!)))
 
+(defn- -resolve-package-changes-since
+  [project-root packages rev-fn]
+  (persistent!
+   (reduce
+    (fn [packages [pkg-name pkg]]
+      (let [commits (git.commit/find-commits-since project-root
+                                                   {:ref (rev-fn pkg)
+                                                    :subdir (:relative-path pkg)})
+
+            commits (pmap (fn [commit-sha]
+                            (git.commit/get-commit-details project-root
+                                                           commit-sha))
+                          commits)
+
+            pkg (assoc pkg :commits (vec commits))]
+
+        (assoc! packages pkg-name pkg)))
+    (transient {})
+    packages)))
+
 (defn resolve-package-changes
   "For each package try find all commits that modified files in the package
   subdirectory since the last known version of the package.
@@ -77,24 +97,22 @@
   Any commits found will be appended to the packages `:commits` key."
   {:malli/schema [:-> :string core.schema/?PackageMap core.schema/?PackageMap]}
   [project-root packages]
-  (->> packages
-       (reduce
-        (fn [packages [pkg-name pkg]]
-          (let [commits (git.commit/find-commits-since
-                         project-root {:ref (when (:version pkg)
-                                              (create-package-version-tag pkg))
-                                       :subdir (:relative-path pkg)})
+  (-resolve-package-changes-since project-root
+                                  packages
+                                  (fn [pkg]
+                                    (when (:version pkg)
+                                      (create-package-version-tag pkg)))))
 
-                commits (pmap
-                         (fn [commit-sha]
-                           (git.commit/get-commit-details project-root commit-sha))
-                         commits)
+(defn resolve-package-changes-since
+  "For each package try find all commits that modified files in the package
+  subdirectory since the given rev.
 
-                pkg (assoc pkg :commits commits)]
-
-            (assoc! packages pkg-name pkg)))
-        (transient {}))
-       persistent!))
+  Any commits found will be appended to the packages `:commits` key."
+  {:malli/schema [:-> :string :string core.schema/?PackageMap core.schema/?PackageMap]}
+  [project-root rev packages]
+  (-resolve-package-changes-since project-root
+                                  packages
+                                  (constantly rev)))
 
 (defn package-changed?
   "A filter function designed to be used with `k16.kmono.core.graph/filter-by`.

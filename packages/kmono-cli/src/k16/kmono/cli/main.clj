@@ -5,6 +5,7 @@
    [k16.kmono.cli.commands.clojure :as commands.clojure]
    [k16.kmono.cli.commands.cp :as commands.cp]
    [k16.kmono.cli.commands.exec :as commands.exec]
+   [k16.kmono.cli.commands.query :as commands.query]
    [k16.kmono.cli.commands.repl :as commands.repl]
    [k16.kmono.cli.commands.run :as commands.run]
    [k16.kmono.cli.parser :as cli.parser]
@@ -37,6 +38,7 @@
               commands.exec/command
               commands.run/command
               commands.clojure/command
+              commands.query/command
               {:command "version"
                :desc "Print the current version of kmono"
                :run-fn (fn [_ _]

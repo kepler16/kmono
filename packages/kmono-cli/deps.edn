@@ -5,6 +5,7 @@
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         babashka/process {:mvn/version "0.5.22"}
         org.babashka/cli {:mvn/version "0.8.60"}
+        metosin/jsonista {:mvn/version "0.3.13"}
 
         com.kepler16/kmono-core {:local/root "../kmono-core"}
         com.kepler16/kmono-version {:local/root "../kmono-version"}

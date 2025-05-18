@@ -1,7 +1,8 @@
 (ns k16.kmono.cli.parser
   (:require
    [babashka.cli :as cli]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [k16.kmono.log :as log]))
 
 (defn- merge-globals [command-config globals]
   (update command-config
@@ -81,13 +82,21 @@
       (:commands command-config)))))
 
 (defn run-cli [config args]
-  (let [commands (make-commands-vector config)
+  (try (let [commands (make-commands-vector config)
 
-        {:keys [opts args run-fn config]}
-        (cli/dispatch commands args)]
+             {:keys [opts args run-fn config]}
+             (cli/dispatch commands args)]
 
-    (cond
-      (:help opts) (show-summary config)
-      (nil? run-fn) (show-summary config)
+         (cond
+           (:help opts) (show-summary config)
+           (nil? run-fn) (show-summary config)
 
-      run-fn (run-fn opts args))))
+           run-fn (run-fn opts args)))
+       (catch Exception ex
+         (let [data (ex-data ex)]
+           (when (and (= :org.babashka/cli (:type data))
+                      (= :validate (:cause data)))
+             (log/error (:msg data))
+             (System/exit 1)))
+
+         (throw ex))))
