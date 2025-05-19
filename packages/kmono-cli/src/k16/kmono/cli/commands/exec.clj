@@ -12,7 +12,7 @@
 (set! *warn-on-reflection* true)
 
 (defn- run-command
-  [{:keys [filter skip-unchanged
+  [{:keys [filter skip-unchanged changed changed-since
            run-in-order concurrency]
     :as opts}
    args]
@@ -20,12 +20,19 @@
 
         packages
         (cond-> packages
-          filter (->> (core.graph/filter-by (core.packages/name-matches? filter)))
+          filter
+          (->> (core.graph/filter-by (core.packages/name-matches? filter)))
 
-          skip-unchanged (->> (kmono.version/resolve-package-versions root)
-                              (kmono.version/resolve-package-changes root)
-                              (core.graph/filter-by kmono.version/package-changed?
-                                                    {:include-dependents true})))
+          (or changed skip-unchanged)
+          (->> (kmono.version/resolve-package-versions root)
+               (kmono.version/resolve-package-changes root)
+               (core.graph/filter-by kmono.version/package-changed?
+                                     {:include-dependents true}))
+
+          changed-since
+          (->> (kmono.version/resolve-package-changes-since root changed-since)
+               (core.graph/filter-by kmono.version/package-changed?
+                                     {:include-dependents true})))
 
         results
         (kmono.exec/run-external-cmds
@@ -49,6 +56,8 @@
    :desc "Run a given command in workspace packages"
    :options {:run-in-order opts/run-in-order-opt
              :skip-unchanged opts/skip-unchanged-opt
+             :changed opts/changed-opt
+             :changed-since opts/changed-since-opt
              :filter opts/package-filter-opt
              :concurrency opts/concurrency-opt}
    :run-fn run-command})

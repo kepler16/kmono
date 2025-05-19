@@ -12,15 +12,23 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- run-command [{:keys [M T X skip-unchanged] :as opts} args]
+(defn- run-command [{:keys [M T X skip-unchanged changed changed-since] :as opts} args]
   (let [{:keys [root packages]} (common.context/load-context opts)
         filter' (:filter opts)
         packages (cond-> packages
-                   filter' (->> (core.graph/filter-by (core.packages/name-matches? filter')))
-                   skip-unchanged (->> (kmono.version/resolve-package-versions root)
-                                       (kmono.version/resolve-package-changes root)
-                                       (core.graph/filter-by kmono.version/package-changed?
-                                                             {:include-dependents true})))
+                   filter'
+                   (->> (core.graph/filter-by (core.packages/name-matches? filter')))
+
+                   (or changed skip-unchanged)
+                   (->> (kmono.version/resolve-package-versions root)
+                        (kmono.version/resolve-package-changes root)
+                        (core.graph/filter-by kmono.version/package-changed?
+                                              {:include-dependents true}))
+
+                   changed-since
+                   (->> (kmono.version/resolve-package-changes-since root changed-since)
+                        (core.graph/filter-by kmono.version/package-changed?
+                                              {:include-dependents true})))
 
         aliases (or M T X)
         flag (cond
@@ -56,6 +64,8 @@
    :desc "Run aliases in workspace packages"
    :options {:run-in-order opts/run-in-order-opt
              :skip-unchanged opts/skip-unchanged-opt
+             :changed opts/changed-opt
+             :changed-since opts/changed-since-opt
              :concurrency opts/concurrency-opt
              :filter opts/package-filter-opt
 

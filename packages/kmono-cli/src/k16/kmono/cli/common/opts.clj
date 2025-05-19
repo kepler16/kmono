@@ -55,6 +55,16 @@
    :coerce :int})
 
 (def skip-unchanged-opt
-  {:desc "Skip packages that have not been changed since the last known version"
+  {:desc "Filter packages by those that have changed since their last known version, loaded from git tags. deprecated, use --changed instead"
    :coerce :boolean
    :default false})
+
+(def changed-opt
+  {:desc "Filter packages by those that have changed since their last known version, loaded from git tags"
+   :coerce :boolean
+   :default false})
+
+(def changed-since-opt
+  {:desc "Filter packages by those that have changed since the specified git <rev>"
+   :ref "<rev>"
+   :coerce :string})

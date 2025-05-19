@@ -29,7 +29,6 @@ jobs:
 
       - name: Test
         run: |
-          just cli run \
+          just test \
             --run-in-order false \
-            --skip-unchanged true \
-            -M :test
+            --changed-since master
