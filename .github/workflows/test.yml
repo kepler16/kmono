@@ -8,6 +8,8 @@ jobs:
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -31,4 +33,4 @@ jobs:
         run: |
           just test \
             --run-in-order false \
-            --changed-since master
+            --changed-since origin/master
