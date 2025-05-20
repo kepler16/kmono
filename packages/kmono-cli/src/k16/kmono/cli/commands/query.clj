@@ -1,5 +1,6 @@
 (ns k16.kmono.cli.commands.query
   (:require
+   [clojure.java.io :as io]
    [jsonista.core :as json]
    [k16.kmono.cli.common.context :as common.context]
    [k16.kmono.cli.common.opts :as opts]
@@ -100,7 +101,8 @@
 
 (def command
   {:command "query"
-   :desc "Query information about the package graph"
+   :summary "Query information about the package graph"
+   :desc (io/resource "k16/kmono/docs/query.md")
    :options {:with-versions with-versions
              :with-changes-since with-changes-since
              :with-changes with-changes

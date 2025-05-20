@@ -1,6 +1,7 @@
 (ns k16.kmono.cli.commands.clojure
   (:require
    [babashka.process :as proc]
+   [clojure.java.io :as io]
    [clojure.string :as str]
    [k16.kmono.cli.common.context :as common.context]
    [k16.kmono.cli.common.opts :as opts]
@@ -77,7 +78,8 @@
 
 (def command
   {:command "clojure"
-   :desc "Run an augmented clojure command"
+   :summary "Run an augmented clojure command"
+   :desc (io/resource "k16/kmono/docs/clojure.md")
 
    :options {:package-aliases opts/package-aliases-opt
 

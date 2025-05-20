@@ -1,5 +1,6 @@
 (ns k16.kmono.cli.commands.repl
   (:require
+   [clojure.java.io :as io]
    [clojure.string :as str]
    [k16.kmono.cli.commands.clojure :as commands.clojure]
    [k16.kmono.cli.common.context :as common.context]
@@ -32,7 +33,8 @@
 
 (def command
   {:command "repl"
-   :desc "Start a clojure repl"
+   :summary "Start a clojure repl"
+   :desc (io/resource "k16/kmono/docs/repl.md")
    :options {:aliases opts/aliases-opt
              :package-aliases opts/package-aliases-opt}
    :run-fn repl-command})

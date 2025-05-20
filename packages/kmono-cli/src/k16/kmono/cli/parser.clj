@@ -11,8 +11,17 @@
             (merge globals current-globals))))
 
 (defn show-summary [{:keys [options global-options commands
-                            command desc version summary-path]}]
-  (println (str command (when desc (str " - " desc)) "\n"))
+                            command version
+                            summary desc summary-path]}]
+  (println (str command (when summary (str " - " summary)) "\n"))
+
+  (when desc
+    (cond
+      (string? desc)
+      (println desc)
+
+      (instance? java.net.URL desc)
+      (println (slurp desc))))
 
   (println "Usage:")
   (let [path (conj summary-path command)]
@@ -28,8 +37,8 @@
     (println "Commands:")
     (println
      (cli/format-table
-      {:rows (mapv (fn [{:keys [command desc]}]
-                     [command desc])
+      {:rows (mapv (fn [{:keys [command summary]}]
+                     [command summary])
                    commands)
        :indent 2})))
 

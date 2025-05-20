@@ -16,10 +16,20 @@
   ([repo-root ref]
    (git.cmd/run-cmd! repo-root "git" "tag" "--merged" ref "--sort=-committerdate")))
 
-(defn get-all-tags-for-ref [repo-root ref]
-  (git.cmd/run-cmd! repo-root "git" "tag" "--points-at" ref))
-
 (defn create-tags
+  "Create a set of `tags` in the git repo found at `repo-root` that point to the
+  specified `ref`."
+  {:malli/schema [:-> :string [:map
+                               [:ref :string]
+                               [:tags [:sequential :string]]]
+                  :nil]}
   [repo-root {:keys [ref tags]}]
   (doseq [tag tags]
     (git.cmd/run-cmd! repo-root "git" "tag" tag ref)))
+
+(defn push-tags
+  "Runs `git push --tags`.
+
+  Can be used to push tags after using [[create-tags]]"
+  [repo-root]
+  (git.cmd/run-cmd! repo-root "git" "push" "--tags"))

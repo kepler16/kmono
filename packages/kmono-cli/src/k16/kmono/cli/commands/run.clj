@@ -8,7 +8,8 @@
    [k16.kmono.cp :as kmono.cp]
    [k16.kmono.exec :as kmono.exec]
    [k16.kmono.log :as log]
-   [k16.kmono.version :as kmono.version]))
+   [k16.kmono.version :as kmono.version]
+   [clojure.java.io :as io]))
 
 (set! *warn-on-reflection* true)
 
@@ -61,7 +62,8 @@
 
 (def command
   {:command "run"
-   :desc "Run aliases in workspace packages"
+   :summary "Run aliases in workspace packages"
+   :desc (io/resource "k16/kmono/docs/run.md")
    :options {:run-in-order opts/run-in-order-opt
              :skip-unchanged opts/skip-unchanged-opt
              :changed opts/changed-opt

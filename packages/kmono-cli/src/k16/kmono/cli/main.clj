@@ -20,7 +20,7 @@
 
 (def cli-configuration
   {:command "kmono"
-   :desc "A cli for managing clojure (mono)repos"
+   :summary "A cli for managing clojure (mono)repos"
    :version (version)
    :global-options {:dir {:desc "Run commands as if in this directory"
                           :alias :d
@@ -40,7 +40,7 @@
               commands.clojure/command
               commands.query/command
               {:command "version"
-               :desc "Print the current version of kmono"
+               :summary "Print the current version of kmono"
                :run-fn (fn [_ _]
                          (println (version)))}]})
 

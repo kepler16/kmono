@@ -68,8 +68,8 @@
           :repository "clojars"})
 
         ;; Create tags after successfully releasing the package.
-        ;;
+        ;; 
         ;; This will require calling `git push --tags` separately but you could
-        ;; just as easilly call it here too.
+        ;; just as easily call it here too.
         (git.tags/create-tags
          project-root {:tags [(kmono.version/create-package-version-tag pkg)]})))))

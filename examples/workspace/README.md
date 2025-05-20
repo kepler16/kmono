@@ -23,11 +23,15 @@ This is the overall structure of the project:
 
 In this structure we have two packages - `a` and `b` where package `b` depends on package `a`.
 
-This project demonstrates a workflow where: 
+> [!NOTE]
+>
+> Run `kmono query` to inspect the workspace package graph and see how packages relate
 
-1) Packages are built and released when PR's are merged to master.
-2) Only packages that have changed since their previous version are build and released.
-3) The project uses convensional-commits and package versions are derived from commits.
+This project demonstrates a workflow where:
+
+1. Packages are built and released when PR's are merged to master.
+2. Only packages that have changed since their previous version are build and released.
+3. The project uses conventional-commits and package versions are derived from commits.
 
 The above requirements aren't needed to make use of kmono - this just serves to demonstrate a particular workflow and
 how you might use kmono to achieve it.
@@ -35,7 +39,7 @@ how you might use kmono to achieve it.
 ## Building/Releasing
 
 The build and release workflow described above is entirely encapsulated in the `build.clj` file using `tools.build` and
-kmono-* APIs.
+kmono-\* APIs.
 
 Packages can be built by running:
 
@@ -49,8 +53,8 @@ And the built packages can then be released by running
 clojure -T:build release
 ```
 
-For both building and releasing you can add the `:skip-unchanged true` argument to build and release only packages that
-have changed. The idea being that you would pass this by default during CI.
+For both building and releasing you can add the `:skip-unchanged true` argument to only build and release packages that
+have changed since their last release. The idea being that you would pass this by default during CI.
 
 ```bash
 clojure -T:build build :skip-unchanged true
@@ -61,7 +65,7 @@ development to build all packages.
 
 ---
 
-Take a look at the [example GitHub workflow file](./.github/workflows/release.yaml) for how you might set up your CI
+Have a look at the [example GitHub workflow file](./.github/workflows/release.yaml) for how you might set up your CI
 pipeline for release.
 
 ## Testing
@@ -69,8 +73,8 @@ pipeline for release.
 To run the tests for each package you can run the command
 
 ```bash
+# Run `clojure -M` in each package (indicated by the `*`) that has a `:test` alias.
 kmono run -M ':*/test'
 ```
 
-This means run `clojure -M` in each package (indicated by the `*`) that has a `:test` alias. Each respective packages'
-`:test` alias will then be appended to the command when it is run, like so: `clojure -M:test`.
+Each respective packages' `:test` alias will then be appended to the command when it is run, like so: `clojure -M:test`.

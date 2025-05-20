@@ -1,5 +1,6 @@
 (ns k16.kmono.cli.commands.exec
   (:require
+   [clojure.java.io :as io]
    [k16.kmono.cli.common.context :as common.context]
    [k16.kmono.cli.common.log :as common.log]
    [k16.kmono.cli.common.opts :as opts]
@@ -53,7 +54,8 @@
 
 (def command
   {:command "exec"
-   :desc "Run a given command in workspace packages"
+   :summary "Run a given command in workspace packages"
+   :desc (io/resource "k16/kmono/docs/exec.md")
    :options {:run-in-order opts/run-in-order-opt
              :skip-unchanged opts/skip-unchanged-opt
              :changed opts/changed-opt
