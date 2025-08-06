@@ -102,7 +102,7 @@
 (def command
   {:command "query"
    :summary "Query information about the package graph"
-   :desc (io/resource "k16/kmono/docs/query.md")
+   :desc (delay (io/resource "k16/kmono/docs/query.md"))
    :options {:with-versions with-versions
              :with-changes-since with-changes-since
              :with-changes with-changes

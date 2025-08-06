@@ -34,7 +34,7 @@
 (def command
   {:command "repl"
    :summary "Start a clojure repl"
-   :desc (io/resource "k16/kmono/docs/repl.md")
+   :desc (delay (io/resource "k16/kmono/docs/repl.md"))
    :options {:aliases opts/aliases-opt
              :package-aliases opts/package-aliases-opt}
    :run-fn repl-command})

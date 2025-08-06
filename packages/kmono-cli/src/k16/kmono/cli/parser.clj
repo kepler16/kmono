@@ -21,7 +21,10 @@
       (println desc)
 
       (instance? java.net.URL desc)
-      (println (slurp desc))))
+      (println (slurp desc))
+
+      (instance? clojure.lang.Delay desc)
+      (println (slurp @desc))))
 
   (println "Usage:")
   (let [path (conj summary-path command)]

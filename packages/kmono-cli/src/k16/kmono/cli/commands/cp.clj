@@ -13,7 +13,7 @@
 (def command
   {:command "cp"
    :summary "Produce a classpath string from a clojure project"
-   :desc (io/resource "k16/kmono/docs/cp.md")
+   :desc (delay (io/resource "k16/kmono/docs/cp.md"))
    :options {:aliases opts/aliases-opt
              :package-aliases opts/package-aliases-opt}
    :run-fn cp-command})

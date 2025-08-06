@@ -55,7 +55,7 @@
 (def command
   {:command "exec"
    :summary "Run a given command in workspace packages"
-   :desc (io/resource "k16/kmono/docs/exec.md")
+   :desc (delay (io/resource "k16/kmono/docs/exec.md"))
    :options {:run-in-order opts/run-in-order-opt
              :skip-unchanged opts/skip-unchanged-opt
              :changed opts/changed-opt

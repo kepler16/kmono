@@ -1,5 +1,6 @@
 (ns k16.kmono.cli.commands.run
   (:require
+   [clojure.java.io :as io]
    [k16.kmono.cli.common.context :as common.context]
    [k16.kmono.cli.common.log :as common.log]
    [k16.kmono.cli.common.opts :as opts]
@@ -8,8 +9,7 @@
    [k16.kmono.cp :as kmono.cp]
    [k16.kmono.exec :as kmono.exec]
    [k16.kmono.log :as log]
-   [k16.kmono.version :as kmono.version]
-   [clojure.java.io :as io]))
+   [k16.kmono.version :as kmono.version]))
 
 (set! *warn-on-reflection* true)
 
@@ -63,7 +63,7 @@
 (def command
   {:command "run"
    :summary "Run aliases in workspace packages"
-   :desc (io/resource "k16/kmono/docs/run.md")
+   :desc (delay (io/resource "k16/kmono/docs/run.md"))
    :options {:run-in-order opts/run-in-order-opt
              :skip-unchanged opts/skip-unchanged-opt
              :changed opts/changed-opt

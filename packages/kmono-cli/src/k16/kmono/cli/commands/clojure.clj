@@ -79,7 +79,7 @@
 (def command
   {:command "clojure"
    :summary "Run an augmented clojure command"
-   :desc (io/resource "k16/kmono/docs/clojure.md")
+   :desc (delay (io/resource "k16/kmono/docs/clojure.md"))
 
    :options {:package-aliases opts/package-aliases-opt
 
