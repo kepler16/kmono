@@ -3,6 +3,7 @@
    [clojure.string :as str]
    [k16.kmono.core.graph :as core.graph]
    [k16.kmono.core.schema :as core.schema]
+   [k16.kmono.core.thread :as core.thread]
    [k16.kmono.git.commit :as git.commit]
    [k16.kmono.git.tags :as git.tags]
    [k16.kmono.version.semver :as semver]))
@@ -68,23 +69,22 @@
 
 (defn- -resolve-package-changes-since
   [project-root packages rev-fn]
-  (persistent!
-   (reduce
-    (fn [packages [pkg-name pkg]]
-      (let [commits (git.commit/find-commits-since project-root
-                                                   {:ref (rev-fn pkg)
-                                                    :subdir (:relative-path pkg)})
+  (into {}
+        (core.thread/batch
+         (fn find-commits [[pkg-name pkg]]
+           (let [commits (git.commit/find-commits-since
+                          project-root {:ref (rev-fn pkg)
+                                        :subdir (:relative-path pkg)})
 
-            commits (pmap (fn [commit-sha]
-                            (git.commit/get-commit-details project-root
-                                                           commit-sha))
-                          commits)
+                 commits (pmap (fn [commit-sha]
+                                 (git.commit/get-commit-details project-root
+                                                                commit-sha))
+                               commits)
 
-            pkg (assoc pkg :commits (vec commits))]
-
-        (assoc! packages pkg-name pkg)))
-    (transient {})
-    packages)))
+                 pkg (assoc pkg :commits (vec commits))]
+             [pkg-name pkg]))
+         32)
+        packages))
 
 (defn resolve-package-changes
   "For each package try find all commits that modified files in the package

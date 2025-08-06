@@ -20,7 +20,7 @@
   "Create a set of `tags` in the git repo found at `repo-root` that point to the
   specified `ref`."
   {:malli/schema [:-> :string [:map
-                               [:ref :string]
+                               [:ref {:optional true} :string]
                                [:tags [:sequential :string]]]
                   :nil]}
   [repo-root {:keys [ref tags]}]

@@ -4,7 +4,8 @@
    [k16.kmono.core.config :as core.config]
    [k16.kmono.core.fs :as core.fs]
    [k16.kmono.core.graph :as core.graph]
-   [k16.kmono.core.schema :as core.schema]))
+   [k16.kmono.core.schema :as core.schema]
+   [k16.kmono.core.thread :as core.thread]))
 
 (set! *warn-on-reflection* true)
 
@@ -147,10 +148,12 @@
         packages
         (into {}
               (comp
-               (map (partial create-package project-root workspace-config))
+               (core.thread/batch
+                (fn load-package [dir]
+                  (create-package project-root workspace-config dir))
+                32)
                (remove nil?)
                (map (juxt :fqn identity)))
-
               dirs)]
 
     (->> packages
