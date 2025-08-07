@@ -27,7 +27,7 @@
            (->> batch
                 (mapv (fn execute-item! [value]
                         (vthread (f value))))
-                (mapv (fn [task]
+                (mapv (fn deref-task! [task]
                         (try (deref task)
                              (catch ExecutionException ex
                                (throw (ex-cause ex)))))))))

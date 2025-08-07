@@ -10,5 +10,7 @@
   ([repo] (commit repo "commit"))
   ([repo message]
    (cmd/run-cmd! repo "git add .")
-   (cmd/run-cmd! repo "git -c commit.gpgsign=false commit --allow-empty" "-m" (str "'" message "'"))
+   (cmd/run-cmd! repo
+                 "git -c commit.gpgsign=false commit --allow-empty --allow-empty-message"
+                 "-m" (str "'" message "'"))
    (get-current-commit repo)))

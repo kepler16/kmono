@@ -1,7 +1,7 @@
 (ns k16.kmono.git.tag-test
   (:require
+   [babashka.process :as proc]
    [clojure.test :refer [deftest is use-fixtures]]
-   [k16.kmono.git :as git]
    [k16.kmono.git.commit :as git.commit]
    [k16.kmono.git.tags :as git.tags]
    [k16.kmono.test.helpers.commit :refer [commit]]
@@ -23,7 +23,10 @@
     (git.tags/create-tags *repo* {:ref (git.commit/get-current-commit *repo*)
                                   :tags ["b-1"]})
 
-    (git/run-cmd! *repo* "git" "checkout" initial-commit)
+    (proc/shell {:dir (str *repo*)
+                 :out :string 
+                 :err :string}
+                (str "git checkout " initial-commit))
 
     (commit *repo* "change-2")
 

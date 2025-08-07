@@ -1,33 +1,26 @@
 (ns k16.kmono.git
-  (:require
-   [babashka.fs :as fs]
-   [babashka.process :as proc]
-   [clojure.string :as string]))
+  (:import
+   [java.io File]
+   [org.eclipse.jgit.api Git]
+   [org.eclipse.jgit.errors RepositoryNotFoundException]))
 
 (set! *warn-on-reflection* true)
 
-(defn- -is-git-repo? [repo-root]
-  (let [git-dir (fs/file repo-root ".git")]
-    (and (fs/exists? git-dir)
-         (fs/directory? git-dir))))
+(def ^:dynamic ^:private *repo* nil)
 
-(def is-git-repo?
-  (memoize -is-git-repo?))
+(defmacro with-open-repo [repo-path f]
+  `(if-let [[git# repo#] (var-get #'k16.kmono.git/*repo*)]
+     (~f git# repo#)
+     (try (with-open [git# (Git/open (File. (str ~repo-path)))]
+            (let [repo# (Git/.getRepository git#)]
+              (binding [k16.kmono.git/*repo* [git# repo#]]
+                (~f git# repo#))))
+          (catch RepositoryNotFoundException ex#
+            (throw (ex-info "Project is not in a git repository"
+                            {:type :kmono/no-git-repository
+                             :path (str ~repo-path)}
+                            ex#))))))
 
-(defn- out->strings
-  [{:keys [out err exit] :as result}]
-  (when-not (= 0 exit)
-    (throw (ex-info err (select-keys result [:out :err :exit]))))
-
-  (let [out (string/trim out)]
-    (when (seq out)
-      (-> out
-          (string/split-lines)
-          (vec)))))
-
-(defn run-cmd! [dir & cmd]
-  (-> (proc/shell {:dir (str dir)
-                   :out :string
-                   :err :string}
-                  (string/join " " (filterv identity cmd)))
-      (out->strings)))
+(defmacro with-pre-open-repo [repo-path & body]
+  `(with-open-repo ~repo-path
+     (fn [_# _#] ~@body)))

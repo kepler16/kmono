@@ -6,6 +6,7 @@
         babashka/process {:mvn/version "0.6.24"}
         org.babashka/cli {:mvn/version "0.8.67"}
         metosin/jsonista {:mvn/version "0.3.13"}
+        org.slf4j/slf4j-nop {:mvn/version "2.0.17"}
 
         com.kepler16/kmono-core {:local/root "../kmono-core"}
         com.kepler16/kmono-version {:local/root "../kmono-version"}

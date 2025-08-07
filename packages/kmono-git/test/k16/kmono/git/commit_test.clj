@@ -28,12 +28,14 @@
   (let [[root-commit commit-1] (prepare-repo)
 
         files-since-root
-        (git.commit/find-commits-since
-         *repo* {:ref root-commit})
+        (mapv :sha
+              (git.commit/find-commits-since
+               *repo* {:ref root-commit}))
 
         files-since-change-1
-        (git.commit/find-commits-since
-         *repo* {:ref commit-1})]
+        (mapv :sha
+              (git.commit/find-commits-since
+               *repo* {:ref commit-1}))]
 
     (is (match? [#"[a-f0-9]{40}"
                  #"[a-f0-9]{40}"]
@@ -46,14 +48,16 @@
   (let [[root-commit commit-1] (prepare-repo)
 
         files-since-root-a
-        (git.commit/find-commits-since
-         *repo* {:ref root-commit
-                 :subdir "packages/a"})
+        (mapv :sha
+              (git.commit/find-commits-since
+               *repo* {:ref root-commit
+                       :subdir "packages/a"}))
 
         files-since-change-1-b
-        (git.commit/find-commits-since
-         *repo* {:ref commit-1
-                 :subdir "packages/b"})]
+        (mapv :sha
+              (git.commit/find-commits-since
+               *repo* {:ref commit-1
+                       :subdir "packages/b"}))]
 
     (is (match? [#"[a-f0-9]{40}"
                  #"[a-f0-9]{40}"]
@@ -63,9 +67,17 @@
                 files-since-change-1-b))))
 
 (deftest query-commit-message
-  (let [commit-sha (commit *repo* "this is the message\nthis is\nthe\nbody")
-        commit (git.commit/get-commit-details *repo* commit-sha)]
+  (let [sha (commit *repo* "this is the message\nthis is\nthe\nbody")
+        commit (git.commit/find-commits-since *repo* {:ref (str sha "^")})]
+    (is (match? [{:sha sha
+                  :message "this is the message"
+                  :body "this is\nthe\nbody"}]
+                commit))))
 
-    (is (match? {:message "this is the message"
-                 :body "this is\nthe\nbody"}
+(deftest query-nil-commit-message
+  (let [sha (commit *repo* "")
+        commit (git.commit/find-commits-since *repo* {:ref (str sha "^")})]
+    (is (match? [{:sha sha
+                  :message ""
+                  :body ""}]
                 commit))))

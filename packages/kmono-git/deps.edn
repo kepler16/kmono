@@ -1,10 +1,14 @@
 {:kmono/description "Simple git interface"
 
- :deps {babashka/process {:mvn/version "0.6.24"}
-        babashka/fs {:mvn/version "0.5.30"}}
+ :paths ["src" "resources"]
+
+ :deps {babashka/fs {:mvn/version "0.5.30"}
+        org.eclipse.jgit/org.eclipse.jgit {:mvn/version "7.5.0.202512021534-r"
+                                           :exclusions [org.slf4j/slf4j-api]}}
 
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
                                nubank/matcher-combinators {:mvn/version "3.9.2"}
-                               local/kmono-test {:local/root "../kmono-test"}}
+                               local/kmono-test {:local/root "../kmono-test"}
+                               babashka/process {:mvn/version "0.6.24"}}
                   :main-opts ["-m" "kaocha.runner" "-c" "../../tests.edn"]}}}
