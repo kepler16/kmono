@@ -2,5 +2,5 @@
  
  :paths ["src" "resources"]
 
- :deps {babashka/fs {:mvn/version "0.5.22"}
-        babashka/process {:mvn/version "0.5.22"}}}
+ :deps {babashka/fs {:mvn/version "0.5.30"}
+        babashka/process {:mvn/version "0.6.24"}}}

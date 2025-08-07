@@ -1,12 +1,12 @@
 {:kmono/description "The core kmono package and graph API's"
 
- :deps {babashka/fs {:mvn/version "0.5.22"}
-        babashka/process {:mvn/version "0.5.22"}
+ :deps {babashka/fs {:mvn/version "0.5.30"}
+        babashka/process {:mvn/version "0.6.24"}
         meta-merge/meta-merge {:mvn/version "1.0.0"}
-        metosin/malli {:mvn/version "0.16.4"}}
+        metosin/malli {:mvn/version "0.20.0"}}
 
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
-                               nubank/matcher-combinators {:mvn/version "3.9.1"}
+                               nubank/matcher-combinators {:mvn/version "3.9.2"}
                                local/kmono-test {:local/root "../kmono-test"}}
                   :main-opts ["-m" "kaocha.runner" "-c" "../../tests.edn"]}}}
