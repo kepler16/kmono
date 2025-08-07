@@ -2,11 +2,13 @@
   (:require
    [babashka.fs :as fs]
    [clojure.edn :as edn]
+   [clojure.java.io :as io]
    [clojure.string :as str])
   (:import
    java.nio.file.FileSystems
    java.nio.file.Path
-   java.nio.file.PathMatcher))
+   java.nio.file.PathMatcher
+   org.eclipse.jgit.ignore.IgnoreNode))
 
 (set! *warn-on-reflection* true)
 
@@ -24,14 +26,12 @@
         str)))
 
 (defn find-project-root
-  "Given a directory (or the cwd if non is supplied) try to find root of the
-  clojure project.
+  "Given a directory (or the cwd if non is supplied) try to find root of the clojure project.
 
-  This is either:
+   This is either:
 
-  1. The first directory containing a `deps.edn` file with a `:kmono/workspace`
-     key present
-  2. The furthest directory containing a `deps.edn` file."
+   1.  The first directory containing a `deps.edn` file with a `:kmono/workspace` key present
+   2.  The furthest directory containing a `deps.edn` file."
   ([] (find-project-root nil nil))
   ([dir] (find-project-root dir nil))
   ([dir current-root]
@@ -53,8 +53,7 @@
        (find-project-root (fs/parent dir) current-root)))))
 
 (defn find-project-root!
-  "This is the same as [[k16.kmono.core.fs/find-project-root]] but will throw an
-  exception if no project root can be found."
+  "This is the same as [[k16.kmono.core.fs/find-project-root]] but will throw an exception if no project root can be found."
   ([] (find-project-root! nil))
   ([dir]
    (let [root (find-project-root dir)]
@@ -72,6 +71,17 @@
       (throw (ex-info (str "Could not read " file-path)
                       {:file-path file-path}
                       ex)))))
+
+(defn- parse-gitignore [gitignore-path]
+  (try (let [ignore-node (IgnoreNode.)]
+         (with-open [in (io/input-stream gitignore-path)]
+           (IgnoreNode/.parse ignore-node in))
+         ignore-node)
+       (catch Exception _
+         nil)))
+
+(defn- ignored? [ignore-node path is-directory?]
+  (IgnoreNode/.checkIgnored ignore-node path is-directory?))
 
 (defn- escape-glob-chars
   "Escapes special glob characters in the input string."
@@ -110,19 +120,16 @@
   [:fn {:error/message "Should be an instance of java.nio.file.Path"}
    (partial instance? Path)])
 
-;; TODO: It would be nice if this could skip/not traverse into directories that
-;; are included in gitignored files
-;; 
-;; This would require either a way to convert `.gitignore` syntax to Java
-;; PathMatcher compatible globs or using something like JGit.
 (defn find-package-directories
   "Find packages in a given `root` that are described by the given set of
-   `package-globs`."
+    `package-globs`."
   {:malli/schema [:-> :string [:or :string [:set :string]] [:set ?Path]]}
   [root package-globs]
   (let [root (-> (fs/path root)
                  fs/normalize
                  fs/absolutize)
+
+        ignore-node (parse-gitignore (str (fs/file root ".gitignore")))
 
         matcher (if (string? package-globs)
                   (glob->matcher root package-globs)
@@ -145,6 +152,12 @@
                        (cond
                          (and @past-root?
                               (fs/hidden? dir))
+                         :skip-subtree
+
+                         (and ignore-node
+                              (ignored? ignore-node
+                                        (str dir)
+                                        true))
                          :skip-subtree
 
                          (not @past-root?)
