@@ -13,27 +13,27 @@
         with-elide (if (not= (count shortened) (count command))
                      (str shortened "...")
                      shortened)]
-
-    (str "@|white " with-elide "|@")))
+    [[:system-grey with-elide]]))
 
 (defn- proc-started [{:keys [package command]}]
-  (log/log "    "
-           (log.render/render-package-name (:fqn package))
-           " @|cyan [running] |@"
-           (render-command command)))
+  (log/log-raw (-> ["    "]
+                   (into (log.render/render-package-name (:fqn package)))
+                   (into [[:system-aqua " [running] "]])
+                   (into (render-command command)))))
 
 (defn- proc-finished [{:keys [package success out err]}]
-  (let [[color message] (if success
-                          ["green" "[succes]"]
-                          ["red" "[failed]"])]
-    (log/log "    "
-             (log.render/render-package-name (:fqn package))
-             " @|" color " " message "|@")
+  (let [message (if success
+                  [:system-green " [succes] "]
+                  [:system-red " [failed] "])]
+
+    (log/log-raw (-> ["    "]
+                     (into (log.render/render-package-name (:fqn package)))
+                     (into [message])))
 
     (when (seq out)
-      (log/log-raw out))
+      (log/log out))
     (when (seq err)
-      (log/log-raw err))))
+      (log/log err))))
 
 (defn handle-event [event]
   (case (:type event)

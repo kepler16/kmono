@@ -1,3 +1,3 @@
 {:kmono/description "Terminal logging API's used by kmono"
 
- :deps {jansi-clj/jansi-clj {:mvn/version "2.0.0"}}}
+ :deps {io.github.paintparty/bling {:mvn/version "0.9.1"}}}

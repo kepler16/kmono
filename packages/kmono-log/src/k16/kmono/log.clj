@@ -1,6 +1,6 @@
 (ns k16.kmono.log
   (:require
-   [jansi-clj.core :as color]))
+   [bling.core :as bling]))
 
 (set! *warn-on-reflection* true)
 
@@ -12,16 +12,17 @@
 
 (defn log-raw [data]
   (locking lock
-    (.println ^java.io.PrintStream *log-out* data)))
+    (let [result (apply bling/bling data)]
+      (.println ^java.io.PrintStream *log-out* result))))
 
-(defn log [& msg]
-  (log-raw (apply color/render msg)))
+(defn log [& msgs]
+  (log-raw msgs))
 
-(defn info [msg]
-  (log (str "@|blue [I] " "|@") (color/render msg)))
+(defn info [& msgs]
+  (log-raw (into [[:system-blue "[I] "]] msgs)))
 
-(defn error [msg]
-  (log (str "@|red [E] " "|@") (color/render msg)))
+(defn error [& msgs]
+  (log-raw (into [[:system-red "[E] "]] msgs)))
 
-(defn debug [msg]
-  (log (str "@|white [D] " (color/render msg) "|@")))
+(defn debug [& msgs]
+  (log-raw (into [[:system-silver "[D] "]] msgs)))

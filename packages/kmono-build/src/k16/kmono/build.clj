@@ -151,8 +151,8 @@
                     (try
                       (let [pkg (get packages pkg-name)]
                         (when-not silent
-                          (log/info (str (log.render/render-package-name pkg-name)
-                                         "@|magenta  " (:version pkg) "|@")))
+                          (apply log/info (into (log.render/render-package-name pkg-name)
+                                                [" " [:system-magenta (:version pkg)]])))
 
                         (b/with-project-root (:relative-path pkg)
                           (build-fn pkg)))

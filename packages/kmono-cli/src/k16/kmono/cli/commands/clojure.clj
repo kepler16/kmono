@@ -58,8 +58,8 @@
 
         _ (when (:verbose props)
             (binding [log/*log-out* System/err]
-              (log/debug "Running clojure command:")
-              (log/debug command)))
+              (log/debug [:system-grey "Running clojure command:"])
+              (log/debug [:system-grey command])))
 
         opts {:dir root :inherit true}
         proc (proc/process opts command)]
