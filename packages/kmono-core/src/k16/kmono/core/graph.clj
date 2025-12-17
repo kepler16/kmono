@@ -7,32 +7,68 @@
 (def ^:no-doc ?ExecOrder
   [:vector [:vector :symbol]])
 
-(defn find-cycles
-  "Try find cyclic dependencies between packages in a given `packages` map"
+(defn- cycle-path
+  [parent-map from-node to-node]
+  (loop [node from-node
+         acc [from-node]]
+    (if (= node to-node)
+      (conj (vec (reverse acc)) to-node)
+      (recur (get parent-map node)
+             (conj acc (get parent-map node))))))
+
+(defn- find-cycle-path-from
+  [packages node visiting visited parent-map]
+  (let [visiting (conj visiting node)
+        neighbors (sort (get-in packages [node :depends-on]))]
+    (loop [neighbors neighbors
+           visited visited
+           parent-map parent-map]
+      (if-let [neighbor (first neighbors)]
+        (cond
+          (contains? visiting neighbor)
+          [(cycle-path parent-map node neighbor) visited parent-map]
+
+          (contains? visited neighbor)
+          (recur (rest neighbors) visited parent-map)
+
+          :else
+          (let [[cycle visited parent-map]
+                (find-cycle-path-from packages
+                                      neighbor
+                                      visiting
+                                      visited
+                                      (assoc parent-map neighbor node))]
+            (if cycle
+              [cycle visited parent-map]
+              (recur (rest neighbors) visited parent-map))))
+        [nil (conj visited node) parent-map]))))
+
+(defn find-cycle
+  "Find a dependency cycle in `packages` and returns it as a closed path.
+
+  Returns a vector like `[a b c a]` for a cycle `a -> b -> c -> a`, or nil if
+  no cycle is found."
   [packages]
-  (loop [nodes (keys packages)
-         node (first nodes)
-         path #{}]
-    (when node
-      (let [package (get packages node)]
-        (if (seq (:depends-on package))
-          (if (contains? path node)
-            (conj (set path) node)
-            (recur (:depends-on package)
-                   (first (:depends-on package))
-                   (conj path node)))
-          (recur (rest nodes)
-                 (first (rest nodes))
-                 (disj path node)))))))
+  (loop [nodes (sort (keys packages))
+         visited #{}
+         parent-map {}]
+    (when-let [node (first nodes)]
+      (if (contains? visited node)
+        (recur (rest nodes) visited parent-map)
+        (let [[cycle visited parent-map]
+              (find-cycle-path-from packages node #{} visited parent-map)]
+          (if cycle
+            cycle
+            (recur (rest nodes) visited parent-map)))))))
 
 (defn ensure-no-cycles!
   "Same as [[find-cycles]] but will throw an exception if any cycles are found."
   [packages]
-  (let [cycles (find-cycles packages)]
-    (when (seq cycles)
-      (throw (ex-info "Cicrlar dependencies found"
+  (let [cycle (find-cycle packages)]
+    (when cycle
+      (throw (ex-info "Circular dependencies found"
                       {:type :kmono/circular-dependencies
-                       :cycles cycles}))))
+                       :cycles [cycle]}))))
   packages)
 
 (defn parallel-topo-sort

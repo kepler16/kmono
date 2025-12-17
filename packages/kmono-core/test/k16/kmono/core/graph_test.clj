@@ -1,7 +1,7 @@
 (ns k16.kmono.core.graph-test
   (:require
    [babashka.fs :as fs]
-   [clojure.test :refer [deftest is use-fixtures]]
+   [clojure.test :refer [deftest is testing use-fixtures]]
    [k16.kmono.core.config :as core.config]
    [k16.kmono.core.graph :as core.graph]
    [k16.kmono.core.packages :as core.packages]
@@ -14,7 +14,7 @@
   (let [config (core.config/resolve-workspace-config *repo*)
         packages (core.packages/resolve-packages *repo* config)]
 
-    (is (not (core.graph/find-cycles packages)))))
+    (is (not (core.graph/find-cycle packages)))))
 
 (deftest finds-cycles-test
   (fs/write-bytes (fs/file *repo* "packages/a/deps.edn")
@@ -26,8 +26,19 @@
     (is (thrown-match?
          clojure.lang.ExceptionInfo
          {:type :kmono/circular-dependencies
-          :cycles #{'com.kepler16/a 'com.kepler16/b}}
+          :cycles '[[com.kepler16/a com.kepler16/b com.kepler16/a]]}
          (core.packages/resolve-packages *repo* config)))))
+
+(deftest no-cycles-multi-paths-test
+  (testing "reproducing a bug where cycles were missed"
+    (is (= '[com.kepler16/a com.kepler16/b com.kepler16/c com.kepler16/a]
+           (core.graph/find-cycle
+            '{com.kepler16/a {:depends-on #{com.kepler16/b}}
+              com.kepler16/b {:depends-on #{com.kepler16/d
+                                            com.kepler16/c}}
+              com.kepler16/c {:depends-on #{com.kepler16/a}}
+
+              com.kepler16/d {:depends-on #{com.kepler16/e}}})))))
 
 (deftest topological-sort-test
   (fs/create-dirs (fs/file *repo* "packages/c"))
