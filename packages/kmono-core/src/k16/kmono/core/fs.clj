@@ -118,7 +118,7 @@
 (defn find-package-directories
   "Find packages in a given `root` that are described by the given set of
    `package-globs`."
-  {:malli/schema [:-> :string [:or :string [:set :string]] [:vector ?Path]]}
+  {:malli/schema [:-> :string [:or :string [:set :string]] [:set ?Path]]}
   [root package-globs]
   (let [root (-> (fs/path root)
                  fs/normalize
