@@ -74,9 +74,11 @@
    the specified `ref` (default: HEAD)."
   {:malli/schema [:-> :string [:map
                                [:ref {:optional true} :string]
+                               [:annotated {:optional true
+                                            :default true} :boolean]
                                [:tags [:sequential :string]]]
                   :nil]}
-  [^String repo-root {:keys [ref tags]}]
+  [^String repo-root {:keys [ref annotated tags]}]
   (with-open [git (Git/open (File. repo-root))]
     (let [repo (Git/.getRepository git)
           obj (resolve-object repo ref)]
@@ -84,5 +86,7 @@
         (let [cmd (Git/.tag git)]
           (TagCommand/.setName cmd tag)
           (TagCommand/.setObjectId cmd obj)
-          (TagCommand/.setAnnotated cmd false)
+          (TagCommand/.setAnnotated cmd (if (boolean? annotated)
+                                          annotated
+                                          true))
           (TagCommand/.call cmd))))))

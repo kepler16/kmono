@@ -21,6 +21,7 @@
     (commit *repo* "change-1")
 
     (git.tags/create-tags *repo* {:ref (git.commit/get-current-commit *repo*)
+                                  :annotated false
                                   :tags ["b-1"]})
 
     (proc/shell {:dir (str *repo*)
