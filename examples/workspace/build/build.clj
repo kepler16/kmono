@@ -3,22 +3,20 @@
    [clojure.tools.build.api :as b]
    [k16.kaven.deploy :as kaven.deploy]
    [k16.kmono.build :as kmono.build]
-   [k16.kmono.core.config :as core.config]
    [k16.kmono.core.fs :as core.fs]
    [k16.kmono.core.graph :as core.graph]
-   [k16.kmono.core.packages :as core.packages]
    [k16.kmono.git.tags :as git.tags]
    [k16.kmono.version :as kmono.version]
-   [k16.kmono.version.alg.conventional-commits :as conventional-commits]))
+   [k16.kmono.version.alg.conventional-commits :as conventional-commits]
+   [k16.kmono.workspace :as kmono.workspace]))
 
 (defn load-packages [{:keys [skip-unchanged]}]
-  (let [project-root (core.fs/find-project-root)
-        workspace-config (core.config/resolve-workspace-config project-root)
+  (let [{:keys [root packages]} (kmono.workspace/resolve-workspace-context!)
 
         packages
-        (cond->> (->> (core.packages/resolve-packages project-root workspace-config)
-                      (kmono.version/resolve-package-versions project-root)
-                      (kmono.version/resolve-package-changes project-root))
+        (cond->> (->> packages
+                      (kmono.version/resolve-package-versions root)
+                      (kmono.version/resolve-package-changes root))
 
           ;; Only perform a build and/or release for packages which have changed
           ;; since their last version; or packages whose dependencies have

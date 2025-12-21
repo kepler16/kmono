@@ -4,11 +4,9 @@
    [clojure.tools.build.api :as b]
    [k16.kaven.deploy :as kaven.deploy]
    [k16.kmono.build :as kmono.build]
-   [k16.kmono.core.config :as core.config]
-   [k16.kmono.core.fs :as core.fs]
    [k16.kmono.core.graph :as core.graph]
-   [k16.kmono.core.packages :as core.packages]
-   [k16.kmono.git.tags :as git.tags]))
+   [k16.kmono.git.tags :as git.tags]
+   [k16.kmono.workspace :as kmono.workspace]))
 
 (defn- get-latest-version [dir]
   (some (fn [tag]
@@ -17,12 +15,9 @@
         (git.tags/get-sorted-tags dir)))
 
 (defn- load-packages []
-  (let [project-root (core.fs/find-project-root!)
-        workspace-config (core.config/resolve-workspace-config project-root)
-        packages (->> (core.packages/resolve-packages project-root workspace-config)
-                      (core.graph/filter-by #(not (get-in % [:deps-edn :kmono/private]))))
-
-        version (get-latest-version project-root)]
+  (let [{:keys [root packages]} (kmono.workspace/resolve-workspace-context!)
+        packages (core.graph/filter-by packages #(not (get-in % [:deps-edn :kmono/private])))
+        version (get-latest-version root)]
 
     (reduce
      (fn [packages [pkg-name pkg]]
