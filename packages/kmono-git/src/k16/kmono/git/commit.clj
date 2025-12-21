@@ -67,7 +67,10 @@
      :message (or message "")
      :body (str/trim body)}))
 
-(defn find-commits-since [^String repo {:keys [ref subdir]}]
+(defn find-commits-since
+  "Find all commits since a given `ref` (or all, if excluded) and optionally
+   filter by the commits which affect the provided `subdir`."
+  [^String repo {:keys [ref subdir]}]
   (git/with-open-repo repo
     (fn with-open-repo [git repo]
       (let [log (Git/.log git)]
