@@ -73,8 +73,11 @@ pipeline for release.
 To run the tests for each package you can run the command
 
 ```bash
-# Run `clojure -M` in each package (indicated by the `*`) that has a `:test` alias.
-kmono run -M ':*/test'
+# Run `clojure -M:test` in each package that has a `:test` alias.
+kmono run -M :test
+
+# Only run `clojure -M:test` in package a.
+kmono run -M :test -F '*/a'
 ```
 
 Each respective packages' `:test` alias will then be appended to the command when it is run, like so: `clojure -M:test`.
