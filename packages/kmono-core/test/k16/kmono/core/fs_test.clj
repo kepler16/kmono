@@ -15,3 +15,10 @@
 
 (deftest stops-at-homedir-test
   (is (= nil (core.fs/find-project-root (fs/file (fs/home) "some-subdir")))))
+
+(deftest stops-at-root-test
+  (let [dir (str (random-uuid))
+        dir (fs/file (fs/temp-dir) dir)]
+    (fs/copy-tree *repo* dir)
+    (is (= (str dir) (core.fs/find-project-root dir)))
+    (fs/delete-tree dir)))
