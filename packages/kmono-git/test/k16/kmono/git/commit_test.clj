@@ -81,3 +81,13 @@
                   :message ""
                   :body ""}]
                 commit))))
+
+(deftest get-current-commit
+  (let [sha (commit *repo* "")
+        commit (git.commit/get-current-commit *repo*)]
+    (is (match? sha commit))))
+
+(deftest get-current-commit-short
+  (let [sha (commit *repo* "")
+        commit (git.commit/get-current-commit-short *repo*)]
+    (is (match? (subs sha 0 7) commit))))

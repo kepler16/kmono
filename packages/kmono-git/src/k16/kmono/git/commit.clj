@@ -5,7 +5,12 @@
   (:import
    [java.io File]
    [org.eclipse.jgit.api Git LogCommand]
-   [org.eclipse.jgit.lib Constants ObjectId Repository]
+   [org.eclipse.jgit.lib
+    AbbreviatedObjectId
+    Constants
+    ObjectId
+    ObjectReader
+    Repository]
    [org.eclipse.jgit.revwalk RevCommit]))
 
 (set! *warn-on-reflection* true)
@@ -14,8 +19,9 @@
   (atom {}))
 
 (defn resolve-commit-id
-  "Resolve a rev (e.g. HEAD, tag, branch, SHA) to a commit ObjectId. Throws if
-   it cannot be resolved to a commit."
+  "Resolve a rev (e.g. HEAD, tag, branch, SHA) to a commit ObjectId.
+
+   Throws if it cannot be resolved to a commit."
   ^ObjectId [^Repository repo ^String rev]
   (let [index [(str (Repository/.getDirectory repo)) rev]
         result (get @resolve-cache index)]
@@ -26,11 +32,25 @@
           (swap! resolve-cache assoc index oid)
           oid))))
 
-(defn get-current-commit [^String repo]
+(defn get-current-commit
+  "Returns the current commit (HEAD) of the repository at `repo`.
+
+   Returns `nil` if the commit cannot be resolved."
+  [^String repo]
   (with-open [git (Git/open (File. repo))]
     (let [repository (Git/.getRepository git)]
-      (-> (Repository/.resolve repository Constants/HEAD)
-          (ObjectId/.getName)))))
+      (some-> (Repository/.resolve repository Constants/HEAD)
+              (ObjectId/.getName)))))
+
+(defn get-current-commit-short
+  "Like [[get-current-commit]] but returns the abbreviated commit sha instead"
+  [^String repo]
+  (with-open [git (Git/open (File. repo))]
+    (let [repository (Git/.getRepository git)]
+      (with-open [reader (Repository/.newObjectReader repository)]
+        (some->> (Repository/.resolve repository Constants/HEAD)
+                 (ObjectReader/.abbreviate reader)
+                 (AbbreviatedObjectId/.name))))))
 
 (defn- commit->map [^RevCommit commit]
   (let [full (RevCommit/.getFullMessage commit)
