@@ -1,9 +1,9 @@
 (ns k16.kmono.git.files
   (:require
-   [clojure.string :as str])
+   [clojure.string :as str]
+   [k16.kmono.git :as git])
   (:import
-   [java.io ByteArrayOutputStream File]
-   [org.eclipse.jgit.api Git]
+   [java.io ByteArrayOutputStream]
    [org.eclipse.jgit.diff DiffEntry DiffFormatter]
    [org.eclipse.jgit.lib Constants Repository]))
 
@@ -12,11 +12,9 @@
 (defn find-changed-files-since
   "Return a seq of changed file paths since `ref` up to HEAD. If `subdir` is
    provided, only include files within that subdir."
-  [^String repo {:keys [ref subdir]}]
-  (with-open [git (Git/open (File. repo))]
-    (let [repo (Git/.getRepository git)
-
-          start-commit (Repository/.resolve repo ref)
+  [^String repo-path {:keys [ref subdir]}]
+  (git/with-repo [repo repo-path]
+    (let [start-commit (Repository/.resolve repo ref)
           end-commit (Repository/.resolve repo Constants/HEAD)
 
           subdir (when subdir

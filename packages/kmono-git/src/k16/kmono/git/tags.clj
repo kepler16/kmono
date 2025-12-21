@@ -1,6 +1,7 @@
 (ns k16.kmono.git.tags
+  (:require
+   [k16.kmono.git :as git])
   (:import
-   java.io.File
    org.eclipse.jgit.api.Git
    org.eclipse.jgit.api.ListTagCommand
    org.eclipse.jgit.api.TagCommand
@@ -26,40 +27,40 @@
    first)"
   ([^String repo-path] (get-sorted-tags repo-path Constants/HEAD))
   ([^String repo-path rev]
-   (with-open [git (Git/open (File. repo-path))
-               repo (.getRepository git)
-               walk (RevWalk. repo)]
-     (let [rev (.resolve repo rev)]
-       (when (nil? rev)
-         (throw (ex-info (str "Cannot resolve rev: " rev) {:rev rev})))
+   (git/with-repo [repo repo-path]
+     (with-open [walk (RevWalk. repo)]
+       (let [rev (.resolve repo rev)
+             git (Git. repo)]
+         (when (nil? rev)
+           (throw (ex-info (str "Cannot resolve rev: " rev) {:rev rev})))
 
-       (let [^RevCommit rev-commit (RevWalk/.parseCommit walk rev)
-             tags (into []
-                        (keep (fn [^Ref ref]
-                                (let [obj-id (Ref/.getObjectId ref)
-                                      any-object (RevWalk/.parseAny walk obj-id)
-                                      ;; If annotated tag, unwrap to commit
-                                      tag-commit (cond
-                                                   (instance? RevTag any-object)
-                                                   (->> any-object
-                                                        (RevTag/.getObject)
-                                                        (RevWalk/.parseCommit walk))
+         (let [^RevCommit rev-commit (RevWalk/.parseCommit walk rev)
+               tags (into []
+                          (keep (fn [^Ref ref]
+                                  (let [obj-id (Ref/.getObjectId ref)
+                                        any-object (RevWalk/.parseAny walk obj-id)
+                                        ;; If annotated tag, unwrap to commit
+                                        tag-commit (cond
+                                                     (instance? RevTag any-object)
+                                                     (->> any-object
+                                                          (RevTag/.getObject)
+                                                          (RevWalk/.parseCommit walk))
 
-                                                   (instance? RevCommit any-object)
-                                                   any-object
+                                                     (instance? RevCommit any-object)
+                                                     any-object
 
-                                                   :else nil)]
-                                  (when (and tag-commit
-                                             (RevWalk/.isMergedInto walk
-                                                                    tag-commit
-                                                                    rev-commit))
-                                    [(shorten-tag-name (.getName ref))
-                                     (RevCommit/.getCommitTime tag-commit)]))))
-                        (-> git Git/.tagList ListTagCommand/.call))]
+                                                     :else nil)]
+                                    (when (and tag-commit
+                                               (RevWalk/.isMergedInto walk
+                                                                      tag-commit
+                                                                      rev-commit))
+                                      [(shorten-tag-name (.getName ref))
+                                       (RevCommit/.getCommitTime tag-commit)]))))
+                          (-> git Git/.tagList ListTagCommand/.call))]
 
-         (into []
-               (map first)
-               (sort-by second #(compare %2 %1) tags)))))))
+           (into []
+                 (map first)
+                 (sort-by second #(compare %2 %1) tags))))))))
 
 (defn- resolve-object
   [^Repository repo ref]
@@ -81,8 +82,8 @@
                                [:tags [:sequential :string]]]
                   :nil]}
   [^String repo-root {:keys [ref annotated tags]}]
-  (with-open [git (Git/open (File. repo-root))]
-    (let [repo (Git/.getRepository git)
+  (git/with-repo [repo repo-root]
+    (let [git (Git. repo)
           obj (resolve-object repo ref)]
       (doseq [tag tags]
         (let [cmd (Git/.tag git)]

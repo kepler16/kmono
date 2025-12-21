@@ -70,7 +70,7 @@
 
 (defn- -resolve-package-changes-since
   [project-root packages rev-fn]
-  (git/with-pre-open-repo project-root
+  (git/with-repo [_ project-root]
     (into {}
           (core.thread/batch
            (fn find-commits [[pkg-name pkg]]

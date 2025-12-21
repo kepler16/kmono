@@ -3,7 +3,6 @@
    [clojure.string :as str]
    [k16.kmono.git :as git])
   (:import
-   [java.io File]
    [org.eclipse.jgit.api Git LogCommand]
    [org.eclipse.jgit.lib
     AbbreviatedObjectId
@@ -56,21 +55,19 @@
   "Returns the current commit (HEAD) of the repository at `repo`.
 
    Returns `nil` if the commit cannot be resolved."
-  [^String repo]
-  (with-open [git (Git/open (File. repo))]
-    (let [repository (Git/.getRepository git)]
-      (some-> (Repository/.resolve repository Constants/HEAD)
-              (ObjectId/.getName)))))
+  [^String repo-path]
+  (git/with-repo [repo repo-path]
+    (some-> (Repository/.resolve repo Constants/HEAD)
+            (ObjectId/.getName))))
 
 (defn get-current-commit-short
   "Like [[get-current-commit]] but returns the abbreviated commit sha instead"
-  [^String repo]
-  (with-open [git (Git/open (File. repo))]
-    (let [repository (Git/.getRepository git)]
-      (with-open [reader (Repository/.newObjectReader repository)]
-        (some->> (Repository/.resolve repository Constants/HEAD)
-                 (ObjectReader/.abbreviate reader)
-                 (AbbreviatedObjectId/.name))))))
+  [^String repo-path]
+  (git/with-repo [repo repo-path]
+    (with-open [reader (Repository/.newObjectReader repo)]
+      (some->> (Repository/.resolve repo Constants/HEAD)
+               (ObjectReader/.abbreviate reader)
+               (AbbreviatedObjectId/.name)))))
 
 (defn- commit->map [^RevCommit commit]
   (let [full (RevCommit/.getFullMessage commit)
@@ -90,16 +87,16 @@
 (defn find-commits-since
   "Find all commits since a given `ref` (or all, if excluded) and optionally
    filter by the commits which affect the provided `subdir`."
-  [^String repo {:keys [ref subdir]}]
-  (git/with-open-repo repo
-    (fn with-open-repo [git repo]
-      (let [log (Git/.log git)]
-        (when ref
-          (let [since (resolve-commit-id repo ref)
-                head (resolve-commit-id repo Constants/HEAD)]
-            (LogCommand/.addRange log since head)))
+  [^String repo-path {:keys [ref subdir]}]
+  (git/with-repo [repo repo-path]
+    (let [git (Git. repo)
+          log (Git/.log git)]
+      (when ref
+        (let [since (resolve-commit-id repo ref)
+              head (resolve-commit-id repo Constants/HEAD)]
+          (LogCommand/.addRange log since head)))
 
-        (when subdir
-          (LogCommand/.addPath log subdir))
+      (when subdir
+        (LogCommand/.addPath log subdir))
 
-        (mapv commit->map (LogCommand/.call log))))))
+      (mapv commit->map (LogCommand/.call log)))))
