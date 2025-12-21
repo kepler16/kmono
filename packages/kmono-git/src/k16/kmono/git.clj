@@ -2,13 +2,13 @@
   (:import
    [java.io File]
    [org.eclipse.jgit.errors RepositoryNotFoundException]
-   [org.eclipse.jgit.lib RepositoryBuilder]))
+   [org.eclipse.jgit.lib Repository RepositoryBuilder]))
 
 (set! *warn-on-reflection* true)
 
 (def ^:dynamic ^:private *repo* nil)
 
-(defn- with-repo* [repo-path f]
+(defn- with-repo* [^String repo-path f]
   (if *repo*
     (f *repo*)
     (try (with-open [repo (-> (RepositoryBuilder.)
@@ -26,6 +26,6 @@
 (defmacro with-repo [[var repo-path] & body]
   (let [fn-name '-with-git]
     `(let [f# (fn ~fn-name [git#]
-                (let [~var git#]
+                (let [~var ^Repository git#]
                   ~@body))]
        (#'k16.kmono.git/with-repo* ~repo-path f#))))
