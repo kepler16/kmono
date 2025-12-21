@@ -16,7 +16,8 @@
 
 (defn- load-packages []
   (let [{:keys [root packages]} (kmono.workspace/resolve-workspace-context!)
-        packages (core.graph/filter-by packages #(not (get-in % [:deps-edn :kmono/private])))
+        packages (core.graph/filter-by #(not (get-in % [:deps-edn :kmono/private]))
+                                       packages)
         version (get-latest-version root)]
 
     (reduce
