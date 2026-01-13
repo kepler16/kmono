@@ -14,26 +14,26 @@
 
 (defn- run-command
   [{:keys [filter skip-unchanged changed changed-since
-           run-in-order concurrency]
+           include-dependents run-in-order concurrency]
     :as opts}
    args]
   (let [{:keys [root packages]} (common.context/load-context opts)
 
         packages
         (cond-> packages
-          filter
-          (->> (core.graph/filter-by (core.packages/name-matches? filter)))
-
           (or changed skip-unchanged)
           (->> (kmono.version/resolve-package-versions root)
                (kmono.version/resolve-package-changes root)
                (core.graph/filter-by kmono.version/package-changed?
-                                     {:include-dependents true}))
+                                     {:include-dependents include-dependents}))
 
           changed-since
           (->> (kmono.version/resolve-package-changes-since root changed-since)
                (core.graph/filter-by kmono.version/package-changed?
-                                     {:include-dependents true})))
+                                     {:include-dependents include-dependents}))
+
+          filter
+          (->> (core.graph/filter-by (core.packages/name-matches? filter))))
 
         results
         (kmono.exec/run-external-cmds
@@ -52,6 +52,11 @@
       (log/error "Command failed in one or more packages")
       (System/exit 1))))
 
+(def include-dependents
+  {:desc "Include the dependents of filtered packages even if they don't match any of the filters"
+   :coerce :boolean
+   :default true})
+
 (def command
   {:command "exec"
    :summary "Run a given command in workspace packages"
@@ -61,5 +66,6 @@
              :changed opts/changed-opt
              :changed-since opts/changed-since-opt
              :filter opts/package-filter-opt
+             :include-dependents include-dependents
              :concurrency opts/concurrency-opt}
    :run-fn run-command})

@@ -27,10 +27,6 @@
 
         {:keys [root packages]} (common.context/load-context opts)
         packages (cond->> packages
-                   filter'
-                   (core.graph/filter-by (core.packages/name-matches? filter')
-                                         {:include-dependents include-dependents})
-
                    with-versions
                    (kmono.version/resolve-package-versions root)
 
@@ -42,6 +38,10 @@
 
                    filter-unchanged
                    (core.graph/filter-by kmono.version/package-changed?
+                                         {:include-dependents include-dependents})
+
+                   filter'
+                   (core.graph/filter-by (core.packages/name-matches? filter')
                                          {:include-dependents include-dependents}))
         packages (into {}
                        (map (fn [[key pkg]]
