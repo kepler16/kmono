@@ -86,7 +86,7 @@
          nil)))
 
 (defn- ignored? [^org.eclipse.jgit.ignore.IgnoreNode ignore-node path is-directory?]
-  (IgnoreNode/.checkIgnored ignore-node path is-directory?))
+  (.checkIgnored ignore-node path is-directory?))
 
 (defn- escape-glob-chars
   "Escapes special glob characters in the input string."
@@ -115,7 +115,7 @@
       (matches [^Path path]
         (reduce
          (fn [acc matcher]
-           (if (PathMatcher/.matches matcher path)
+           (if (.matches ^PathMatcher matcher path)
              (reduced true)
              acc))
          false

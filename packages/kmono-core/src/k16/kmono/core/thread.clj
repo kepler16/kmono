@@ -11,7 +11,7 @@
 
 (defmacro vthread [& body]
   `(let [^Callable fn# (bound-fn [] ~@body)]
-     (ExecutorService/.submit *executor* fn#)))
+     (.submit ^ExecutorService *executor* fn#)))
 
 (defn batch
   "Execute the given `coll` in batches of `batch-size`.

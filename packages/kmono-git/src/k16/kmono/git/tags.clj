@@ -42,8 +42,8 @@
                                         ;; If annotated tag, unwrap to commit
                                         tag-commit (cond
                                                      (instance? RevTag any-object)
-                                                     (->> any-object
-                                                          (RevTag/.getObject)
+                                                     (->> ^RevTag any-object
+                                                          (.getObject)
                                                           (RevWalk/.parseCommit walk))
 
                                                      (instance? RevCommit any-object)
@@ -55,7 +55,7 @@
                                                                       tag-commit
                                                                       rev-commit))
                                       [(shorten-tag-name (.getName ref))
-                                       (RevCommit/.getCommitTime tag-commit)]))))
+                                       (.getCommitTime ^RevCommit tag-commit)]))))
                           (-> git Git/.tagList ListTagCommand/.call))]
 
            (into []
