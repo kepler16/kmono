@@ -85,7 +85,7 @@
        (catch Exception _
          nil)))
 
-(defn- ignored? [ignore-node path is-directory?]
+(defn- ignored? [^org.eclipse.jgit.ignore.IgnoreNode ignore-node path is-directory?]
   (IgnoreNode/.checkIgnored ignore-node path is-directory?))
 
 (defn- escape-glob-chars
