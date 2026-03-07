@@ -1,0 +1,39 @@
+name: Lint
+
+on: [push]
+
+jobs:
+  check-formatting:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+
+      - uses: extractions/setup-just@v3
+      - uses: DeLaGuardo/setup-clojure@13.2
+        with:
+          cljfmt: 0.16.1
+
+      - name: Install prettier
+        run: |
+          npm i -g prettier
+
+      - name: Install Pruner
+        run: |
+          set -euo pipefail
+
+          mkdir -p $HOME/.local/bin
+          curl -fL https://github.com/julienvincent/pruner/releases/download/v1.0.0-alpha.10/pruner-linux-amd64 \
+            -o "$HOME/.local/bin/pruner"
+
+          chmod +x "$HOME/.local/bin/pruner"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+          pruner --version
+
+      - name: Check Formatting
+        run: just lint
