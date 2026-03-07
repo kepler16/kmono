@@ -1,5 +1,6 @@
 {:kmono/workspace {:group com.kepler16
-                   :packages #{"packages/*/*"}}
+                   :packages #{"packages/*/*"}
+                   :package-aliases [:*/test]}
 
  :aliases {:build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}
                           com.kepler16/kaven {:mvn/version "1.0.0-alpha.1"}
