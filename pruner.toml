@@ -1,0 +1,27 @@
+query_paths = ["build/queries"]
+
+[grammars]
+clojure = "https://github.com/sogaiu/tree-sitter-clojure"
+markdown = "https://github.com/MDeiml/tree-sitter-markdown"
+
+[formatters]
+prettier = { cmd = "prettier", args = [
+  "--prose-wrap=always",
+  "--print-width=$textwidth",
+  "--parser=$language",
+] }
+
+cljfmt = { cmd = "cljfmt", args = [
+  "fix",
+  "-",
+  "-q",
+  "--remove-multiple-non-indenting-spaces",
+] }
+
+[plugins]
+trim_newlines = "https://github.com/pruner-formatter/plugin-trim-newlines/releases/download/v0.1.1/plugin.wasm"
+align_comments = "https://github.com/pruner-formatter/plugin-clojure-comment-formatter/releases/download/v0.1.0/plugin.wasm"
+
+[languages]
+markdown = ["prettier", "trim_newlines"]
+clojure = ["cljfmt", "align_comments", "trim_newlines"]

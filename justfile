@@ -31,3 +31,12 @@ cli *args:
 
 test *args:
     just cli {{ args }} run -M :test
+
+format dry='false':
+    pruner format '**/*.clj' \
+      --config pruner.toml \
+      --lang clojure \
+      --check={{ dry }}
+
+lint:
+    just format true

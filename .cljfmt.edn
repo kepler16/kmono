@@ -1,2 +1,4 @@
 {:remove-multiple-non-indenting-spaces? true
- :sort-ns-references? true}
+ :sort-ns-references? true
+
+ :extra-indents {k16.kmono.build/for-each-package [[:inner 0] [:inner 1]]}}
