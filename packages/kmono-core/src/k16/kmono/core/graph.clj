@@ -46,8 +46,8 @@
 (defn find-cycle
   "Find a dependency cycle in `packages` and returns it as a closed path.
 
-  Returns a vector like `[a b c a]` for a cycle `a -> b -> c -> a`, or nil if
-  no cycle is found."
+   Returns a vector like `[a b c a]` for a cycle `a -> b -> c -> a`, or nil if
+   no cycle is found."
   [packages]
   (loop [nodes (sort (keys packages))
          visited #{}
@@ -73,19 +73,19 @@
 
 (defn parallel-topo-sort
   "Sort a given `packages` map by the order in which the packages therein depend
-  on each other.
+   on each other.
 
-  As an example, if I have 3 packages `a`, `b`, `c` and `b` depends on `a`
-  then:
+   As an example, if I have 3 packages `a`, `b`, `c` and `b` depends on `a`
+   then:
 
-  ```clojure
-  (parallel-topo-sort {a {} b {} c {}})
-  ;; => [[a c] [b]]
-  ```
+   ```clojure
+   (parallel-topo-sort {a {} b {} c {}})
+   ;; => [[a c] [b]]
+   ```
 
-  This is generally used to calculate the execution order of packages when
-  trying to run commands in subpackages or build/release packages in the
-  correct order."
+   This is generally used to calculate the execution order of packages when
+   trying to run commands in subpackages or build/release packages in the
+   correct order."
   {:malli/schema [:=> [:cat core.schema/?PackageMap] [:maybe ?ExecOrder]]}
   [packages]
   (let [stage
@@ -113,7 +113,7 @@
 (defn query-dependents
   "Find all dependent packages of `pkg-name` within the give `packages` map.
 
-  This includes all transitive dependencies."
+   This includes all transitive dependencies."
   {:malli/schema [:=> [:cat core.schema/?PackageMap :symbol] [:set :symbol]]}
   [packages pkg-name]
 
@@ -156,15 +156,15 @@
 (defn filter-by
   "Filter a given `packages` map by those that match the given `predicate-fn`.
 
-  If the `:include-dependents` property is `true` then all dependent packages
-  of the retained packages will also be kept.
+   If the `:include-dependents` property is `true` then all dependent packages
+   of the retained packages will also be kept.
 
-  This function will update the `:depends-on` and `:dependent` keys of each
-  retained package to include only other packages that still remain in the map.
+   This function will update the `:depends-on` and `:dependent` keys of each
+   retained package to include only other packages that still remain in the map.
 
-  It's generally recommended to use this function instead of writing your own
-  package filtering. If you need to write your own then you should also make
-  sure to keep the `:depends-on` and `:dependents` updated."
+   It's generally recommended to use this function instead of writing your own
+   package filtering. If you need to write your own then you should also make
+   sure to keep the `:depends-on` and `:dependents` updated."
   ([predicate-fn packages] (filter-by predicate-fn {} packages))
   ([predicate-fn {:keys [include-dependents]} packages]
    (let [filtered

@@ -30,18 +30,18 @@
 (defn collect-aliases
   "Collect a set of 'active' aliases from the workspace.
 
-  This function works by:
+   This function works by:
 
-  1. Discovering all available package aliases in the workspace and filtering
-     them based on the `:package-aliases` config from the provided
-     `workspace-config`.
-  2. Merging this set with the aliases defined in the `:aliases` key on the
-     `workspace-config`.
-  3. Adding the special `:kmono/packages` alias which contains the base package
-     classpaths.
+   1. Discovering all available package aliases in the workspace and filtering
+      them based on the `:package-aliases` config from the provided
+      `workspace-config`.
+   2. Merging this set with the aliases defined in the `:aliases` key on the
+      `workspace-config`.
+   3. Adding the special `:kmono/packages` alias which contains the base package
+      classpaths.
 
-  This function is designed to be used to collect the relevant set of aliases
-  to provide to the clojure flags `-A`, `-M`, `-T`, `-X`."
+   This function is designed to be used to collect the relevant set of aliases
+   to provide to the clojure flags `-A`, `-M`, `-T`, `-X`."
   [workspace-config packages]
   (let [package-alias-globs (:package-aliases workspace-config)
         package-aliases (->> packages
@@ -74,10 +74,10 @@
 (defn resolve-classpath
   "Resolve a classpath string for a workspace.
 
-  This works by shelling out to `clojure -Spath` with additional flags
-  generated from analysing the workspace.
+   This works by shelling out to `clojure -Spath` with additional flags
+   generated from analysing the workspace.
 
-  See [[generate-classpath-command]] for the command construction logic."
+   See [[generate-classpath-command]] for the command construction logic."
   [project-root workspace-config packages]
   (:out
    (proc/shell

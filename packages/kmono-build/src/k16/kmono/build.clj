@@ -16,14 +16,14 @@
 (defn published?
   "A `predicate-fn` designed to be used with [[k16.kmono.core.graph/filter-by]].
 
-  Checks whether a given `package` has been published to it's maven repository.
-  The repositories from the packages `:mvn/deps` map will be used to run this
-  check.
+   Checks whether a given `package` has been published to it's maven repository.
+   The repositories from the packages `:mvn/deps` map will be used to run this
+   check.
 
-  Requires that the package has a `:version` set in order to perform a maven
-  query.
+   Requires that the package has a `:version` set in order to perform a maven
+   query.
 
-  This fn will just return `false` if the package `:version` is not set."
+   This fn will just return `false` if the package `:version` is not set."
   [package]
   (let [local-repo-override (str (fs/create-temp-dir))]
     (try
@@ -49,7 +49,7 @@
 (defn join
   "Attempt to join together a given a series of paths.
 
-  For example - given `(join \"/a/b/c\" \"../d\")` return `\"/a/b/d\"`"
+   For example - given `(join \"/a/b/c\" \"../d\")` return `\"/a/b/d\"`"
   [& paths]
   (->> (apply fs/file paths)
        fs/normalize
@@ -57,16 +57,16 @@
 
 (defn create-basis
   "Constructs a basis using [[clojure.tools.build.api/create-basis]] with a
-  modified set of `:libs`.
+   modified set of `:libs`.
 
-  Any `:local/root` kmono dependencies within the basis are replaced with their
-  respective `:mvn/version` coordinate derived from the given `packages` map.
+   Any `:local/root` kmono dependencies within the basis are replaced with their
+   respective `:mvn/version` coordinate derived from the given `packages` map.
 
-  These `:libs` are then used to generate a correctly referenced `pom.xml` when
-  using [[clojure.tools.build.api/write-pom]].
+   These `:libs` are then used to generate a correctly referenced `pom.xml` when
+   using [[clojure.tools.build.api/write-pom]].
 
-  Additional `opts` can be optionally provided and these will be given directly
-  to `create-basis`."
+   Additional `opts` can be optionally provided and these will be given directly
+   to `create-basis`."
   ([packages package] (create-basis packages package {}))
   ([packages package opts]
    (let [dependencies
@@ -96,26 +96,26 @@
 (defn for-each-package
   "Execute a given `build-fn` for each package in the given `packages` map.
 
-  Accepts an optional `opts` map containing:
+   Accepts an optional `opts` map containing:
 
-  - **`:concurrency`** :int (default 4) - The maximum number of packages that
-    can be executing at a time.
-  - **`:run-in-order`** :boolean (default `true`) - Set this to false to run
-    all packages concurrently ignoring their dependency order.
-  - **`silent`** :boolean (default `false`) - Set this to true to disable
-    logging the package name and version.
+   - **`:concurrency`** :int (default 4) - The maximum number of packages that
+     can be executing at a time.
+   - **`:run-in-order`** :boolean (default `true`) - Set this to false to run
+     all packages concurrently ignoring their dependency order.
+   - **`silent`** :boolean (default `false`) - Set this to true to disable
+     logging the package name and version.
 
-  The `build-fn` will be called with the `*project-root*` var (from
-  `clojure.tools.build.api`) bound to the subdirectory of the relevant package.
-  This allows using the various API's from `tools.build` under the assumption
-  that all specified paths will be relative to the package subdirectory.
+   The `build-fn` will be called with the `*project-root*` var (from
+   `clojure.tools.build.api`) bound to the subdirectory of the relevant package.
+   This allows using the various API's from `tools.build` under the assumption
+   that all specified paths will be relative to the package subdirectory.
 
-  TIP: Use the [[clojure.tools.build.api/resolve-path]] API to resolve a path
-  relative to the current package dir.
+   TIP: Use the [[clojure.tools.build.api/resolve-path]] API to resolve a path
+   relative to the current package dir.
 
-  The `build-fn` will be called concurrently (up to max of `:concurrency` or
-  `4`) but packages with dependencies will only be executed after each of their
-  respective dependencies have run unless `:run-in-order` is `false`."
+   The `build-fn` will be called concurrently (up to max of `:concurrency` or
+   `4`) but packages with dependencies will only be executed after each of their
+   respective dependencies have run unless `:run-in-order` is `false`."
   {:style/indent :defn
    :malli/schema
    [:function

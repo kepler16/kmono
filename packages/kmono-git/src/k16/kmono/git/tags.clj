@@ -20,8 +20,8 @@
     refname))
 
 (defn get-sorted-tags
-  "Returns all tags that are present in the current or any ancestor of the
-   given `rev`.
+  "Returns all tags that are present in the current or any ancestor of the given
+   `rev`.
 
    The returned tags are sorted by commit date (descending, most recent commit
    first)"
@@ -71,8 +71,8 @@
       (RevWalk/.parseAny walk oid))))
 
 (defn create-tags
-  "Create a set of `tags` in the git repo found at `repo-root` that point to
-   the specified `ref` (default: HEAD).
+  "Create a set of `tags` in the git repo found at `repo-root` that point to the
+   specified `ref` (default: HEAD).
 
    This will create annotated tags unless `annotated` is set to `false`."
   {:malli/schema [:-> :string [:map

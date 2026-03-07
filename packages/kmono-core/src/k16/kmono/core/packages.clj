@@ -90,18 +90,18 @@
 (defn glob-matches?
   "Compare a namespaced keyword or symbol against a keyword `glob`.
 
-  The keyword `glob` should be provided as a keyword where either the namespace
-  or name component can be substituted with a `*`. For example the below are
-  all valid globs
+   The keyword `glob` should be provided as a keyword where either the namespace
+   or name component can be substituted with a `*`. For example the below are
+   all valid globs
 
-  ```clojure
-  (glob-matches? :*/* :a/b) ;; true
-  (glob-matches? :a/* :a/b) ;; true
-  (glob-matches? :*/b :a/b) ;; true
-  (glob-matches? :*/b 'a/b) ;; true
+   ```clojure
+   (glob-matches? :*/* :a/b) ;; true
+   (glob-matches? :a/* :a/b) ;; true
+   (glob-matches? :*/b :a/b) ;; true
+   (glob-matches? :*/b 'a/b) ;; true
 
-  (glob-matches? :a/a :a/b) ;; false
-  ```"
+   (glob-matches? :a/a :a/b) ;; false
+   ```"
   {:malli/schema [:-> :keyword [:or :keyword :symbol] :boolean]}
   [glob kw|sym]
   (let [ns-matches
@@ -116,14 +116,14 @@
 
 (defn name-matches?
   "A `predicate-fn` constructor (returns a `predicate-fn`) designed to be used
-  with [[k16.kmono.core.graph/filter-by]].
+   with [[k16.kmono.core.graph/filter-by]].
 
-  Compares a give `pkg` :fqn against a given set of `globs` in the format
-  described by [[glob-matches?]]. Returns true if a match is found.
+   Compares a give `pkg` :fqn against a given set of `globs` in the format
+   described by [[glob-matches?]]. Returns true if a match is found.
 
-  ```clojure
-  (core.graph/filter-by (name-matches? [:*/*]))
-  ```"
+   ```clojure
+   (core.graph/filter-by (name-matches? [:*/*]))
+   ```"
   [globs]
   (fn name-matches-filter-fn [pkg]
     (boolean (some #(glob-matches? % (:fqn pkg)) globs))))
@@ -131,12 +131,12 @@
 (defn resolve-packages
   "Resolve the packages graph for a clojure project.
 
-  This will find all packages as described by the given `workspace-config` and
-  will use them to build a graph of all workspace packages and their
-  dependencies.
+   This will find all packages as described by the given `workspace-config` and
+   will use them to build a graph of all workspace packages and their
+   dependencies.
 
-  See [[k16.kmono.core.schema/?PackageMap]] for a schema of the returned
-  package map."
+   See [[k16.kmono.core.schema/?PackageMap]] for a schema of the returned
+   package map."
   {:malli/schema [:=> [:cat :string core.schema/?WorkspaceConfig] core.schema/?PackageMap]}
   [project-root workspace-config]
   (let [globs (:packages workspace-config)

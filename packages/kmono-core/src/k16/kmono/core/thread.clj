@@ -1,8 +1,8 @@
 (ns ^:no-doc k16.kmono.core.thread
   (:import
    java.util.concurrent.ExecutionException
-   java.util.concurrent.ExecutorService
-   java.util.concurrent.Executors))
+   java.util.concurrent.Executors
+   java.util.concurrent.ExecutorService))
 
 (set! *warn-on-reflection* true)
 
@@ -16,8 +16,8 @@
 (defn batch
   "Execute the given `coll` in batches of `batch-size`.
 
-   Each batch will be executed in parallel and a new batch will only be
-   executed when all items in the previous batch have completed.
+   Each batch will be executed in parallel and a new batch will only be executed
+   when all items in the previous batch have completed.
 
    If any items fail the entire operation fails."
   ([f batch-size]

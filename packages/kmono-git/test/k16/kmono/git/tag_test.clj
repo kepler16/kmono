@@ -25,7 +25,7 @@
                                   :tags ["b-1"]})
 
     (proc/shell {:dir (str *repo*)
-                 :out :string 
+                 :out :string
                  :err :string}
                 (str "git checkout " initial-commit))
 

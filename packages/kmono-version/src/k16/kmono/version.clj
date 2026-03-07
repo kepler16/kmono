@@ -54,7 +54,7 @@
    use-case requires alternative strategies then you might be interested in
    writing your own version of this function.
 
-   Other kmono-* API's only care about there being a `:version` set on a
+   Other kmono-\\* API's only care about there being a `:version` set on a
    package therefore how that field is set is up to you."
   {:malli/schema [:-> :string core.schema/?PackageMap core.schema/?PackageMap]}
   [project-root packages]
@@ -159,10 +159,10 @@
    `resolve-package-changes`. This information can be used to correctly
    determine the next version.
 
-   Note that this fn will also inc dependent package versions if those
-   dependent packages weren't themselves incremented. This is to ensure that
-   changes made to a parent package result in dependent packages being
-   incremented and published
+   Note that this fn will also inc dependent package versions if those dependent
+   packages weren't themselves incremented. This is to ensure that changes made
+   to a parent package result in dependent packages being incremented and
+   published
 
    Example usage:
 

@@ -23,18 +23,18 @@
 
 (defn version-fn
   "A `version-fn` for [[k16.kmono.version/inc-package-versions]] which produces
-  a version-type of `[:patch, :minor, :major, nil]` according to the
-  convensions of conventional-commits.
+   a version-type of `[:patch, :minor, :major, nil]` according to the
+   convensions of conventional-commits.
 
-  - A commit message with `fix:` in the title would produce a version-type of
-    `:patch`.
-  - A commit message with `feat:` in the title would produce a version-type of
-    `:minor`.
-  - The presence of a bang (!) such as `fix!:` would produce a version-type of
-    `:major`.
+   - A commit message with `fix:` in the title would produce a version-type of
+     `:patch`.
+   - A commit message with `feat:` in the title would produce a version-type of
+     `:minor`.
+   - The presence of a bang (!) such as `fix!:` would produce a version-type of
+     `:major`.
 
-  And finally if the commit message body contained the text `BREAKING CHANGE:`
-  then this would also result in a version-type of `:major`."
+   And finally if the commit message body contained the text `BREAKING CHANGE:`
+   then this would also result in a version-type of `:major`."
   [package]
   (reduce
    (fn [current-version-type commit]

@@ -79,15 +79,15 @@
 
 (defn filter-package-aliases
   "Filter the given `packages` map by those that contain aliases described by at
-  least one of the given given `globs`.
+   least one of the given given `globs`.
 
-  Returns a map with pkg-name as the key and the set of aliases from that
-  package that matched the globs.
+   Returns a map with pkg-name as the key and the set of aliases from that
+   package that matched the globs.
 
-  ```clojure
-  (filter-package-aliases {:package-a {}} [:*/test])
-  ;; => {:package-a #{:test}}
-  ```"
+   ```clojure
+   (filter-package-aliases {:package-a {}} [:*/test])
+   ;; => {:package-a #{:test}}
+   ```"
   [globs packages]
   (reduce
    (fn [packages [pkg-name pkg]]
@@ -113,17 +113,17 @@
 
 (defn generate-sdeps-aliases
   "Generate an `-Sdeps` compatible map containing aliases generated from various
-  workspace sources.
+   workspace sources.
 
-  This is the primary way of augmenting clojure with new classpath information.
+   This is the primary way of augmenting clojure with new classpath information.
 
-  Aliases are generated from:
+   Aliases are generated from:
 
-  1. The set of packages in the workspace. These are added into an alias called
-     `:kmono/packages` containing `:extra-deps`.
-  2. All the aliases from all packages in the workspace are raised up and
-     combined, scoping their alias names to the package name.
-  3. The aliases from `deps.local.edn` in the project root."
+   1. The set of packages in the workspace. These are added into an alias called
+      `:kmono/packages` containing `:extra-deps`.
+   2. All the aliases from all packages in the workspace are raised up and
+      combined, scoping their alias names to the package name.
+   3. The aliases from `deps.local.edn` in the project root."
   [project-root packages]
   (let [local-deps
         (fs/file project-root "deps.local.edn")

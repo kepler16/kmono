@@ -56,8 +56,8 @@
        (find-project-root parent current-root)))))
 
 (defn find-project-root!
-  "This is the same as [[k16.kmono.core.fs/find-project-root]] but will throw
-   an exception if no project root can be found."
+  "This is the same as [[k16.kmono.core.fs/find-project-root]] but will throw an
+   exception if no project root can be found."
   ([] (find-project-root! nil))
   ([dir]
    (let [root (find-project-root dir)]
