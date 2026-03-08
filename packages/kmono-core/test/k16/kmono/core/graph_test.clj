@@ -79,6 +79,24 @@
     (is (match? #{}
                 (core.graph/query-dependents packages 'com.kepler16/c)))))
 
+(deftest query-dependencies-test
+  (fs/create-dirs (fs/file *repo* "packages/c"))
+  (fs/write-bytes (fs/file *repo* "packages/c/deps.edn")
+                  (.getBytes (prn-str {:kmono/package {}
+                                       :deps {'com.kepler16/b {:local/root "../b"}}})))
+
+  (let [config (core.config/resolve-workspace-config *repo*)
+        packages (core.packages/resolve-packages *repo* config)]
+
+    (is (match? #{'com.kepler16/b 'com.kepler16/a}
+                (core.graph/query-dependencies packages 'com.kepler16/c)))
+
+    (is (match? #{'com.kepler16/a}
+                (core.graph/query-dependencies packages 'com.kepler16/b)))
+
+    (is (match? #{}
+                (core.graph/query-dependencies packages 'com.kepler16/a)))))
+
 (deftest filter-packages-test
   (let [config (core.config/resolve-workspace-config *repo*)
         packages (core.packages/resolve-packages *repo* config)]

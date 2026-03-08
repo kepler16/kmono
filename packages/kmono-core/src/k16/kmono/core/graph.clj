@@ -126,6 +126,22 @@
 
     (into (set (:dependents pkg)) dependents)))
 
+(defn query-dependencies
+  "Find all dependency packages of `pkg-name` within the given `packages` map.
+
+  This includes all transitive dependencies."
+  {:malli/schema [:=> [:cat core.schema/?PackageMap :symbol] [:set :symbol]]}
+  [packages pkg-name]
+
+  (let [pkg (get packages pkg-name)
+        dependencies
+        (mapcat
+         (fn [dep-pkg-name]
+           (query-dependencies packages dep-pkg-name))
+         (:depends-on pkg))]
+
+    (into (set (:depends-on pkg)) dependencies)))
+
 (defn- update-graph-edges
   [packages filtered]
   (into
