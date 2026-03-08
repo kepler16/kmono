@@ -9,4 +9,10 @@
         babashka/fs {:mvn/version "0.5.30"}
 
         com.kepler16/kmono-core {:local/root "../kmono-core"}
-        com.kepler16/kmono-log {:local/root "../kmono-log"}}}
+        com.kepler16/kmono-log {:local/root "../kmono-log"}}
+
+ :aliases {:test {:extra-paths ["test"]
+                  :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
+                               nubank/matcher-combinators {:mvn/version "3.9.2"}
+                               local/kmono-test {:local/root "../kmono-test"}}
+                  :main-opts ["-m" "kaocha.runner" "-c" "../../tests.edn"]}}}
