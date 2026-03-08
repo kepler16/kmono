@@ -1,5 +1,4 @@
 name: Build and Release Libs
-
 on:
   push:
   pull_request:

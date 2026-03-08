@@ -1,5 +1,4 @@
 name: Release CLI
-
 on:
   push:
   pull_request:
