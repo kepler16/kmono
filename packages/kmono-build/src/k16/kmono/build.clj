@@ -59,33 +59,36 @@
   "Constructs a basis using [[clojure.tools.build.api/create-basis]] with a
    modified set of `:libs`.
 
-   Any `:local/root` kmono dependencies within the basis are replaced with their
-   respective `:mvn/version` coordinate derived from the given `packages` map.
+   Any `:local/root` kmono dependencies within the resolved basis `:libs` are
+   replaced with their respective `:mvn/version` coordinate by looking up the
+   lib's symbol in the given `packages` map.
 
    These `:libs` are then used to generate a correctly referenced `pom.xml` when
    using [[clojure.tools.build.api/write-pom]].
+
+   The `packages` map should contain all workspace packages required for version
+   lookup (typically the full unfiltered package map).
 
    Additional `opts` can be optionally provided and these will be given directly
    to `create-basis`."
   ([packages package] (create-basis packages package {}))
   ([packages package opts]
-   (let [dependencies
+   (let [basis (b/create-basis opts)
+
+         libs
          (into {}
-               (comp
-                (map (fn [pkg-name]
-                       (let [version (get-in packages [pkg-name :version])
-                             dep {:deps/manifest :mvn
-                                  :mvn/version version
-                                  :parents #{[]}
-                                  :paths []}]
-                         (when version
-                           [pkg-name dep]))))
-                (remove nil?))
-               (:depends-on package))
+               (map (fn [[lib-name coord]]
+                      (let [version (get-in packages [lib-name :version])
+                            local-dep? (some? (get-in packages [(:fqn package) :deps-edn :deps lib-name :local/root]))]
+                        (if (and version local-dep?)
+                          [lib-name {:deps/manifest :mvn
+                                     :mvn/version version
+                                     :parents #{[]}
+                                     :paths []}]
+                          [lib-name coord]))))
+               (:libs basis))]
 
-         basis (b/create-basis opts)]
-
-     (update basis :libs merge dependencies))))
+     (assoc basis :libs libs))))
 
 (def ^:no-doc ?BuildOpts
   [:map
