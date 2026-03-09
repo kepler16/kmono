@@ -129,7 +129,7 @@
 (defn query-dependencies
   "Find all dependency packages of `pkg-name` within the given `packages` map.
 
-  This includes all transitive dependencies."
+   This includes all transitive dependencies."
   {:malli/schema [:=> [:cat core.schema/?PackageMap :symbol] [:set :symbol]]}
   [packages pkg-name]
 
