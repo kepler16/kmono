@@ -1,17 +1,23 @@
 (ns ^:no-doc k16.kmono.core.thread
   (:import
-   java.util.concurrent.ExecutionException
-   java.util.concurrent.Executors
-   java.util.concurrent.ExecutorService))
+    (java.util.concurrent
+      ExecutionException
+      ExecutorService
+      Executors)))
+
 
 (set! *warn-on-reflection* true)
+
 
 (def ^:dynamic ^:private *executor*
   (Executors/newVirtualThreadPerTaskExecutor))
 
-(defmacro vthread [& body]
+
+(defmacro vthread
+  [& body]
   `(let [^Callable fn# (bound-fn [] ~@body)]
-     (ExecutorService/.submit *executor* fn#)))
+     (ExecutorService/.submit ^ExecutorService *executor* fn#)))
+
 
 (defn batch
   "Execute the given `coll` in batches of `batch-size`.
