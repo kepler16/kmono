@@ -25,16 +25,19 @@
             (log/error "Either --with-changes or --with-changes-since is required when setting --filter-unchanged")
             (System/exit 1))
 
-        {:keys [root packages]} (common.context/load-context opts)
+        {:keys [root packages config]} (common.context/load-context opts)
+        ignore-changes (:ignore-changes config)
+        change-opts (when ignore-changes
+                      {:ignore-changes ignore-changes})
         packages (cond->> packages
                    with-versions
                    (kmono.version/resolve-package-versions root)
 
                    with-changes
-                   (kmono.version/resolve-package-changes root)
+                   (kmono.version/resolve-package-changes root change-opts)
 
                    with-changes-since
-                   (kmono.version/resolve-package-changes-since root with-changes-since)
+                   (kmono.version/resolve-package-changes-since root with-changes-since change-opts)
 
                    filter-unchanged
                    (core.graph/filter-by kmono.version/package-changed?
@@ -107,6 +110,7 @@
    :options {:with-versions with-versions
              :with-changes-since with-changes-since
              :with-changes with-changes
+             :ignore-changes opts/ignore-changes-opt
              :filter-unchanged filter-unchanged
              :include-dependents include-dependents
              :filter opts/package-filter-opt

@@ -197,6 +197,42 @@ last tagged version.
 The `k16.kmono.version/resolve-package-changes-since` can be used to find commits that have changed the package since a
 given git revision.
 
+#### Ignoring Changes by File Pattern
+
+When using change detection (`--changed` or `--changed-since`), you can filter out changes to specific files using
+`--ignore-changes`. This accepts a comma-separated list of regexp patterns matched against file paths relative to the
+package root. If **all** changed files in a package match the ignore patterns, that package is treated as unchanged.
+
+```bash
+# Ignore markdown-only changes
+kmono run --changed --ignore-changes ".*\.md$" -M :test
+
+# Ignore multiple patterns (comma-separated)
+kmono run --changed --ignore-changes ".*\.md$,LICENSE,^docs/" -M :build
+
+# Works with --changed-since too
+kmono run --changed-since main --ignore-changes ".*\.md$" -M :test
+```
+
+This is useful in CI/CD workflows where documentation-only changes shouldn't trigger builds or tests.
+
+Patterns can also be configured at the workspace level in `deps.edn` (see [Workspace Configuration](#workspace-configuration)):
+
+```clojure
+{:kmono/workspace {:group com.example
+                   :ignore-changes [".*\\.md$" "^docs/" "LICENSE"]}}
+```
+
+Individual packages can override the workspace-level patterns by setting `:ignore-changes` in their `:kmono/package`
+config (see [Package Configuration](#package-configuration)):
+
+```clojure
+;; packages/my-lib/deps.edn
+{:kmono/package {:ignore-changes [".*\\.md$" "^test-fixtures/"]}}
+```
+
+The precedence order is: CLI `--ignore-changes` > per-package `:ignore-changes` > workspace `:ignore-changes`.
+
 These tools and others can be used to build sophisticated build and release pipelines for kmono workspaces.
 
 ## API Documentation
@@ -263,6 +299,7 @@ configuration accepts the following properties:
 | `:repl-aliases`    | `[keyword?]`            | `nil`             | A set of `deps` aliases to include when running `kmono repl`                                                                           |
 | `:aliases`         | `[keyword?]`            | `nil`             | A set of `deps` aliases to include for all kmono workspace commands by default                                                         |
 | `:package-aliases` | `[keyword?]`            | `nil`             | A set of namespaced [alias globs](#alias-globs) that describe the aliases of packages within the workspace to include in the classpath |
+| `:ignore-changes`  | `[string?]`             | `nil`             | A list of regexp patterns for file paths to ignore when determining package changes (used with `--changed` / `--changed-since`)        |
 
 Example:
 
@@ -271,7 +308,9 @@ Example:
 {:kmono/workspace {:group com.example
                    :packages #{"./(packages|modules)/**"}
                    ;; Include any `:test` aliases from all (`*`) packages in the workspace
-                   :package-aliases [:*/test]}
+                   :package-aliases [:*/test]
+                   ;; Ignore doc-only changes when using --changed
+                   :ignore-changes [".*\\.md$" "LICENSE"]}
 
  :paths ["src" "resources"]
 
@@ -285,9 +324,10 @@ Packages in the workspace can optionally provide their own configuration metadat
 
 | Field       | Type                 | Default | Description                                                                                                                                    |
 | ----------- | -------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `:group`    | `symbol?`            | `nil`   | The mvn group to use for this package. If not specified, the `:group` specified in the root `:kmono/workspace` configuration will be used.     |
-| `:name`     | `string? \| symbol?` | `$dir`  | The name of the package. If not set the name of the parent directory containing the packages' `deps.edn` file will be used as the package name |
-| `:excluded` | `boolean?`           | `false` | Whether or not this package is excluded from the project workspace                                                                             |
+| `:group`           | `symbol?`            | `nil`   | The mvn group to use for this package. If not specified, the `:group` specified in the root `:kmono/workspace` configuration will be used.     |
+| `:name`            | `string? \| symbol?` | `$dir`  | The name of the package. If not set the name of the parent directory containing the packages' `deps.edn` file will be used as the package name |
+| `:excluded`        | `boolean?`           | `false` | Whether or not this package is excluded from the project workspace                                                                             |
+| `:ignore-changes`  | `[string?]`          | `nil`   | Override the workspace-level `:ignore-changes` patterns for this package                                                                       |
 
 Example
 
@@ -296,7 +336,9 @@ Example
 {:kmono/package {;; Maven artifacts group
                  :group com.example
                  ;; Override the default package name
-                 :name example-lib}
+                 :name example-lib
+                 ;; Override workspace-level ignore-changes for this package
+                 :ignore-changes [".*\\.md$" "^test-fixtures/"]}
 
  :paths ["src"]
  :deps {...}

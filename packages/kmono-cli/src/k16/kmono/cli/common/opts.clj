@@ -68,3 +68,8 @@
   {:desc "Filter packages by those that have changed since the specified git <rev>"
    :ref "<rev>"
    :coerce :string})
+
+(def ignore-changes-opt
+  {:desc "Comma-separated regexp patterns of file paths to ignore when determining changes"
+   :coerce :string
+   :parse-fn (fn [value] (str/split value #","))})
