@@ -14,20 +14,23 @@
 (set! *warn-on-reflection* true)
 
 (defn- run-command [{:keys [M T X skip-unchanged changed changed-since] :as opts} args]
-  (let [{:keys [root packages]} (common.context/load-context opts)
+  (let [{:keys [root packages config]} (common.context/load-context opts)
         filter' (:filter opts)
+        ignore-changes (:ignore-changes config)
+        change-opts (when ignore-changes
+                      {:ignore-changes ignore-changes})
         packages (cond-> packages
                    filter'
                    (->> (core.graph/filter-by (core.packages/name-matches? filter')))
 
                    (or changed skip-unchanged)
                    (->> (kmono.version/resolve-package-versions root)
-                        (kmono.version/resolve-package-changes root)
+                        (kmono.version/resolve-package-changes root change-opts)
                         (core.graph/filter-by kmono.version/package-changed?
                                               {:include-dependents true}))
 
                    changed-since
-                   (->> (kmono.version/resolve-package-changes-since root changed-since)
+                   (->> (kmono.version/resolve-package-changes-since root changed-since change-opts)
                         (core.graph/filter-by kmono.version/package-changed?
                                               {:include-dependents true})))
 
@@ -68,6 +71,7 @@
              :skip-unchanged opts/skip-unchanged-opt
              :changed opts/changed-opt
              :changed-since opts/changed-since-opt
+             :ignore-changes opts/ignore-changes-opt
              :concurrency opts/concurrency-opt
              :filter opts/package-filter-opt
 

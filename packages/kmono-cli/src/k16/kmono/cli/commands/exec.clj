@@ -17,18 +17,21 @@
            include-dependents run-in-order concurrency]
     :as opts}
    args]
-  (let [{:keys [root packages]} (common.context/load-context opts)
+  (let [{:keys [root packages config]} (common.context/load-context opts)
+        ignore-changes (:ignore-changes config)
+        change-opts (when ignore-changes
+                      {:ignore-changes ignore-changes})
 
         packages
         (cond-> packages
           (or changed skip-unchanged)
           (->> (kmono.version/resolve-package-versions root)
-               (kmono.version/resolve-package-changes root)
+               (kmono.version/resolve-package-changes root change-opts)
                (core.graph/filter-by kmono.version/package-changed?
                                      {:include-dependents include-dependents}))
 
           changed-since
-          (->> (kmono.version/resolve-package-changes-since root changed-since)
+          (->> (kmono.version/resolve-package-changes-since root changed-since change-opts)
                (core.graph/filter-by kmono.version/package-changed?
                                      {:include-dependents include-dependents}))
 
@@ -65,6 +68,7 @@
              :skip-unchanged opts/skip-unchanged-opt
              :changed opts/changed-opt
              :changed-since opts/changed-since-opt
+             :ignore-changes opts/ignore-changes-opt
              :filter opts/package-filter-opt
              :include-dependents include-dependents
              :concurrency opts/concurrency-opt}

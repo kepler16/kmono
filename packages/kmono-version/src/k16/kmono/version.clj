@@ -6,6 +6,7 @@
    [k16.kmono.core.thread :as core.thread]
    [k16.kmono.git :as git]
    [k16.kmono.git.commit :as git.commit]
+   [k16.kmono.git.files :as git.files]
    [k16.kmono.git.tags :as git.tags]
    [k16.kmono.version.semver :as semver]))
 
@@ -68,15 +69,38 @@
           (transient {}))
          persistent!)))
 
+(defn- file-ignored?
+  "Returns true if the file path matches any of the ignore patterns."
+  [patterns file-path]
+  (boolean (some #(re-find (re-pattern %) file-path) patterns)))
+
+(defn- commit-has-meaningful-changes?
+  "Returns true if the commit has changed files that don't all match ignore
+   patterns. Files are matched relative to the package root."
+  [project-root pkg ignore-changes commit]
+  (let [files (git.files/find-commit-changed-files
+               project-root {:sha (:sha commit)
+                             :subdir (:relative-path pkg)})
+        pkg-prefix (str (:relative-path pkg) "/")
+        relative-files (map #(str/replace-first % pkg-prefix "") files)]
+    (boolean (seq (remove #(file-ignored? ignore-changes %) relative-files)))))
+
 (defn- -resolve-package-changes-since
-  [project-root packages rev-fn]
+  [project-root packages rev-fn {:keys [ignore-changes]}]
   (git/with-repo [_ project-root]
     (into {}
           (core.thread/batch
            (fn find-commits [[pkg-name pkg]]
-             (let [commits (git.commit/find-commits-since
-                            project-root {:ref (rev-fn pkg)
+             (let [ref (rev-fn pkg)
+                   commits (git.commit/find-commits-since
+                            project-root {:ref ref
                                           :subdir (:relative-path pkg)})
+                   pkg-ignore-changes (or (:ignore-changes pkg) ignore-changes)
+                   commits (if (and (seq pkg-ignore-changes) (seq commits) ref)
+                             (filterv #(commit-has-meaningful-changes?
+                                        project-root pkg pkg-ignore-changes %)
+                                      commits)
+                             commits)
                    pkg (assoc pkg :commits (vec commits))]
                [pkg-name pkg]))
            32)
@@ -90,25 +114,39 @@
    and version. See `k16.kmono.version/resolve-package-versions` for a
    description on how this tag is expected to be formatted.
 
-   Any commits found will be appended to the packages `:commits` key."
+   Any commits found will be appended to the packages `:commits` key.
+
+   An optional `opts` map may be provided with `:ignore-changes` - a sequence of
+   regexp patterns. Commits where all changed files match these patterns are
+   filtered out."
   {:malli/schema [:-> :string core.schema/?PackageMap core.schema/?PackageMap]}
-  [project-root packages]
-  (-resolve-package-changes-since project-root
-                                  packages
-                                  (fn [pkg]
-                                    (when (:version pkg)
-                                      (create-package-version-tag pkg)))))
+  ([project-root packages]
+   (resolve-package-changes project-root nil packages))
+  ([project-root opts packages]
+   (-resolve-package-changes-since project-root
+                                   packages
+                                   (fn [pkg]
+                                     (when (:version pkg)
+                                       (create-package-version-tag pkg)))
+                                   opts)))
 
 (defn resolve-package-changes-since
   "For each package try find all commits that modified files in the package
    subdirectory since the given rev.
 
-   Any commits found will be appended to the packages `:commits` key."
+   Any commits found will be appended to the packages `:commits` key.
+
+   An optional `opts` map may be provided with `:ignore-changes` - a sequence of
+   regexp patterns. Commits where all changed files match these patterns are
+   filtered out."
   {:malli/schema [:-> :string :string core.schema/?PackageMap core.schema/?PackageMap]}
-  [project-root rev packages]
-  (-resolve-package-changes-since project-root
-                                  packages
-                                  (constantly rev)))
+  ([project-root rev packages]
+   (resolve-package-changes-since project-root rev nil packages))
+  ([project-root rev opts packages]
+   (-resolve-package-changes-since project-root
+                                   packages
+                                   (constantly rev)
+                                   opts)))
 
 (defn package-changed?
   "A filter function designed to be used with `k16.kmono.core.graph/filter-by`.

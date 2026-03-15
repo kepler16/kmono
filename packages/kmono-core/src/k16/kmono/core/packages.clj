@@ -16,8 +16,8 @@
                (not (fs/same-file? project-root package-path)))
       (let [relative-path (str (fs/relativize project-root package-path))
             package (merge {:name (symbol (fs/file-name package-path))}
-                           (select-keys workspace-config [:group])
-                           (select-keys config [:group :name :deps-edn])
+                           (select-keys workspace-config [:group :ignore-changes])
+                           (select-keys config [:group :name :deps-edn :ignore-changes])
                            {:absolute-path (str package-path)
                             :relative-path relative-path
                             :depends-on #{}})

@@ -19,14 +19,19 @@
    [:aliases {:optional true}
     [:vector :keyword]]
    [:package-aliases {:optional true}
-    [:vector :keyword]]])
+    [:vector :keyword]]
+
+   [:ignore-changes {:optional true}
+    [:sequential :string]]])
 
 (def ?PackageConfig
   [:map
    [:group {:optional true} :symbol]
    [:name {:optional true}
     [:maybe [:or :string :symbol]]]
-   [:excluded {:optional true} :boolean]])
+   [:excluded {:optional true} :boolean]
+   [:ignore-changes {:optional true}
+    [:sequential :string]]])
 
 (def ?Coordinate
   [:map
@@ -56,7 +61,9 @@
    [:dependents [:set :symbol]]
 
    [:absolute-path :string]
-   [:relative-path :string]])
+   [:relative-path :string]
+
+   [:ignore-changes {:optional true} [:sequential :string]]])
 
 (def ?PackageMap
   [:map-of :symbol ?Package])
