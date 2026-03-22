@@ -13,12 +13,12 @@
                       (comp
                        (map (fn [alias]
                               [[:system-yellow alias]
-                               [:bold.system-black ", "]]))
+                               [:bold.system-grey ", "]]))
                        cat)
                       aliases)]
-    (-> [[:bold.system-black "["]]
+    (-> [[:bold.system-grey "["]]
         (into (drop-last aliases))
-        (into [[:bold.system-black "]"]]))))
+        (into [[:bold.system-grey "]"]]))))
 
 (defn- repl-command [opts _]
   (let [{:keys [config]} (common.context/load-context opts)
