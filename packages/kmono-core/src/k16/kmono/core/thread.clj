@@ -6,8 +6,13 @@
 
 (set! *warn-on-reflection* true)
 
+(defmacro ^:private default-executor []
+  (if (>= (.feature (Runtime/version)) 21)
+    `(Executors/newVirtualThreadPerTaskExecutor)
+    `(Executors/newCachedThreadPool)))
+
 (def ^:dynamic ^:private *executor*
-  (Executors/newVirtualThreadPerTaskExecutor))
+  (default-executor))
 
 (defmacro vthread [& body]
   `(let [^Callable fn# (bound-fn [] ~@body)]
